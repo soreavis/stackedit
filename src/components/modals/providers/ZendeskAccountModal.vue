@@ -17,7 +17,7 @@
           You have to configure an OAuth Client with redirect URL <b>{{redirectUrl}}</b>
         </div>
         <div class="form-entry__actions">
-          <a href="https://support.zendesk.com/hc/en-us/articles/203663836" target="_blank">More info</a>
+          <a href="https://support.zendesk.com/hc/en-us/articles/203663836" target="_blank" rel="noopener noreferrer">More info</a>
         </div>
       </form-entry>
     </div>

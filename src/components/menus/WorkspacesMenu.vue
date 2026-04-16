@@ -7,7 +7,7 @@
     </menu-entry>
     <hr>
     <div class="workspace" v-for="(workspace, id) in workspacesById" :key="id">
-      <menu-entry :href="workspace.url" target="_blank">
+      <menu-entry :href="workspace.url" target="_blank" rel="noopener noreferrer">
         <icon-provider slot="icon" :provider-id="workspace.providerId"></icon-provider>
         <div class="workspace__name"><div class="menu-entry__label" v-if="currentWorkspace === workspace">current</div>{{workspace.name}}</div>
       </menu-entry>
@@ -96,7 +96,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../../styles/variables.scss';
+@use '../../styles/variables.scss' as *;
 
 .workspace .menu-entry {
   padding-top: 12px;

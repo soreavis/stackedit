@@ -30,7 +30,7 @@
               <button class="workspace-entry__button button" v-clipboard="workspace.url" @click="info('Workspace URL copied to clipboard!')" v-title="'Copy URL'">
                 <icon-content-copy></icon-content-copy>
               </button>
-              <a class="workspace-entry__button button" :href="workspace.url" target="_blank" v-title="'Open workspace'">
+              <a class="workspace-entry__button button" :href="workspace.url" target="_blank" rel="noopener noreferrer" v-title="'Open workspace'">
                 <icon-open-in-new></icon-open-in-new>
               </a>
             </div>
@@ -43,7 +43,7 @@
               <button class="workspace-entry__button button" v-clipboard="workspace.locationUrl" @click="info('Workspace URL copied to clipboard!')" v-title="'Copy URL'">
                 <icon-content-copy></icon-content-copy>
               </button>
-              <a class="workspace-entry__button button" :href="workspace.locationUrl" target="_blank" v-title="'Open workspace location'">
+              <a class="workspace-entry__button button" :href="workspace.locationUrl" target="_blank" rel="noopener noreferrer" v-title="'Open workspace location'">
                 <icon-open-in-new></icon-open-in-new>
               </a>
             </div>
@@ -141,7 +141,8 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../../styles/variables.scss';
+@use 'sass:color';
+@use '../../styles/variables.scss' as *;
 
 .workspace-entry {
   margin: 1.75em 0;
@@ -228,6 +229,6 @@ $small-button-size: 22px;
   padding: 0.15em 0.35em;
   border-radius: 3px;
   color: #fff;
-  background-color: darken($error-color, 10);
+  background-color: color.adjust($error-color, $lightness: -10%);
 }
 </style>

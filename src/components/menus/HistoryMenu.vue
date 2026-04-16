@@ -16,7 +16,7 @@
           <icon-provider :provider-id="syncLocation.providerId"></icon-provider>
         </div>
         <span v-if="syncLocation.url">
-          The following revisions are stored in <a :href="syncLocation.url" target="_blank">{{ syncLocationProviderName }}</a>.
+          The following revisions are stored in <a :href="syncLocation.url" target="_blank" rel="noopener noreferrer">{{ syncLocationProviderName }}</a>.
         </span>
         <span v-else>
           The following revisions are stored in {{ syncLocationProviderName }}.
@@ -336,7 +336,8 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../../styles/variables.scss';
+@use 'sass:color';
+@use '../../styles/variables.scss' as *;
 
 .history__button {
   font-size: 14px;
@@ -415,10 +416,10 @@ export default {
 .layout--revision {
   .cledit-section *,
   .cl-preview-section * {
-    color: transparentize($editor-color-light, 0.5) !important;
+    color: color.adjust($editor-color-light, $alpha: -0.5) !important;
 
     .app--dark & {
-      color: transparentize($editor-color-dark, 0.5) !important;
+      color: color.adjust($editor-color-dark, $alpha: -0.5) !important;
     }
   }
 
@@ -442,11 +443,11 @@ export default {
     padding: 0.25em 0;
 
     &.revision-diff--insert {
-      background-color: mix(#fff, $selection-highlighting-color, 60%);
+      background-color: color.mix(#fff, $selection-highlighting-color, 60%);
     }
 
     &.revision-diff--delete {
-      background-color: mix(#fff, $error-color, 60%);
+      background-color: color.mix(#fff, $error-color, 60%);
       text-decoration: line-through;
     }
   }

@@ -32,6 +32,7 @@ import { mapState, mapGetters, mapMutations, mapActions } from 'vuex';
 import editorSvc from '../../services/editorSvc';
 import animationSvc from '../../services/animationSvc';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
+import htmlSanitizer from '../../libs/htmlSanitizer';
 import StickyComment from './StickyComment';
 import store from '../../store';
 import badgeSvc from '../../services/badgeSvc';
@@ -56,7 +57,7 @@ export default {
       'constants',
     ]),
     text() {
-      return markdownConversionSvc.highlight(this.currentDiscussion.text);
+      return htmlSanitizer.sanitizeHtml(markdownConversionSvc.highlight(this.currentDiscussion.text));
     },
     showNext() {
       return this.nextDiscussionId && this.nextDiscussionId !== this.currentDiscussionId;
@@ -114,7 +115,8 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../../styles/variables.scss';
+@use 'sass:color';
+@use '../../styles/variables.scss' as *;
 
 .current-discussion {
   position: absolute;
@@ -166,11 +168,11 @@ export default {
 
   span {
     padding: 0.2em 0;
-    background-color: mix($editor-background-light, $selection-highlighting-color, 10%);
+    background-color: color.mix($editor-background-light, $selection-highlighting-color, 10%);
     cursor: pointer;
 
     .app--dark {
-      background-color: mix($editor-background-dark, $selection-highlighting-color, 10%);
+      background-color: color.mix($editor-background-dark, $selection-highlighting-color, 10%);
     }
   }
 }

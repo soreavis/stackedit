@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      runtime-minor:
+        dependency-type: production
+        update-types: [minor, patch]
+      dev-minor:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: vue
+        versions: [">=3.0.0"]
+      - dependency-name: vuex
+        versions: [">=4.0.0"]
+      - dependency-name: markdown-it
+        versions: [">=9.0.0"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

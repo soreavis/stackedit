@@ -1,6 +1,6 @@
 import utils from './utils';
 import store from '../store';
-import welcomeFile from '../data/welcomeFile.md';
+import welcomeFile from '../data/welcomeFile.md?raw';
 import workspaceSvc from './workspaceSvc';
 import constants from '../data/constants';
 

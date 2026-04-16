@@ -72,7 +72,7 @@
   <span class="token key atrule">katex</span><span class="token punctuation">:</span>
     <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
 </code></pre>
-          <p>For the full list of options, see <a href="https://github.com/benweet/stackedit/blob/master/src/data/presets.js" target="_blank">here</a>.</p>
+          <p>For the full list of options, see <a href="https://github.com/benweet/stackedit/blob/master/src/data/presets.js" target="_blank" rel="noopener noreferrer">here</a>.</p>
         </div>
       </div>
     </div>
@@ -187,7 +187,7 @@ export default {
           delete properties.extensions;
         }
         this.setYamlProperties(Object.keys(properties).length
-          ? yaml.safeDump(properties)
+          ? yaml.dump(properties)
           : '\n');
       }
     },
@@ -202,7 +202,7 @@ export default {
     setYamlProperties(value) {
       this.yamlProperties = value;
       try {
-        this.properties = yaml.safeLoad(value);
+        this.properties = yaml.load(value);
         this.error = null;
       } catch (e) {
         this.error = e.message;
@@ -239,7 +239,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../../styles/variables.scss';
+@use '../../styles/variables.scss' as *;
 
 .modal__inner-1.modal__inner-1--file-properties {
   max-width: 520px;
