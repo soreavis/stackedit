@@ -4,8 +4,8 @@
       <p>Please choose a <b>PayPal</b> option:</p>
       <a class="paypal-option button flex flex--row flex--center" v-for="button in buttons" :key="button.id" :href="button.link">
         <div class="flex flex--column">
-          <div>{{button.price}}<div class="paypal-option__offer" v-if="button.offer">{{button.offer}}</div></div>
-          <span>{{button.description}}</span>
+          <div>{{ button.price }}<div class="paypal-option__offer" v-if="button.offer">{{ button.offer }}</div></div>
+          <span>{{ button.description }}</span>
         </div>
       </a>
     </div>

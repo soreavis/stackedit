@@ -1,6 +1,6 @@
 <template>
   <div class="comment-list" :class="stickyComment && 'comment-list--' + stickyComment" :style="{width: constants.gutterWidth + 'px'}">
-    <comment v-for="(comment, discussionId) in currentFileDiscussionLastComments" :key="discussionId" v-if="comment.discussionId !== currentDiscussionId" :comment="comment" class="comment--last" :class="'comment--discussion-' + discussionId" :style="{top: tops[discussionId] + 'px'}" @click.native="setCurrentDiscussionId(discussionId)"></comment>
+    <comment v-for="(comment, discussionId) in lastCommentsExcludingCurrent" :key="discussionId" :comment="comment" class="comment--last" :class="'comment--discussion-' + discussionId" :style="{top: tops[discussionId] + 'px'}" @click.native="setCurrentDiscussionId(discussionId)"></comment>
     <div class="comment-list__current-discussion" :style="{top: tops.current + 'px'}">
       <comment v-for="(comment, id) in currentDiscussionComments" :key="id" :comment="comment" :class="'comment--' + id"></comment>
       <new-comment v-if="isCommenting"></new-comment>
@@ -43,6 +43,16 @@ export default {
       'currentDiscussionComments',
       'currentDiscussionLastCommentId',
     ]),
+    lastCommentsExcludingCurrent() {
+      const comments = this.currentFileDiscussionLastComments;
+      const filtered = {};
+      Object.keys(comments).forEach((id) => {
+        if (comments[id].discussionId !== this.currentDiscussionId) {
+          filtered[id] = comments[id];
+        }
+      });
+      return filtered;
+    },
     updateTopsTrigger() {
       return utils.serializeObject([
         this.styles,

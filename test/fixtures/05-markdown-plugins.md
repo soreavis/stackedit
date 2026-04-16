@@ -47,7 +47,7 @@ Water: H~2~O. Einstein: E = mc^2^.
 - [x] Mermaid 11
 - [ ] Vue 3 migration
 
-## Image with size (markdown-it-imsize shim)
+## Image with size (vendored markdown-it imsize plugin — src/libs/markdownItImsize.js)
 
 ![placeholder =80x80](https://placehold.co/80)
 

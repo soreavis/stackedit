@@ -68,7 +68,7 @@ export default modalTemplate({
           if (err.status === 401) {
             store.dispatch('modal/open', 'sponsorOnly');
           } else {
-            console.error(err); // eslint-disable-line no-console
+            console.error(err);  
             store.dispatch('notification/error', err);
           }
         }

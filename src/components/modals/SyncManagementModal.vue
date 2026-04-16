@@ -4,8 +4,8 @@
       <div class="modal__image">
         <icon-sync></icon-sync>
       </div>
-      <p v-if="syncLocations.length"><b>{{currentFileName}}</b> is synchronized with the following location(s):</p>
-      <p v-else><b>{{currentFileName}}</b> is not synchronized yet.</p>
+      <p v-if="syncLocations.length"><b>{{ currentFileName }}</b> is synchronized with the following location(s):</p>
+      <p v-else><b>{{ currentFileName }}</b> is not synchronized yet.</p>
       <div>
         <div class="sync-entry flex flex--column" v-for="location in syncLocations" :key="location.id">
           <div class="sync-entry__header flex flex--row flex--align-center">
@@ -13,7 +13,7 @@
               <icon-provider :provider-id="location.providerId"></icon-provider>
             </div>
             <div class="sync-entry__description">
-              {{location.description}}
+              {{ location.description }}
             </div>
             <div class="sync-entry__buttons flex flex--row flex--center">
               <button class="sync-entry__button button" @click="remove(location)" v-title="'Remove location'">
@@ -23,7 +23,7 @@
           </div>
           <div class="sync-entry__row flex flex--row flex--align-center">
             <div class="sync-entry__url">
-              {{location.url || 'Google Drive app data'}}
+              {{ location.url || 'Google Drive app data' }}
             </div>
             <div class="sync-entry__buttons flex flex--row flex--center" v-if="location.url">
               <button class="sync-entry__button button" v-clipboard="location.url" @click="info('Location URL copied to clipboard!')" v-title="'Copy URL'">

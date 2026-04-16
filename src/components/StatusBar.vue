@@ -6,9 +6,9 @@
         <span v-if="textSelection">selection</span>
       </span>
       <span v-for="stat in textStats" :key="stat.id">
-        <span class="stat-panel__value">{{stat.value}}</span> {{stat.name}}
+        <span class="stat-panel__value">{{ stat.value }}</span> {{ stat.name }}
       </span>
-      <span class="stat-panel__value">Ln {{line}}, Col {{column}}</span>
+      <span class="stat-panel__value">Ln {{ line }}, Col {{ column }}</span>
     </div>
     <div class="stat-panel__block stat-panel__block--right">
       <span class="stat-panel__block-name">
@@ -16,7 +16,7 @@
         <span v-if="htmlSelection">selection</span>
       </span>
       <span v-for="stat in htmlStats" :key="stat.id">
-        <span class="stat-panel__value">{{stat.value}}</span> {{stat.name}}
+        <span class="stat-panel__value">{{ stat.value }}</span> {{ stat.name }}
       </span>
     </div>
   </div>

@@ -125,10 +125,10 @@ export default {
     if (documentId) {
       options.method = 'PUT';
       options.path = documentId;
-      options.body._rev = rev; // eslint-disable-line no-underscore-dangle
+      options.body._rev = rev;  
     }
     if (data) {
-      options.body._attachments = { // eslint-disable-line no-underscore-dangle
+      options.body._attachments = {  
         data: {
           content_type: dataType,
           data: utils.encodeBase64(data),
@@ -173,7 +173,7 @@ export default {
       params: { attachments: true, rev },
     });
     body.attachments = {};
-    // eslint-disable-next-line no-underscore-dangle
+     
     Object.entries(body._attachments).forEach(([name, attachment]) => {
       body.attachments[name] = utils.decodeBase64(attachment.data);
     });

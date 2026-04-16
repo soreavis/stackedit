@@ -20,7 +20,7 @@ export default {
   },
   watch: {
     sanitizedUserId: {
-      handler: sanitizedUserId => userSvc.addUserId(sanitizedUserId),
+      handler(sanitizedUserId) { userSvc.addUserId(sanitizedUserId); },
       immediate: true,
     },
   },

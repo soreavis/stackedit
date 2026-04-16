@@ -4,11 +4,11 @@
       <div class="modal__image">
         <icon-provider provider-id="gitlab"></icon-provider>
       </div>
-      <p>Save <b>{{currentFileName}}</b> to your <b>GitLab</b> project and keep it synced.</p>
+      <p>Save <b>{{ currentFileName }}</b> to your <b>GitLab</b> project and keep it synced.</p>
       <form-entry label="Project URL" error="projectUrl">
         <input slot="field" class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()">
         <div class="form-entry__info">
-          <b>Example:</b> {{config.token.serverUrl}}/path/to/project
+          <b>Example:</b> {{ config.token.serverUrl }}/path/to/project
         </div>
       </form-entry>
       <form-entry label="File path" error="path">

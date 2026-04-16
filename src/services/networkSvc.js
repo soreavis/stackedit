@@ -206,7 +206,7 @@ export default {
             if (event.source === wnd && event.origin === constants.origin) {
               const data = utils.parseQueryParams(`${event.data}`.slice(1));
               if (data.error || data.state !== state) {
-                console.error(data); // eslint-disable-line no-console
+                console.error(data);  
                 reject(new Error('Could not get required authorization.'));
               } else {
                 resolve({
