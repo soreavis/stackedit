@@ -8,7 +8,9 @@
 ![Vite](https://img.shields.io/badge/vite-6.4-646cff?logo=vite&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-202_passing-brightgreen)
 
-> **Full-featured, open-source Markdown editor.** Fork of [`benweet/stackedit`](https://github.com/benweet/stackedit) modernized for Vercel deployment.
+> **Full-featured, open-source Markdown editor** based on [PageDown](https://code.google.com/archive/p/pagedown/), the Markdown library originally written for Stack Overflow and the other Stack Exchange sites. Fork of [`benweet/stackedit`](https://github.com/benweet/stackedit), modernized for Vercel deployment.
+
+**Try it online:** [stackedit.io](https://stackedit.io/) (upstream's live deployment).
 
 > [!NOTE]
 > **This is a fork of [`benweet/stackedit`](https://github.com/benweet/stackedit)** by Benoit Schweblin.
@@ -70,7 +72,8 @@ npm run dev                      # http://localhost:8080
    | `GOOGLE_CLIENT_ID` | Google Drive OAuth | Build-time (baked into bundle) |
    | `GITHUB_CLIENT_ID` | GitHub OAuth | Build-time |
    | `GITHUB_CLIENT_SECRET` | `/api/githubToken` token exchange | Runtime |
-   | `DROPBOX_APP_KEY` | Dropbox OAuth | Runtime (from `/api/conf`) |
+   | `DROPBOX_APP_KEY` | Dropbox OAuth (app folder scope) | Runtime (from `/api/conf`) |
+   | `DROPBOX_APP_KEY_FULL` | Dropbox OAuth (full dropbox scope) | Runtime (from `/api/conf`) |
    | `WORDPRESS_CLIENT_ID` | WordPress OAuth | Runtime |
    | `GOOGLE_API_KEY` | Google APIs | Runtime (restrict by HTTP referrer) |
    | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Optional — enables distributed rate limiting | Runtime |
@@ -106,10 +109,19 @@ test/
 vercel.json         # Install + headers + rewrites + Edge/Node function config
 ```
 
+## Upstream ecosystem
+
+These are all maintained by the upstream project, not this fork, and still work with or against the upstream `stackedit.io` deployment. Linked here so fork users know they exist:
+
+- [Chrome app](https://chrome.google.com/webstore/detail/iiooodelglhkcpgbajoejffhijaclcdg)
+- [`stackedit.js`](https://github.com/benweet/stackedit.js) — embed StackEdit in any website
+- [Chrome extension](https://chrome.google.com/webstore/detail/ajehldoplanpchfokmeempkekhnhmoha) (uses `stackedit.js`)
+- [Community forum](https://community.stackedit.io/)
+
 ## Credits
 
 - **Original author:** [Benoit Schweblin](https://github.com/benweet) — the entire StackEdit editor + ecosystem. Fork maintained in parallel with, not in replacement of, the upstream repo.
-- **Fork maintained by:** [Soreavis](https://github.com/soreavis)
+- **Fork maintained by:** [Julian Soreavis](https://github.com/soreavis)
 - **Community:** [community.stackedit.io](https://community.stackedit.io/) (upstream's)
 
 ## License
