@@ -1,7 +1,5 @@
 import Vue from 'vue';
-import 'babel-polyfill';
-import 'indexeddbshim/dist/indexeddbshim';
-import * as OfflinePluginRuntime from 'offline-plugin/runtime';
+import { registerSW } from 'virtual:pwa-register';
 import './extensions';
 import './services/optional';
 import './icons';
@@ -13,17 +11,12 @@ if (!indexedDB) {
   throw new Error('Your browser is not supported. Please upgrade to the latest version.');
 }
 
-OfflinePluginRuntime.install({
-  onUpdateReady: () => {
-    // Tells to new SW to take control immediately
-    OfflinePluginRuntime.applyUpdate();
-  },
-  onUpdated: async () => {
+const updateSW = registerSW({
+  onNeedRefresh: async () => {
     if (!store.state.light) {
       await localDbSvc.sync();
       localStorage.updated = true;
-      // Reload the webpage to load into the new version
-      window.location.reload();
+      updateSW(true);
     }
   },
 });

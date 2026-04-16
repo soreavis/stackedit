@@ -5,6 +5,8 @@ dist/
 .idea
 npm-debug.log*
 .vscode
-stackedit_v4
-chrome-app/*.zip
+.vercel
+.env
+.env.local
+.env.*.local
 /test/unit/coverage/
