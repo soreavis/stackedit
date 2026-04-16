@@ -1,0 +1,47 @@
+name: Feature Request
+description: Suggest a new feature or improvement for this fork
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: if you're asking for a new editor feature, markdown plugin, or sync provider, please open it at [`benweet/stackedit`](https://github.com/benweet/stackedit/issues) first. This tracker is for **fork-specific** features (deployment, security, tooling, Edge runtime, observability).
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Vercel deployment / API routes
+        - Security hardening
+        - Build / tooling
+        - Observability (logs, health, analytics)
+        - Documentation
+        - Other
+    validations: { required: true }
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What's the pain point?
+    validations: { required: true }
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations: { required: true }
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations: { required: false }
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Links, screenshots, prior art.
+    validations: { required: false }
