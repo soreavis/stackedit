@@ -57,10 +57,6 @@
         <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
         <span>Add Google Drive account</span>
       </menu-entry>
-      <menu-entry @click.native="addGooglePhotosAccount">
-        <icon-provider slot="icon" provider-id="googlePhotos"></icon-provider>
-        <span>Add Google Photos account</span>
-      </menu-entry>
       <menu-entry @click.native="addWordpressAccount">
         <icon-provider slot="icon" provider-id="wordpress"></icon-provider>
         <span>Add WordPress account</span>
@@ -190,11 +186,6 @@ export default {
       try {
         await store.dispatch('modal/open', { type: 'googleDriveAccount' });
         await googleHelper.addDriveAccount(!store.getters['data/localSettings'].googleDriveRestrictedAccess);
-      } catch (e) { /* cancel */ }
-    },
-    async addGooglePhotosAccount() {
-      try {
-        await googleHelper.addPhotosAccount();
       } catch (e) { /* cancel */ }
     },
     async addWordpressAccount() {

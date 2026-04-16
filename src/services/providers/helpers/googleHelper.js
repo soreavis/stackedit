@@ -13,7 +13,6 @@ const getDriveScopes = token => [token.driveFullAccess
   : 'https://www.googleapis.com/auth/drive.file',
 'https://www.googleapis.com/auth/drive.install'];
 const bloggerScopes = ['https://www.googleapis.com/auth/blogger'];
-const photosScopes = ['https://www.googleapis.com/auth/photos'];
 
 const checkIdToken = (idToken) => {
   try {
@@ -161,7 +160,6 @@ export default {
       isDrive: scopes.includes('https://www.googleapis.com/auth/drive') ||
         scopes.includes('https://www.googleapis.com/auth/drive.file'),
       isBlogger: scopes.includes('https://www.googleapis.com/auth/blogger'),
-      isPhotos: scopes.includes('https://www.googleapis.com/auth/photos'),
       driveFullAccess: scopes.includes('https://www.googleapis.com/auth/drive'),
     };
 
@@ -188,7 +186,6 @@ export default {
         isSponsor: existingToken.isSponsor,
         isDrive: existingToken.isDrive || token.isDrive,
         isBlogger: existingToken.isBlogger || token.isBlogger,
-        isPhotos: existingToken.isPhotos || token.isPhotos,
         driveFullAccess: existingToken.driveFullAccess || token.driveFullAccess,
       });
     }
@@ -261,11 +258,6 @@ export default {
   async addBloggerAccount() {
     const token = await this.startOauth2(bloggerScopes);
     badgeSvc.addBadge('addBloggerAccount');
-    return token;
-  },
-  async addPhotosAccount() {
-    const token = await this.startOauth2(photosScopes);
-    badgeSvc.addBadge('addGooglePhotosAccount');
     return token;
   },
 
@@ -623,7 +615,10 @@ export default {
    * https://developers.google.com/picker/docs/
    */
   async openPicker(token, type = 'doc') {
-    const scopes = type === 'img' ? photosScopes : getDriveScopes(token);
+    // Google Photos scope was deprecated in 2019 and the Photos Library API
+    // was locked down in March 2025 (apps can only read their own uploads).
+    // All pickers now route through Drive, filtered by MIME type when needed.
+    const scopes = getDriveScopes(token);
     if (!window.google) {
       await networkSvc.loadScript('https://apis.google.com/js/api.js');
       await new Promise((resolve, reject) => window.gapi.load('picker', {
@@ -687,10 +682,17 @@ export default {
           break;
         }
         case 'img': {
-          const view = new google.picker.PhotosView();
-          view.setType('highlights');
+          const mimeTypes = 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml';
+          const view = new google.picker.DocsView(google.picker.ViewId.DOCS_IMAGES);
+          view.setMimeTypes(mimeTypes);
           pickerBuilder.addView(view);
-          pickerBuilder.addView(google.picker.ViewId.PHOTO_UPLOAD);
+
+          const teamDriveView = new google.picker.DocsView(google.picker.ViewId.DOCS_IMAGES);
+          teamDriveView.setMimeTypes(mimeTypes);
+          teamDriveView.setEnableTeamDrives(true);
+          pickerBuilder.addView(teamDriveView);
+
+          pickerBuilder.enableFeature(google.picker.Feature.SUPPORT_TEAM_DRIVES);
           break;
         }
       }

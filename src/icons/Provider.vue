@@ -14,8 +14,6 @@ export default {
         case 'googleDriveAppData':
         case 'googleDriveWorkspace':
           return 'google-drive';
-        case 'googlePhotos':
-          return 'google-photos';
         case 'githubWorkspace':
           return 'github';
         case 'gist':
@@ -49,10 +47,6 @@ export default {
 
 .icon-provider--google-drive {
   background-image: url(../assets/iconGoogleDrive.svg);
-}
-
-.icon-provider--google-photos {
-  background-image: url(../assets/iconGooglePhotos.svg);
 }
 
 .icon-provider--github {
