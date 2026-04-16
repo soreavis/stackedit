@@ -1,12 +1,12 @@
-import 'mermaid';
 import extensionSvc from '../services/extensionSvc';
 import utils from '../services/utils';
 
 const config = {
-  logLevel: 5,
+  logLevel: 'fatal',
   startOnLoad: false,
   arrowMarkerAbsolute: false,
   theme: 'neutral',
+  securityLevel: 'strict',
   flowchart: {
     htmlLabels: true,
     curve: 'linear',
@@ -39,25 +39,24 @@ const config = {
   },
 };
 
-const containerElt = document.createElement('div');
-containerElt.className = 'hidden-rendering-container';
-document.body.appendChild(containerElt);
+let mermaidPromise = null;
 
-let init = () => {
-  window.mermaid.initialize(config);
-  init = () => {};
-};
+function getMermaid() {
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then((m) => {
+      m.default.initialize(config);
+      return m.default;
+    });
+  }
+  return mermaidPromise;
+}
 
-const render = (elt) => {
+const render = async (elt) => {
   try {
-    init();
+    const mermaid = await getMermaid();
     const svgId = `mermaid-svg-${utils.uid()}`;
-    window.mermaid.mermaidAPI.render(svgId, elt.textContent, () => {
-      while (elt.firstChild) {
-        elt.removeChild(elt.lastChild);
-      }
-      elt.appendChild(containerElt.querySelector(`#${svgId}`));
-    }, containerElt);
+    const { svg } = await mermaid.render(svgId, elt.textContent);
+    elt.innerHTML = svg;
   } catch (e) {
     console.error(e); // eslint-disable-line no-console
   }

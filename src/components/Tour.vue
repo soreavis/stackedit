@@ -39,8 +39,8 @@
       </div>
       <div class="tour-step__inner" v-else-if="step === 'end'">
         <h2>Enjoy!</h2>
-        <p>If you like StackEdit, please rate 5 stars on the <a target="_blank" href="https://chrome.google.com/webstore/detail/iiooodelglhkcpgbajoejffhijaclcdg/reviews">Chrome Web Store</a>.</p>
-        <p>You can also star the project on <a target="_blank" href="https://github.com/benweet/stackedit">GitHub</a> and join the <a target="_blank" href="https://community.stackedit.io/">community</a>.</p>
+        <p>If you like StackEdit, please rate 5 stars on the <a target="_blank" rel="noopener noreferrer" href="https://chrome.google.com/webstore/detail/iiooodelglhkcpgbajoejffhijaclcdg/reviews">Chrome Web Store</a>.</p>
+        <p>You can also star the project on <a target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit">GitHub</a> and join the <a target="_blank" rel="noopener noreferrer" href="https://community.stackedit.io/">community</a>.</p>
         <div class="tour-step__button-bar">
           <button class="button button--resolve" @click="finish">Ok</button>
         </div>
@@ -127,7 +127,9 @@ export default {
 
 
 <style lang="scss">
-@import '../styles/variables.scss';
+@use 'sass:color';
+@use 'sass:math';
+@use '../styles/variables.scss' as *;
 
 .tour {
   position: absolute;
@@ -139,7 +141,7 @@ export default {
   position: absolute;
 }
 
-$tour-step-background: transparentize(mix(#f3f3f3, $selection-highlighting-color, 75%), 0.025);
+$tour-step-background: color.adjust(color.mix(#f3f3f3, $selection-highlighting-color, 75%), $alpha: -0.025);
 $tour-step-width: 240px;
 
 .tour-step__inner {
@@ -175,7 +177,7 @@ $tour-step-width: 240px;
 
   .tour-step--welcome &,
   .tour-step--end & {
-    left: -$tour-step-width/2;
+    left: math.div(-$tour-step-width, 2);
     top: 36px;
     border-bottom-right-radius: 0;
 

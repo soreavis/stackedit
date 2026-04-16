@@ -1,7 +1,8 @@
 import Vue from 'vue';
-import 'babel-polyfill';
-import 'indexeddbshim/dist/indexeddbshim';
-import * as OfflinePluginRuntime from 'offline-plugin/runtime';
+import DOMPurify from 'dompurify';
+import { inject as injectAnalytics } from '@vercel/analytics';
+import { injectSpeedInsights } from '@vercel/speed-insights';
+import { registerSW } from 'virtual:pwa-register';
 import './extensions';
 import './services/optional';
 import './icons';
@@ -9,21 +10,40 @@ import App from './components/App';
 import store from './store';
 import localDbSvc from './services/localDbSvc';
 
+// Skew protection: when a Vite deploy ships new chunk hashes, a long-open
+// tab may fail to dynamically load the old hash. Catch and reload to pick
+// up the latest manifest. Must register before any dynamic import().
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
+// Vercel Analytics + Web Vitals. No-ops outside a Vercel deployment.
+injectAnalytics();
+injectSpeedInsights();
+
+if (window.trustedTypes && window.trustedTypes.createPolicy) {
+  try {
+    window.trustedTypes.createPolicy('default', {
+      createHTML: html => DOMPurify.sanitize(html),
+      createScript: s => s,
+      createScriptURL: s => s,
+    });
+  } catch {
+    // policy already exists (HMR) — ignore
+  }
+}
+
 if (!indexedDB) {
   throw new Error('Your browser is not supported. Please upgrade to the latest version.');
 }
 
-OfflinePluginRuntime.install({
-  onUpdateReady: () => {
-    // Tells to new SW to take control immediately
-    OfflinePluginRuntime.applyUpdate();
-  },
-  onUpdated: async () => {
+const updateSW = registerSW({
+  onNeedRefresh: async () => {
     if (!store.state.light) {
       await localDbSvc.sync();
       localStorage.updated = true;
-      // Reload the webpage to load into the new version
-      window.location.reload();
+      updateSW(true);
     }
   },
 });

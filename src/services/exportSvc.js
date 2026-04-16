@@ -1,5 +1,5 @@
 import FileSaver from 'file-saver';
-import TemplateWorker from 'worker-loader!./templateWorker.js'; // eslint-disable-line
+import TemplateWorker from './templateWorker.js?worker';
 import localDbSvc from './localDbSvc';
 import markdownConversionSvc from './markdownConversionSvc';
 import extensionSvc from './extensionSvc';

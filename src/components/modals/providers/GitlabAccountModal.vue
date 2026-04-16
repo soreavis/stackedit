@@ -18,7 +18,7 @@
           You have to configure an OAuth2 Application with redirect URL <b>{{redirectUrl}}</b>
         </div>
         <div class="form-entry__actions">
-          <a href="https://docs.gitlab.com/ee/integration/oauth_provider.html" target="_blank">More info</a>
+          <a href="https://docs.gitlab.com/ee/integration/oauth_provider.html" target="_blank" rel="noopener noreferrer">More info</a>
         </div>
       </form-entry>
     </div>
