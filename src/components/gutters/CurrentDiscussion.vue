@@ -32,6 +32,7 @@ import { mapState, mapGetters, mapMutations, mapActions } from 'vuex';
 import editorSvc from '../../services/editorSvc';
 import animationSvc from '../../services/animationSvc';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
+import htmlSanitizer from '../../libs/htmlSanitizer';
 import StickyComment from './StickyComment';
 import store from '../../store';
 import badgeSvc from '../../services/badgeSvc';
@@ -56,7 +57,7 @@ export default {
       'constants',
     ]),
     text() {
-      return markdownConversionSvc.highlight(this.currentDiscussion.text);
+      return htmlSanitizer.sanitizeHtml(markdownConversionSvc.highlight(this.currentDiscussion.text));
     },
     showNext() {
       return this.nextDiscussionId && this.nextDiscussionId !== this.currentDiscussionId;

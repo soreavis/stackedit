@@ -65,12 +65,13 @@ export default {
   async startOauth2(scopes, sub = null, silent = false) {
     const clientId = store.getters['data/serverConf'].githubClientId;
 
-    // Get an OAuth2 code
-    const { code } = await networkSvc.startOauth2(
+    // Get an OAuth2 code (PKCE-protected)
+    const { code, codeVerifier } = await networkSvc.startOauth2(
       'https://github.com/login/oauth/authorize',
       {
         client_id: clientId,
         scope: scopes.join(' '),
+        pkce: true,
       },
       silent,
     );
@@ -82,6 +83,7 @@ export default {
       params: {
         clientId,
         code,
+        codeVerifier,
       },
     })).body;
 

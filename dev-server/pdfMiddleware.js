@@ -84,7 +84,7 @@ export async function pdfHandler(req, res) {
   } catch (err) {
     console.error('[pdf]', err);
     res.statusCode = 500;
-    res.end(err.message || 'pdf_failed');
+    res.end('pdf_failed');
   } finally {
     if (page) await page.close().catch(() => {});
   }

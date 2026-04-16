@@ -16,7 +16,7 @@
           <icon-provider :provider-id="syncLocation.providerId"></icon-provider>
         </div>
         <span v-if="syncLocation.url">
-          The following revisions are stored in <a :href="syncLocation.url" target="_blank">{{ syncLocationProviderName }}</a>.
+          The following revisions are stored in <a :href="syncLocation.url" target="_blank" rel="noopener noreferrer">{{ syncLocationProviderName }}</a>.
         </span>
         <span v-else>
           The following revisions are stored in {{ syncLocationProviderName }}.

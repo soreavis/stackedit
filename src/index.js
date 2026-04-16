@@ -1,4 +1,5 @@
 import Vue from 'vue';
+import DOMPurify from 'dompurify';
 import { registerSW } from 'virtual:pwa-register';
 import './extensions';
 import './services/optional';
@@ -6,6 +7,18 @@ import './icons';
 import App from './components/App';
 import store from './store';
 import localDbSvc from './services/localDbSvc';
+
+if (window.trustedTypes && window.trustedTypes.createPolicy) {
+  try {
+    window.trustedTypes.createPolicy('default', {
+      createHTML: html => DOMPurify.sanitize(html),
+      createScript: s => s,
+      createScriptURL: s => s,
+    });
+  } catch {
+    // policy already exists (HMR) — ignore
+  }
+}
 
 if (!indexedDB) {
   throw new Error('Your browser is not supported. Please upgrade to the latest version.');

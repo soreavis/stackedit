@@ -63,26 +63,19 @@ export default {
         && this.isUserActive()
       ) {
         store.commit('updateLastOfflineCheck');
-        const script = document.createElement('script');
-        let timeout;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), networkTimeout);
         try {
-          await new Promise((resolve, reject) => {
-            script.onload = resolve;
-            script.onerror = reject;
-            script.src = `https://apis.google.com/js/api.js?${Date.now()}`;
-            try {
-              document.head.appendChild(script); // This can fail with bad network
-              timeout = setTimeout(reject, networkTimeout);
-            } catch (e) {
-              reject(e);
-            }
+          const res = await fetch(`conf?_=${Date.now()}`, {
+            signal: controller.signal,
+            cache: 'no-store',
           });
+          if (!res.ok) throw new Error('offline_check_failed');
           isConnectionDown = false;
         } catch (e) {
           isConnectionDown = true;
         } finally {
           clearTimeout(timeout);
-          document.head.removeChild(script);
         }
       }
       const offline = isBrowserOffline || isConnectionDown;
@@ -148,8 +141,23 @@ export default {
     try {
       // Build the authorize URL
       const state = utils.uid();
+      const { pkce, ...authParams } = params;
+      let codeVerifier;
+      const extraAuthParams = {};
+      if (pkce) {
+        const bytes = crypto.getRandomValues(new Uint8Array(32));
+        codeVerifier = btoa(String.fromCharCode(...bytes))
+          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        const digest = new Uint8Array(await crypto.subtle.digest(
+          'SHA-256', new TextEncoder().encode(codeVerifier),
+        ));
+        extraAuthParams.code_challenge = btoa(String.fromCharCode(...digest))
+          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        extraAuthParams.code_challenge_method = 'S256';
+      }
       const authorizeUrl = utils.addQueryParams(url, {
-        ...params,
+        ...authParams,
+        ...extraAuthParams,
         state,
         redirect_uri: constants.oauth2RedirectUri,
       });
@@ -206,6 +214,7 @@ export default {
                   code: data.code,
                   idToken: data.id_token,
                   expiresIn: data.expires_in,
+                  codeVerifier,
                 });
               }
             }

@@ -30,7 +30,7 @@
               <button class="workspace-entry__button button" v-clipboard="workspace.url" @click="info('Workspace URL copied to clipboard!')" v-title="'Copy URL'">
                 <icon-content-copy></icon-content-copy>
               </button>
-              <a class="workspace-entry__button button" :href="workspace.url" target="_blank" v-title="'Open workspace'">
+              <a class="workspace-entry__button button" :href="workspace.url" target="_blank" rel="noopener noreferrer" v-title="'Open workspace'">
                 <icon-open-in-new></icon-open-in-new>
               </a>
             </div>
@@ -43,7 +43,7 @@
               <button class="workspace-entry__button button" v-clipboard="workspace.locationUrl" @click="info('Workspace URL copied to clipboard!')" v-title="'Copy URL'">
                 <icon-content-copy></icon-content-copy>
               </button>
-              <a class="workspace-entry__button button" :href="workspace.locationUrl" target="_blank" v-title="'Open workspace location'">
+              <a class="workspace-entry__button button" :href="workspace.locationUrl" target="_blank" rel="noopener noreferrer" v-title="'Open workspace location'">
                 <icon-open-in-new></icon-open-in-new>
               </a>
             </div>
