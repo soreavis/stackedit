@@ -5,14 +5,14 @@
       <form-entry label="URL" error="url">
         <input slot="field" class="textfield" type="text" v-model.trim="url" @keydown.enter="resolve">
       </form-entry>
-      <menu-entry @click.native="openGooglePhotos(token)" v-for="token in googlePhotosTokens" :key="token.sub">
-        <icon-provider slot="icon" provider-id="googlePhotos"></icon-provider>
-        <div>Open from Google Photos</div>
+      <menu-entry @click.native="openGoogleDrive(token)" v-for="token in googleDriveTokens" :key="token.sub">
+        <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+        <div>Open from Google Drive</div>
         <span>{{token.name}}</span>
       </menu-entry>
-      <menu-entry @click.native="addGooglePhotosAccount">
-        <icon-provider slot="icon" provider-id="googlePhotos"></icon-provider>
-        <span>Add Google Photos account</span>
+      <menu-entry @click.native="addGoogleDriveAccount" v-if="!googleDriveTokens.length">
+        <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+        <span>Add Google Drive account</span>
       </menu-entry>
     </div>
     <div class="modal__button-bar">
@@ -36,10 +36,10 @@ export default modalTemplate({
     url: '',
   }),
   computed: {
-    googlePhotosTokens() {
+    googleDriveTokens() {
       const googleTokensBySub = store.getters['data/googleTokensBySub'];
       return Object.values(googleTokensBySub)
-        .filter(token => token.isPhotos)
+        .filter(token => token.isDrive)
         .sort((token1, token2) => token1.name.localeCompare(token2.name));
     },
   },
@@ -59,19 +59,23 @@ export default modalTemplate({
       this.config.reject();
       callback(null);
     },
-    async addGooglePhotosAccount() {
+    async addGoogleDriveAccount() {
       try {
-        await googleHelper.addPhotosAccount();
+        await googleHelper.addDriveAccount(!store.getters['data/localSettings'].googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
-    async openGooglePhotos(token) {
+    async openGoogleDrive(token) {
       const { callback } = this.config;
       this.config.reject();
       const res = await googleHelper.openPicker(token, 'img');
       if (res[0]) {
+        // Drive picker returns thumbnailUrl (lh3.googleusercontent.com) which
+        // supports =sNNN resizing; doc.url is a drive.google.com view link
+        // that is not directly embeddable in markdown.
+        const imgUrl = res[0].thumbnailUrl || res[0].url;
         store.dispatch('modal/open', {
           type: 'googlePhoto',
-          url: res[0].url,
+          url: imgUrl,
           callback,
         });
       }

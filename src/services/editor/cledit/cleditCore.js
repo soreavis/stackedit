@@ -349,6 +349,25 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
     let data;
     let { clipboardData } = evt;
     if (clipboardData) {
+      // Image-first path: if the clipboard carries an image (screenshot, copied
+      // image), embed it as a base64 data URL. Text of an image paste is
+      // usually empty, so do this before falling back to text/html parsing.
+      const items = clipboardData.items ? Array.from(clipboardData.items) : [];
+      const imageItem = items.find(i => i.kind === 'file' && i.type.startsWith('image/'));
+      if (imageItem) {
+        const file = imageItem.getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const alt = (file.name && file.name.replace(/\.[^.]+$/, '')) || 'pasted image';
+            const markdown = `![${alt}](${reader.result})`;
+            replace(selectionMgr.selectionStart, selectionMgr.selectionEnd, markdown);
+            adjustCursorPosition();
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
+      }
       data = clipboardData.getData('text/plain');
       if (turndownService) {
         try {
