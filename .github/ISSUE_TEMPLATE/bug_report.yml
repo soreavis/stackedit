@@ -1,0 +1,70 @@
+name: Bug Report
+description: Report a bug in this fork's deployment, API routes, build, or security-sensitive code
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug.
+
+        **Before filing:** if the bug is in StackEdit's editor, markdown rendering, or sync providers (i.e., likely present upstream too), please report it to [`benweet/stackedit`](https://github.com/benweet/stackedit/issues) first. This issue tracker is for **fork-specific** bugs.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Vercel deployment / API routes
+        - Build / Vite / Vitest
+        - Security (CSP, sanitizer, OAuth, rate limit)
+        - Upstream editor behavior (not fork-specific)
+        - Other
+    validations: { required: true }
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Environment
+      options:
+        - Vercel production deployment
+        - Vercel preview
+        - Local `npm run dev`
+        - Local `npm run build && npm run preview`
+    validations: { required: true }
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / OS
+      description: e.g. "Chrome 132 on macOS 14"
+    validations: { required: true }
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit / version
+      description: Run `git rev-parse --short HEAD` or use the `/health` endpoint
+    validations: { required: true }
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Click …
+        3. See error
+    validations: { required: true }
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations: { required: true }
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include console errors and, if relevant, CSP violations.
+    validations: { required: true }
