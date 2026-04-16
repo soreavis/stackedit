@@ -5,7 +5,7 @@
         <icon-dots-horizontal></icon-dots-horizontal>
       </button>
       <div class="side-title__title">
-        {{panelName}}
+        {{ panelName }}
       </div>
       <button class="side-title__button button" @click="toggleSideBar(false)" v-title="'Close side bar'">
         <icon-close></icon-close>

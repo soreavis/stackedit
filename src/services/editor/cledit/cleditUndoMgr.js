@@ -4,9 +4,9 @@ import cledit from './cleditCore';
 function UndoMgr(editor) {
   cledit.Utils.createEventHooks(this);
 
-  /* eslint-disable new-cap */
+   
   const diffMatchPatch = new DiffMatchPatch();
-  /* eslint-enable new-cap */
+   
 
   const self = this;
   let selectionMgr;

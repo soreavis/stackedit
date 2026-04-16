@@ -6,7 +6,7 @@
     <div class="find-replace__row">
       <input type="text" class="find-replace__text-input find-replace__text-input--find text-input" @keydown.enter="find('forward')" v-model="findText">
       <div class="find-replace__find-stats">
-        {{findPosition}} of {{findCount}}
+        {{ findPosition }} of {{ findCount }}
       </div>
       <div class="flex flex--row flex--space-between">
         <div class="flex flex--row">
@@ -98,6 +98,55 @@ export default {
     replaceText: accessor('replaceText', 'setReplaceText'),
     findCaseSensitive: computedLayoutSetting('findCaseSensitive'),
     findUseRegexp: computedLayoutSetting('findUseRegexp'),
+  },
+  mounted() {
+    this.classAppliers = {};
+
+    // Highlight occurences
+    this.debouncedHighlightOccurrences = cledit.Utils.debounce(
+      () => this.highlightOccurrences(),
+      25,
+    );
+    // Refresh highlighting when find text changes or changing options
+    this.$watch(() => this.findText, this.debouncedHighlightOccurrences);
+    this.$watch(() => this.findCaseSensitive, this.debouncedHighlightOccurrences);
+    this.$watch(() => this.findUseRegexp, this.debouncedHighlightOccurrences);
+    // Refresh highlighting when content changes
+    editorSvc.clEditor.on('contentChanged', this.debouncedHighlightOccurrences);
+
+    // Last open changes trigger focus on text input and find occurence in selection
+    this.$watch(() => this.lastOpen, () => {
+      const elt = this.$el.querySelector(`.find-replace__text-input--${this.type}`);
+      elt.focus();
+      elt.setSelectionRange(0, this[`${this.type}Text`].length);
+      // Highlight and find in selection
+      this.state = null;
+      this.debouncedHighlightOccurrences();
+    }, {
+      immediate: true,
+    });
+
+    // Close on escape
+    this.onKeyup = (evt) => {
+      if (evt.which === 27) {
+        // Esc key
+        store.commit('findReplace/setType');
+      }
+    };
+    window.addEventListener('keyup', this.onKeyup);
+
+    // Unselect class applier when focus is out of the panel
+    this.onFocusIn = () => this.$el.contains(document.activeElement) ||
+      setTimeout(() => this.unselectClassApplier(), 15);
+    window.addEventListener('focusin', this.onFocusIn);
+  },
+  destroyed() {
+    // Unregister listeners
+    editorSvc.clEditor.off('contentChanged', this.debouncedHighlightOccurrences);
+    window.removeEventListener('keyup', this.onKeyup);
+    window.removeEventListener('focusin', this.onFocusIn);
+    this.state = 'destroyed';
+    this.debouncedHighlightOccurrences();
   },
   methods: {
     highlightOccurrences() {
@@ -228,55 +277,6 @@ export default {
     onEscape() {
       editorSvc.clEditor.focus();
     },
-  },
-  mounted() {
-    this.classAppliers = {};
-
-    // Highlight occurences
-    this.debouncedHighlightOccurrences = cledit.Utils.debounce(
-      () => this.highlightOccurrences(),
-      25,
-    );
-    // Refresh highlighting when find text changes or changing options
-    this.$watch(() => this.findText, this.debouncedHighlightOccurrences);
-    this.$watch(() => this.findCaseSensitive, this.debouncedHighlightOccurrences);
-    this.$watch(() => this.findUseRegexp, this.debouncedHighlightOccurrences);
-    // Refresh highlighting when content changes
-    editorSvc.clEditor.on('contentChanged', this.debouncedHighlightOccurrences);
-
-    // Last open changes trigger focus on text input and find occurence in selection
-    this.$watch(() => this.lastOpen, () => {
-      const elt = this.$el.querySelector(`.find-replace__text-input--${this.type}`);
-      elt.focus();
-      elt.setSelectionRange(0, this[`${this.type}Text`].length);
-      // Highlight and find in selection
-      this.state = null;
-      this.debouncedHighlightOccurrences();
-    }, {
-      immediate: true,
-    });
-
-    // Close on escape
-    this.onKeyup = (evt) => {
-      if (evt.which === 27) {
-        // Esc key
-        store.commit('findReplace/setType');
-      }
-    };
-    window.addEventListener('keyup', this.onKeyup);
-
-    // Unselect class applier when focus is out of the panel
-    this.onFocusIn = () => this.$el.contains(document.activeElement) ||
-      setTimeout(() => this.unselectClassApplier(), 15);
-    window.addEventListener('focusin', this.onFocusIn);
-  },
-  destroyed() {
-    // Unregister listeners
-    editorSvc.clEditor.off('contentChanged', this.debouncedHighlightOccurrences);
-    window.removeEventListener('keyup', this.onKeyup);
-    window.removeEventListener('focusin', this.onFocusIn);
-    this.state = 'destroyed';
-    this.debouncedHighlightOccurrences();
   },
 };
 </script>

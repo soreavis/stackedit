@@ -58,7 +58,7 @@ const render = async (elt) => {
     const { svg } = await mermaid.render(svgId, elt.textContent);
     elt.innerHTML = svg;
   } catch (e) {
-    console.error(e); // eslint-disable-line no-console
+    console.error(e);  
   }
 };
 

@@ -420,7 +420,7 @@ const localDbSvc = {
               store.getters['discussion/nextDiscussionId'],
             );
           } catch (err) {
-            console.error(err); // eslint-disable-line no-console
+            console.error(err);  
             store.dispatch('notification/error', err);
           }
         }

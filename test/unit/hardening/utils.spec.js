@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { clientIp, rateLimit, sameOrigin } from '../../../api/_utils.js';
 
 const mkReq = (headers = {}, remoteAddress = '10.0.0.1') => ({

@@ -15,7 +15,7 @@
       <form-entry label="Application ID" error="applicationId">
         <input slot="field" class="textfield" type="text" v-model.trim="applicationId" @keydown.enter="resolve()">
         <div class="form-entry__info">
-          You have to configure an OAuth2 Application with redirect URL <b>{{redirectUrl}}</b>
+          You have to configure an OAuth2 Application with redirect URL <b>{{ redirectUrl }}</b>
         </div>
         <div class="form-entry__actions">
           <a href="https://docs.gitlab.com/ee/integration/oauth_provider.html" target="_blank" rel="noopener noreferrer">More info</a>

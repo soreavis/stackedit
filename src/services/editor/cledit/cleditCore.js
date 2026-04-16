@@ -32,9 +32,9 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
   let lastTextContent = getTextContent();
   const highlighter = new cledit.Highlighter(editor);
 
-  /* eslint-disable new-cap */
+   
   const diffMatchPatch = new DiffMatchPatch();
-  /* eslint-enable new-cap */
+   
   const selectionMgr = new cledit.SelectionMgr(editor);
 
   function adjustCursorPosition(force) {

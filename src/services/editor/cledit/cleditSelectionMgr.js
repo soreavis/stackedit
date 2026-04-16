@@ -248,7 +248,7 @@ function SelectionMgr(editor) {
         if (selection.rangeCount > 0) {
           const selectionRange = selection.getRangeAt(0);
           let node = selectionRange.startContainer;
-          // eslint-disable-next-line no-bitwise
+           
           if ((contentElt.compareDocumentPosition(node)
             & window.Node.DOCUMENT_POSITION_CONTAINED_BY)
             || contentElt === node

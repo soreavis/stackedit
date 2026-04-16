@@ -61,10 +61,10 @@ const whiteList = {
   close: 1,
 };
 
-/* eslint-disable no-restricted-globals */
+ 
 let global = self;
 while (global !== Object.prototype) {
-  Object.getOwnPropertyNames(global).forEach((prop) => { // eslint-disable-line no-loop-func
+  Object.getOwnPropertyNames(global).forEach((prop) => {  
     if (!Object.prototype.hasOwnProperty.call(whiteList, prop)) {
       try {
         Object.defineProperty(global, prop, {
@@ -83,7 +83,7 @@ while (global !== Object.prototype) {
 self.Handlebars = Handlebars;
 
 function safeEval(code) {
-  eval(`"use strict";\n${code}`); // eslint-disable-line no-eval
+  eval(`"use strict";\n${code}`);  
 }
 
 self.onmessage = (evt) => {
