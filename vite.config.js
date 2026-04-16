@@ -3,6 +3,7 @@ import vue2 from '@vitejs/plugin-vue2';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 import pkg from './package.json' with { type: 'json' };
+import devApiPlugin from './dev-server/index.js';
 
 export default defineConfig({
   resolve: {
@@ -20,6 +21,7 @@ export default defineConfig({
     GITHUB_CLIENT_ID: JSON.stringify(process.env.GITHUB_CLIENT_ID || ''),
   },
   plugins: [
+    devApiPlugin(),
     vue2(),
     VitePWA({
       registerType: 'autoUpdate',
