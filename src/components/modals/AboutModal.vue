@@ -12,7 +12,7 @@
       <br>
       StackEdit on <a target="_blank" rel="noopener noreferrer" href="https://twitter.com/stackedit/">Twitter</a>
       <hr>
-      <small>© 2013-2019 Dock5 Software Ltd.<br>v{{version}}</small>
+      <small>© 2013-2019 Dock5 Software Ltd.<br>v{{ version }}</small>
       <h3>FAQ</h3>
       <div class="faq" v-html="faq"></div>
       <div class="modal__info">

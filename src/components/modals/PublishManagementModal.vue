@@ -4,8 +4,8 @@
       <div class="modal__image">
         <icon-upload></icon-upload>
       </div>
-      <p v-if="publishLocations.length"><b>{{currentFileName}}</b> is published to the following location(s):</p>
-      <p v-else><b>{{currentFileName}}</b> is not published yet.</p>
+      <p v-if="publishLocations.length"><b>{{ currentFileName }}</b> is published to the following location(s):</p>
+      <p v-else><b>{{ currentFileName }}</b> is not published yet.</p>
       <div>
         <div class="publish-entry flex flex--column" v-for="location in publishLocations" :key="location.id">
           <div class="publish-entry__header flex flex--row flex--align-center">
@@ -13,7 +13,7 @@
               <icon-provider :provider-id="location.providerId"></icon-provider>
             </div>
             <div class="publish-entry__description">
-              {{location.description}}
+              {{ location.description }}
             </div>
             <div class="publish-entry__buttons flex flex--row flex--center">
               <button class="publish-entry__button button" @click="remove(location)" v-title="'Remove location'">
@@ -23,7 +23,7 @@
           </div>
           <div class="publish-entry__row flex flex--row flex--align-center">
             <div class="publish-entry__url">
-              {{location.url}}
+              {{ location.url }}
             </div>
             <div class="publish-entry__buttons flex flex--row flex--center" v-if="location.url">
               <button class="publish-entry__button button" v-clipboard="location.url" @click="info('Location URL copied to clipboard!')" v-title="'Copy URL'">

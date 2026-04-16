@@ -8,8 +8,8 @@
     <modal-inner v-else aria-label="Dialog">
       <div class="modal__content" v-html="simpleModal.contentHtml(config)"></div>
       <div class="modal__button-bar">
-        <button class="button" v-if="simpleModal.rejectText" @click="config.reject()">{{simpleModal.rejectText}}</button>
-        <button class="button button--resolve" v-if="simpleModal.resolveText" @click="config.resolve()">{{simpleModal.resolveText}}</button>
+        <button class="button" v-if="simpleModal.rejectText" @click="config.reject()">{{ simpleModal.rejectText }}</button>
+        <button class="button button--resolve" v-if="simpleModal.resolveText" @click="config.resolve()">{{ simpleModal.resolveText }}</button>
       </div>
     </modal-inner>
   </div>
@@ -142,6 +142,20 @@ export default {
       return simpleModals[this.config.type] || {};
     },
   },
+  mounted() {
+    this.$watch(
+      () => this.config,
+      (isOpen) => {
+        if (isOpen) {
+          const tabbables = getTabbables(this.$el);
+          if (tabbables[0]) {
+            tabbables[0].focus();
+          }
+        }
+      },
+      { immediate: true },
+    );
+  },
   methods: {
     async sponsor() {
       try {
@@ -185,20 +199,6 @@ export default {
         }
       }
     },
-  },
-  mounted() {
-    this.$watch(
-      () => this.config,
-      (isOpen) => {
-        if (isOpen) {
-          const tabbables = getTabbables(this.$el);
-          if (tabbables[0]) {
-            tabbables[0].focus();
-          }
-        }
-      },
-      { immediate: true },
-    );
   },
 };
 </script>

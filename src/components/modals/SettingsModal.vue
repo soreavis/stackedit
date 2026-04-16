@@ -21,7 +21,7 @@
           <code-editor lang="yaml" :value="defaultSettings" key="default-settings" disabled="true"></code-editor>
         </div>
       </div>
-      <div class="modal__error modal__error--settings">{{error}}</div>
+      <div class="modal__error modal__error--settings">{{ error }}</div>
     </div>
     <div class="modal__button-bar">
       <button class="button" @click="config.reject()">Cancel</button>

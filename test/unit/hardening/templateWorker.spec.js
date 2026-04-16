@@ -38,7 +38,7 @@ beforeAll(() => {
 function renderTemplate(template, context, helpersCode = '') {
   const compiled = Handlebars.compile(template);
   if (helpersCode) {
-    // eslint-disable-next-line no-new-func
+     
     new Function('Handlebars', helpersCode)(Handlebars);
   }
   return compiled(context);

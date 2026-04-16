@@ -87,7 +87,7 @@ const publishFile = async (fileId) => {
             if (store.state.offline) {
               throw err;
             }
-            console.error(err); // eslint-disable-line no-console
+            console.error(err);  
             store.dispatch('notification/error', err);
           }
         },

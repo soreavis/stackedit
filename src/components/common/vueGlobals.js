@@ -1,7 +1,30 @@
 import Vue from 'vue';
-import Clipboard from 'clipboard';
 import timeSvc from '../../services/timeSvc';
 import store from '../../store';
+
+// Fallback for older browsers / insecure contexts (navigator.clipboard is
+// only available on https:// or localhost).
+const legacyCopy = (text) => {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.top = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch { /* ignore */ }
+  document.body.removeChild(ta);
+};
+
+const copyToClipboard = async (text) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch { /* fall through to legacy */ }
+  }
+  legacyCopy(text);
+};
 
 // Global directives
 Vue.directive('focus', {
@@ -48,14 +71,18 @@ Vue.directive('title', {
   },
 });
 
-// Clipboard directive
+// v-clipboard directive: click the element to copy its bound value to the
+// OS clipboard. Uses the native async Clipboard API with a hidden-textarea
+// fallback for legacy browsers / insecure contexts.
 const createClipboard = (el, value) => {
-  el.seClipboard = new Clipboard(el, { text: () => value });
+  const handler = () => copyToClipboard(value);
+  el.addEventListener('click', handler);
+  el.seClipboardHandler = handler;
 };
 const destroyClipboard = (el) => {
-  if (el.seClipboard) {
-    el.seClipboard.destroy();
-    el.seClipboard = null;
+  if (el.seClipboardHandler) {
+    el.removeEventListener('click', el.seClipboardHandler);
+    el.seClipboardHandler = null;
   }
 };
 Vue.directive('clipboard', {

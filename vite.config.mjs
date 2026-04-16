@@ -27,7 +27,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'src'),
       vue: 'vue/dist/vue.runtime.esm.js',
-      'markdown-it-imsize': path.resolve(__dirname, 'src/shims/markdown-it-imsize.js'),
     },
   },
   define: {

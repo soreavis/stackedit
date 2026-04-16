@@ -78,7 +78,7 @@ export default new Provider({
           itemId: change.item.id,
           type: change.item.type,
           hash: change.item.hash,
-          rev: change.doc._rev, // eslint-disable-line no-underscore-dangle
+          rev: change.doc._rev,  
         };
       }
       change.syncDataId = change.id;
@@ -118,7 +118,7 @@ export default new Provider({
   },
   async downloadWorkspaceContent({ token, contentSyncData }) {
     const body = await couchdbHelper.retrieveDocumentWithAttachments(token, contentSyncData.id);
-    const rev = body._rev; // eslint-disable-line no-underscore-dangle
+    const rev = body._rev;  
     const content = Provider.parseContent(body.attachments.data, body.item.id);
     return {
       content,
@@ -136,7 +136,7 @@ export default new Provider({
 
     const body = await couchdbHelper.retrieveDocumentWithAttachments(token, syncData.id);
     const item = utils.addItemHash(JSON.parse(body.attachments.data));
-    const rev = body._rev; // eslint-disable-line no-underscore-dangle
+    const rev = body._rev;  
     return {
       item,
       syncData: {
@@ -199,7 +199,7 @@ export default new Provider({
   async listFileRevisions({ token, contentSyncDataId }) {
     const body = await couchdbHelper.retrieveDocumentWithRevisions(token, contentSyncDataId);
     const revisions = [];
-    body._revs_info.forEach((revInfo, idx) => { // eslint-disable-line no-underscore-dangle
+    body._revs_info.forEach((revInfo, idx) => {  
       if (revInfo.status === 'available') {
         revisions.push({
           id: revInfo.rev,

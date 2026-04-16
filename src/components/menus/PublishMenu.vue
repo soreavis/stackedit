@@ -1,20 +1,20 @@
 <template>
   <div class="side-bar__panel side-bar__panel--menu">
     <div class="side-bar__info" v-if="isCurrentTemp">
-      <p>{{currentFileName}} can't be published as it's a temporary file.</p>
+      <p>{{ currentFileName }} can't be published as it's a temporary file.</p>
     </div>
     <div v-else>
       <div class="side-bar__info" v-if="publishLocations.length">
-        <p>{{currentFileName}} is already published.</p>
+        <p>{{ currentFileName }} is already published.</p>
         <menu-entry @click.native="requestPublish">
           <icon-upload slot="icon"></icon-upload>
           <div>Publish now</div>
-          <span>Update publications for {{currentFileName}}.</span>
+          <span>Update publications for {{ currentFileName }}.</span>
         </menu-entry>
         <menu-entry @click.native="managePublish">
           <icon-view-list slot="icon"></icon-view-list>
-          <div><div class="menu-entry__label menu-entry__label--count">{{locationCount}}</div> File publication</div>
-          <span>Manage publication locations for {{currentFileName}}.</span>
+          <div><div class="menu-entry__label menu-entry__label--count">{{ locationCount }}</div> File publication</div>
+          <span>Manage publication locations for {{ currentFileName }}.</span>
         </menu-entry>
       </div>
       <div class="side-bar__info" v-else-if="noToken">
@@ -25,59 +25,59 @@
         <menu-entry @click.native="publishBlogger(token)">
           <icon-provider slot="icon" provider-id="blogger"></icon-provider>
           <div>Publish to Blogger</div>
-          <span>{{token.name}}</span>
+          <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="publishBloggerPage(token)">
           <icon-provider slot="icon" provider-id="bloggerPage"></icon-provider>
           <div>Publish to Blogger Page</div>
-          <span>{{token.name}}</span>
+          <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in dropboxTokens" :key="token.sub">
         <menu-entry @click.native="publishDropbox(token)">
           <icon-provider slot="icon" provider-id="dropbox"></icon-provider>
           <div>Publish to Dropbox</div>
-          <span>{{token.name}}</span>
+          <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in githubTokens" :key="token.sub">
         <menu-entry @click.native="publishGist(token)">
           <icon-provider slot="icon" provider-id="gist"></icon-provider>
           <div>Publish to Gist</div>
-          <span>{{token.name}}</span>
+          <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="publishGithub(token)">
           <icon-provider slot="icon" provider-id="github"></icon-provider>
           <div>Publish to GitHub</div>
-          <span>{{token.name}}</span>
+          <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in gitlabTokens" :key="token.sub">
         <menu-entry @click.native="publishGitlab(token)">
           <icon-provider slot="icon" provider-id="gitlab"></icon-provider>
           <div>Publish to GitLab</div>
-          <span>{{token.name}}</span>
+          <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in googleDriveTokens" :key="token.sub">
         <menu-entry @click.native="publishGoogleDrive(token)">
           <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
           <div>Publish to Google Drive</div>
-          <span>{{token.name}}</span>
+          <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in wordpressTokens" :key="token.sub">
         <menu-entry @click.native="publishWordpress(token)">
           <icon-provider slot="icon" provider-id="wordpress"></icon-provider>
           <div>Publish to WordPress</div>
-          <span>{{token.name}}</span>
+          <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in zendeskTokens" :key="token.sub">
         <menu-entry @click.native="publishZendesk(token)">
           <icon-provider slot="icon" provider-id="zendesk"></icon-provider>
           <div>Publish to Zendesk Help Center</div>
-          <span>{{token.name}} — {{token.subdomain}}</span>
+          <span>{{ token.name }} — {{ token.subdomain }}</span>
         </menu-entry>
       </div>
       <hr>

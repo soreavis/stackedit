@@ -18,7 +18,7 @@
       </div>
       <!-- Title -->
       <div class="navigation-bar__title navigation-bar__title--fake text-input"></div>
-      <div class="navigation-bar__title navigation-bar__title--text text-input" :style="{width: titleWidth + 'px'}">{{title}}</div>
+      <div class="navigation-bar__title navigation-bar__title--text text-input" :style="{width: titleWidth + 'px'}">{{ title }}</div>
       <input class="navigation-bar__title navigation-bar__title--input text-input" :class="{'navigation-bar__title--focus': titleFocus, 'navigation-bar__title--scrolling': titleScrolling}" :style="{width: titleWidth + 'px'}" @focus="editTitle(true)" @blur="editTitle(false)" @keydown.enter="submitTitle(false)" @keydown.esc.stop="submitTitle(true)" @mouseenter="titleHover = true" @mouseleave="titleHover = false" v-model="title">
       <!-- Sync/Publish -->
       <div class="flex flex--row" :class="{'navigation-bar__hidden': styles.hideLocations}">
@@ -127,9 +127,14 @@ export default {
       return !store.state.queue.isEmpty;
     },
     titleWidth() {
+      // Intentional side effect: write the current title into a hidden
+      // fake-input element so its rendered width drives the visible input.
+      // Upstream pattern since 2017; refactoring to a watch-based flow would
+      // introduce a render-frame lag that ruins the typing feel.
       if (!this.mounted) {
         return 0;
       }
+      // eslint-disable-next-line vue/no-side-effects-in-computed-properties
       this.titleFakeElt.textContent = this.title;
       const width = this.titleFakeElt.getBoundingClientRect().width + 2; // 2px for the caret
       return Math.min(width, this.styles.titleMaxWidth);

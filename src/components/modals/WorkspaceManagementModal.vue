@@ -12,7 +12,7 @@
               <icon-provider :provider-id="workspace.providerId"></icon-provider>
             </div>
             <input class="text-input" type="text" v-if="editedId === id" v-focus @blur="submitEdit()" @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingName">
-            <div class="workspace-entry__name" v-else>{{workspace.name}}</div>
+            <div class="workspace-entry__name" v-else>{{ workspace.name }}</div>
             <div class="workspace-entry__buttons flex flex--row">
               <button class="workspace-entry__button button" @click="edit(id)" v-title="'Edit name'">
                 <icon-pen></icon-pen>
@@ -24,7 +24,7 @@
           </div>
           <div class="workspace-entry__row flex flex--row flex--align-center">
             <div class="workspace-entry__url">
-              {{workspace.url}}
+              {{ workspace.url }}
             </div>
             <div class="workspace-entry__buttons flex flex--row">
               <button class="workspace-entry__button button" v-clipboard="workspace.url" @click="info('Workspace URL copied to clipboard!')" v-title="'Copy URL'">
@@ -37,7 +37,7 @@
           </div>
           <div class="workspace-entry__row flex flex--row flex--align-center" v-if="workspace.locationUrl">
             <div class="workspace-entry__url">
-              {{workspace.locationUrl}}
+              {{ workspace.locationUrl }}
             </div>
             <div class="workspace-entry__buttons flex flex--row">
               <button class="workspace-entry__button button" v-clipboard="workspace.locationUrl" @click="info('Workspace URL copied to clipboard!')" v-title="'Copy URL'">

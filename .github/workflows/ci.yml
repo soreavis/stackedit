@@ -27,6 +27,9 @@ jobs:
         # that npm 9+ refuses without the flag. Also matches vercel.json.
         run: npm ci --legacy-peer-deps
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
         env:

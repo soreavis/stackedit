@@ -299,12 +299,12 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     let range = selection.rangeCount && selection.getRangeAt(0);
     if (range) {
       if (
-        /* eslint-disable no-bitwise */
+         
         !(editorSvc.previewElt.compareDocumentPosition(range.startContainer) &
           window.Node.DOCUMENT_POSITION_CONTAINED_BY) ||
         !(editorSvc.previewElt.compareDocumentPosition(range.endContainer) &
           window.Node.DOCUMENT_POSITION_CONTAINED_BY)
-        /* eslint-enable no-bitwise */
+         
       ) {
         range = null;
       }

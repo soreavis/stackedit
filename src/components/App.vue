@@ -45,11 +45,6 @@ export default {
       return Array.isArray(result) ? result : themeClasses.light;
     },
   },
-  methods: {
-    close() {
-      tempFileSvc.close();
-    },
-  },
   async created() {
     try {
       await syncSvc.init();
@@ -60,10 +55,15 @@ export default {
       if (err && err.message === 'RELOAD') {
         window.location.reload();
       } else if (err && err.message !== 'RELOAD') {
-        console.error(err); // eslint-disable-line no-console
+        console.error(err);  
         store.dispatch('notification/error', err);
       }
     }
+  },
+  methods: {
+    close() {
+      tempFileSvc.close();
+    },
   },
 };
 </script>

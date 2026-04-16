@@ -13,7 +13,7 @@
               <icon-provider :provider-id="entry.providerId"></icon-provider>
             </div>
             <div class="account-entry__description">
-              {{entry.name}}
+              {{ entry.name }}
             </div>
             <div class="account-entry__buttons flex flex--row flex--center">
               <button class="account-entry__button button" @click="remove(entry)" v-title="'Remove access'">
@@ -24,15 +24,15 @@
           <div class="account-entry__row">
             <span class="account-entry__field" v-if="entry.userId">
               <b>User ID:</b>
-              {{entry.userId}}
+              {{ entry.userId }}
             </span>
             <span class="account-entry__field" v-if="entry.url">
               <b>URL:</b>
-              {{entry.url}}
+              {{ entry.url }}
             </span>
             <span class="account-entry__field" v-if="entry.scopes">
               <b>Scopes:</b>
-              {{entry.scopes.join(', ')}}
+              {{ entry.scopes.join(', ') }}
             </span>
           </div>
         </div>
