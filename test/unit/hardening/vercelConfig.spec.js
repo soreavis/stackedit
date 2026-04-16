@@ -133,6 +133,12 @@ describe('vercel.json — rewrites', () => {
     expect(rewrite).toBeTruthy();
     expect(rewrite.destination).toBe('/api/cspReport');
   });
+
+  it('maps /health to /api/health', () => {
+    const rewrite = vercel.rewrites.find(r => r.source === '/health');
+    expect(rewrite).toBeTruthy();
+    expect(rewrite.destination).toBe('/api/health');
+  });
 });
 
 describe('vercel.json — build / deploy config', () => {

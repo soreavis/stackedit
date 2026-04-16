@@ -1,5 +1,7 @@
 import Vue from 'vue';
 import DOMPurify from 'dompurify';
+import { inject as injectAnalytics } from '@vercel/analytics';
+import { injectSpeedInsights } from '@vercel/speed-insights';
 import { registerSW } from 'virtual:pwa-register';
 import './extensions';
 import './services/optional';
@@ -7,6 +9,18 @@ import './icons';
 import App from './components/App';
 import store from './store';
 import localDbSvc from './services/localDbSvc';
+
+// Skew protection: when a Vite deploy ships new chunk hashes, a long-open
+// tab may fail to dynamically load the old hash. Catch and reload to pick
+// up the latest manifest. Must register before any dynamic import().
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
+// Vercel Analytics + Web Vitals. No-ops outside a Vercel deployment.
+injectAnalytics();
+injectSpeedInsights();
 
 if (window.trustedTypes && window.trustedTypes.createPolicy) {
   try {

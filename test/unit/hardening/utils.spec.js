@@ -46,33 +46,47 @@ describe('api/_utils sameOrigin', () => {
   });
 });
 
-describe('api/_utils rateLimit', () => {
-  beforeEach(() => {
-    // Keys are unique per test so the in-memory map doesn't leak state.
-  });
-
-  it('lets traffic through below the limit', () => {
+describe('api/_utils rateLimit (in-memory fallback, no Upstash env)', () => {
+  it('lets traffic through below the limit', async () => {
     const key = `low:${Math.random()}`;
     for (let i = 0; i < 5; i += 1) {
-      expect(rateLimit(key, 5)).toBe(true);
+      expect(await rateLimit(key, 5)).toBe(true);
     }
   });
 
-  it('blocks after the limit is exceeded', () => {
+  it('blocks after the limit is exceeded', async () => {
     const key = `block:${Math.random()}`;
-    for (let i = 0; i < 3; i += 1) expect(rateLimit(key, 3)).toBe(true);
-    expect(rateLimit(key, 3)).toBe(false);
-    expect(rateLimit(key, 3)).toBe(false);
+    for (let i = 0; i < 3; i += 1) expect(await rateLimit(key, 3)).toBe(true);
+    expect(await rateLimit(key, 3)).toBe(false);
+    expect(await rateLimit(key, 3)).toBe(false);
   });
 
-  it('tracks different keys independently', () => {
+  it('tracks different keys independently', async () => {
     const a = `a:${Math.random()}`;
     const b = `b:${Math.random()}`;
     for (let i = 0; i < 2; i += 1) {
-      expect(rateLimit(a, 2)).toBe(true);
-      expect(rateLimit(b, 2)).toBe(true);
+      expect(await rateLimit(a, 2)).toBe(true);
+      expect(await rateLimit(b, 2)).toBe(true);
     }
-    expect(rateLimit(a, 2)).toBe(false);
-    expect(rateLimit(b, 2)).toBe(false);
+    expect(await rateLimit(a, 2)).toBe(false);
+    expect(await rateLimit(b, 2)).toBe(false);
+  });
+});
+
+describe('api/_utils sameOrigin (Edge Headers API)', () => {
+  it('accepts a Fetch API Request-style headers object', () => {
+    const req = new Request('https://stackedit.example/x', {
+      headers: { origin: 'https://stackedit.example', host: 'stackedit.example' },
+    });
+    expect(sameOrigin(req)).toBe(true);
+  });
+});
+
+describe('api/_utils clientIp (Edge Headers API)', () => {
+  it('reads x-forwarded-for from Headers instance', () => {
+    const req = new Request('https://stackedit.example/x', {
+      headers: { 'x-forwarded-for': '1.2.3.4, 10.0.0.1' },
+    });
+    expect(clientIp(req)).toBe('1.2.3.4');
   });
 });

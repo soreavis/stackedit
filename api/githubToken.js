@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   if (!sameOrigin(req)) {
     return res.status(403).send('forbidden');
   }
-  if (!rateLimit(`githubToken:${clientIp(req)}`, 10)) {
+  if (!(await rateLimit(`githubToken:${clientIp(req)}`, 10))) {
     return res.status(429).send('rate_limited');
   }
   const len = Number(req.headers['content-length'] || 0);
