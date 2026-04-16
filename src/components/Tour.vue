@@ -127,7 +127,9 @@ export default {
 
 
 <style lang="scss">
-@import '../styles/variables.scss';
+@use 'sass:color';
+@use 'sass:math';
+@use '../styles/variables.scss' as *;
 
 .tour {
   position: absolute;
@@ -139,7 +141,7 @@ export default {
   position: absolute;
 }
 
-$tour-step-background: transparentize(mix(#f3f3f3, $selection-highlighting-color, 75%), 0.025);
+$tour-step-background: color.adjust(color.mix(#f3f3f3, $selection-highlighting-color, 75%), $alpha: -0.025);
 $tour-step-width: 240px;
 
 .tour-step__inner {
@@ -175,7 +177,7 @@ $tour-step-width: 240px;
 
   .tour-step--welcome &,
   .tour-step--end & {
-    left: -$tour-step-width/2;
+    left: math.div(-$tour-step-width, 2);
     top: 36px;
     border-bottom-right-radius: 0;
 

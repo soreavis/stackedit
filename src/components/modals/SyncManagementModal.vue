@@ -84,7 +84,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../../styles/variables.scss';
+@use '../../styles/variables.scss' as *;
 
 .sync-entry {
   margin: 1.5em 0;

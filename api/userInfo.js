@@ -1,9 +1,39 @@
-import { clientIp, rateLimit } from './_utils.js';
+export const config = { runtime: 'edge' };
 
-export default function handler(req, res) {
-  if (!rateLimit(`userInfo:${clientIp(req)}`, 120)) {
-    return res.status(429).json({ error: 'rate_limited' });
+const WINDOW_MS = 60 * 1000;
+const RATE_MAX = 120;
+const buckets = new Map();
+
+function clientIp(req) {
+  const fwd = req.headers.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0].trim();
+  return req.headers.get('x-real-ip') || 'unknown';
+}
+
+function rateLimit(key) {
+  const now = Date.now();
+  const entry = buckets.get(key);
+  if (!entry || now > entry.resetAt) {
+    buckets.set(key, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
   }
-  res.setHeader('Cache-Control', 'private, max-age=60');
-  res.status(200).json({ sponsorUntil: 0 });
+  if (entry.count >= RATE_MAX) return false;
+  entry.count += 1;
+  return true;
+}
+
+export default function handler(req) {
+  if (!rateLimit(`userInfo:${clientIp(req)}`)) {
+    return new Response(JSON.stringify({ error: 'rate_limited' }), {
+      status: 429,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  return new Response(JSON.stringify({ sponsorUntil: 0 }), {
+    status: 200,
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': 'private, max-age=60',
+    },
+  });
 }
