@@ -1,5 +1,9 @@
-import Vue from 'vue';
-import './mocks/cryptoMock';
-import './mocks/mutationObserverMock';
+import { beforeAll } from 'vitest';
 
-Vue.config.productionTip = false;
+beforeAll(() => {
+  // happy-dom exposes window.crypto; ensure globalThis.crypto is defined for
+  // tests that use crypto.subtle directly (Node's webcrypto global).
+  if (!globalThis.crypto && typeof window !== 'undefined' && window.crypto) {
+    globalThis.crypto = window.crypto;
+  }
+});

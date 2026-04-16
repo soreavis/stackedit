@@ -95,7 +95,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../styles/variables.scss';
+@use '../styles/variables.scss' as *;
 
 .side-bar {
   overflow: hidden;

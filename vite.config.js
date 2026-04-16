@@ -1,9 +1,25 @@
 import { defineConfig } from 'vite';
 import vue2 from '@vitejs/plugin-vue2';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 import pkg from './package.json' with { type: 'json' };
 import devApiPlugin from './dev-server/index.js';
+
+// Fail the prod build if the bake-at-build-time env vars are missing. Matches
+// the pattern used by Vercel build env: these must be set before `vite build`.
+const isProd = process.env.NODE_ENV === 'production' || process.argv.includes('build');
+if (isProd && !process.env.SKIP_ENV_CHECK) {
+  const required = ['GOOGLE_CLIENT_ID', 'GITHUB_CLIENT_ID'];
+  const missing = required.filter(k => !process.env[k]);
+  if (missing.length) {
+    // Do not hard-fail on empty OAuth IDs — they're legitimately absent for a
+    // public fork that hasn't registered OAuth apps yet. Warn so it's visible
+    // in Vercel build logs but don't block.
+    // eslint-disable-next-line no-console
+    console.warn(`[vite] WARNING: missing build-time env vars: ${missing.join(', ')}. OAuth flows for these providers will be disabled in the bundle.`);
+  }
+}
 
 export default defineConfig({
   resolve: {
@@ -46,10 +62,24 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
-  ],
+    process.env.ANALYZE && visualizer({
+      filename: 'dist/bundle-analysis.html',
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap',
+    }),
+  ].filter(Boolean),
   server: {
     port: 8080,
     host: true,
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+        silenceDeprecations: ['legacy-js-api'],
+      },
+    },
   },
   publicDir: 'static',
   build: {
@@ -57,5 +87,22 @@ export default defineConfig({
     assetsDir: 'static',
     sourcemap: false,
     chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('mermaid')) return 'mermaid';
+          if (id.includes('abcjs')) return 'abcjs';
+          if (id.includes('katex')) return 'katex';
+          if (id.includes('turndown')) return 'turndown';
+          if (id.includes('handlebars')) return 'handlebars';
+          if (id.includes('prismjs')) return 'prismjs';
+          if (id.includes('markdown-it')) return 'markdown-it';
+          if (id.includes('dompurify')) return 'dompurify';
+          if (id.includes('/vue/') || id.includes('/vuex/')) return 'vue';
+          return undefined;
+        },
+      },
+    },
   },
 });

@@ -1,8 +1,15 @@
 {
   "buildCommand": "npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)test' ':(exclude).github' ':(exclude)*.md' ':(exclude)NOTICE'",
   "outputDirectory": "dist",
   "framework": null,
   "cleanUrls": true,
+  "functions": {
+    "api/githubToken.js": { "memory": 256, "maxDuration": 10 },
+    "api/pdfExport.js": { "memory": 128, "maxDuration": 5 },
+    "api/pandocExport.js": { "memory": 128, "maxDuration": 5 }
+  },
   "rewrites": [
     { "source": "/conf", "destination": "/api/conf" },
     { "source": "/oauth2/githubToken", "destination": "/api/githubToken" },
