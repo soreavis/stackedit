@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { writeFile, readFile, unlink, mkdtemp } from 'node:fs/promises';
+import { readFile, unlink, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 

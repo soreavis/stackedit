@@ -5,7 +5,7 @@
         <div class="comment__user-image">
           <user-image :user-id="userId"></user-image>
         </div>
-        <span class="user-name">{{loginToken.name}}</span>
+        <span class="user-name">{{ loginToken.name }}</span>
       </div>
     </div>
     <div class="comment__text">
@@ -119,11 +119,13 @@ export default {
 
     this.$watch(
       () => store.state.discussion.currentDiscussionId,
-      () => this.$nextTick(() => {
-        if (isVisible() && store.state.discussion.newCommentFocus) {
-          clEditor.focus();
-        }
-      }),
+      () => {
+        this.$nextTick(() => {
+          if (isVisible() && store.state.discussion.newCommentFocus) {
+            clEditor.focus();
+          }
+        });
+      },
       { immediate: true },
     );
 

@@ -40,7 +40,7 @@ export default {
         .then(() => Promise.resolve()
           .then(() => cb())
           .catch((err) => {
-            console.error(err); // eslint-disable-line no-console
+            console.error(err);  
             checkOffline();
             dispatch('notification/error', err, { root: true });
           })

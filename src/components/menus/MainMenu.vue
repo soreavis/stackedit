@@ -5,33 +5,33 @@
         <div class="menu-entry__icon menu-entry__icon--image">
           <user-image :user-id="userId"></user-image>
         </div>
-        <span>Signed in as <b>{{loginToken.name}}</b>.</span>
+        <span>Signed in as <b>{{ loginToken.name }}</b>.</span>
       </div>
       <div class="menu-entry menu-entry--info flex flex--row flex--align-center" v-if="syncToken">
         <div class="menu-entry__icon menu-entry__icon--image">
           <icon-provider :provider-id="currentWorkspace.providerId"></icon-provider>
         </div>
         <span v-if="currentWorkspace.providerId === 'googleDriveAppData'">
-          <b>{{currentWorkspace.name}}</b> synced with your Google Drive app data folder.
+          <b>{{ currentWorkspace.name }}</b> synced with your Google Drive app data folder.
         </span>
         <span v-else-if="currentWorkspace.providerId === 'googleDriveWorkspace'">
-          <b>{{currentWorkspace.name}}</b> synced with a <a :href="workspaceLocationUrl" target="_blank" rel="noopener noreferrer">Google Drive folder</a>.
+          <b>{{ currentWorkspace.name }}</b> synced with a <a :href="workspaceLocationUrl" target="_blank" rel="noopener noreferrer">Google Drive folder</a>.
         </span>
         <span v-else-if="currentWorkspace.providerId === 'couchdbWorkspace'">
-          <b>{{currentWorkspace.name}}</b> synced with a <a :href="workspaceLocationUrl" target="_blank" rel="noopener noreferrer">CouchDB database</a>.
+          <b>{{ currentWorkspace.name }}</b> synced with a <a :href="workspaceLocationUrl" target="_blank" rel="noopener noreferrer">CouchDB database</a>.
         </span>
         <span v-else-if="currentWorkspace.providerId === 'githubWorkspace'">
-          <b>{{currentWorkspace.name}}</b> synced with a <a :href="workspaceLocationUrl" target="_blank" rel="noopener noreferrer">GitHub repo</a>.
+          <b>{{ currentWorkspace.name }}</b> synced with a <a :href="workspaceLocationUrl" target="_blank" rel="noopener noreferrer">GitHub repo</a>.
         </span>
         <span v-else-if="currentWorkspace.providerId === 'gitlabWorkspace'">
-          <b>{{currentWorkspace.name}}</b> synced with a <a :href="workspaceLocationUrl" target="_blank" rel="noopener noreferrer">GitLab project</a>.
+          <b>{{ currentWorkspace.name }}</b> synced with a <a :href="workspaceLocationUrl" target="_blank" rel="noopener noreferrer">GitLab project</a>.
         </span>
       </div>
       <div class="menu-entry menu-entry--info flex flex--row flex--align-center" v-else>
         <div class="menu-entry__icon menu-entry__icon--disabled">
           <icon-sync-off></icon-sync-off>
         </div>
-        <span><b>{{currentWorkspace.name}}</b> not synced.</span>
+        <span><b>{{ currentWorkspace.name }}</b> not synced.</span>
       </div>
     </div>
     <menu-entry v-if="!loginToken" @click.native="signin">
@@ -41,18 +41,18 @@
     </menu-entry>
     <menu-entry @click.native="setPanel('workspaces')">
       <icon-database slot="icon"></icon-database>
-      <div><div class="menu-entry__label menu-entry__label--count" v-if="workspaceCount">{{workspaceCount}}</div> Workspaces</div>
+      <div><div class="menu-entry__label menu-entry__label--count" v-if="workspaceCount">{{ workspaceCount }}</div> Workspaces</div>
       <span>Switch to another workspace.</span>
     </menu-entry>
     <hr>
     <menu-entry @click.native="setPanel('sync')">
       <icon-sync slot="icon"></icon-sync>
-      <div><div class="menu-entry__label menu-entry__label--count" v-if="syncLocationCount">{{syncLocationCount}}</div> Synchronize</div>
+      <div><div class="menu-entry__label menu-entry__label--count" v-if="syncLocationCount">{{ syncLocationCount }}</div> Synchronize</div>
       <span>Sync your files in the Cloud.</span>
     </menu-entry>
     <menu-entry @click.native="setPanel('publish')">
       <icon-upload slot="icon"></icon-upload>
-      <div><div class="menu-entry__label menu-entry__label--count" v-if="publishLocationCount">{{publishLocationCount}}</div>Publish</div>
+      <div><div class="menu-entry__label menu-entry__label--count" v-if="publishLocationCount">{{ publishLocationCount }}</div>Publish</div>
       <span>Export your files to the web.</span>
     </menu-entry>
     <menu-entry @click.native="setPanel('history')">
@@ -86,17 +86,17 @@
     <hr>
     <menu-entry @click.native="badges">
       <icon-seal slot="icon"></icon-seal>
-      <div><div class="menu-entry__label menu-entry__label--count">{{badgeCount}}/{{featureCount}}</div> Badges</div>
+      <div><div class="menu-entry__label menu-entry__label--count">{{ badgeCount }}/{{ featureCount }}</div> Badges</div>
       <span>List application features and earned badges.</span>
     </menu-entry>
     <menu-entry @click.native="accounts">
       <icon-key slot="icon"></icon-key>
-      <div><div class="menu-entry__label menu-entry__label--count">{{accountCount}}</div> Accounts</div>
+      <div><div class="menu-entry__label menu-entry__label--count">{{ accountCount }}</div> Accounts</div>
       <span>Manage access to your external accounts.</span>
     </menu-entry>
     <menu-entry @click.native="templates">
       <icon-code-braces slot="icon"></icon-code-braces>
-      <div><div class="menu-entry__label menu-entry__label--count">{{templateCount}}</div> Templates</div>
+      <div><div class="menu-entry__label menu-entry__label--count">{{ templateCount }}</div> Templates</div>
       <span>Configure Handlebars templates for your exports.</span>
     </menu-entry>
     <menu-entry @click.native="settings">

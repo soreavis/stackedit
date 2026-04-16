@@ -28,8 +28,8 @@
       </div>
       <div class="form-entry">
         <label class="form-entry__label">Value</label>
-        <div class="form-entry__field" v-for="(template, id) in templates" :key="id" v-if="id === selectedId">
-          <code-editor lang="handlebars" :value="template.value" :disabled="isReadOnly" @changed="template.value = $event"></code-editor>
+        <div class="form-entry__field" v-if="selectedTemplate">
+          <code-editor lang="handlebars" :value="selectedTemplate.value" :disabled="isReadOnly" @changed="selectedTemplate.value = $event"></code-editor>
         </div>
       </div>
       <div v-if="!isReadOnly">
@@ -37,8 +37,8 @@
         <div class="form-entry" v-else>
           <br>
           <label class="form-entry__label">Helpers</label>
-          <div class="form-entry__field" v-for="(template, id) in templates" :key="id" v-if="id === selectedId">
-            <code-editor lang="javascript" :value="template.helpers" @changed="template.helpers = $event"></code-editor>
+          <div class="form-entry__field" v-if="selectedTemplate">
+            <code-editor lang="javascript" :value="selectedTemplate.helpers" @changed="selectedTemplate.helpers = $event"></code-editor>
           </div>
         </div>
       </div>
@@ -87,8 +87,11 @@ export default {
     ...mapGetters('modal', [
       'config',
     ]),
+    selectedTemplate() {
+      return this.templates[this.selectedId];
+    },
     isReadOnly() {
-      return this.templates[this.selectedId].isAdditional;
+      return this.selectedTemplate && this.selectedTemplate.isAdditional;
     },
   },
   created() {

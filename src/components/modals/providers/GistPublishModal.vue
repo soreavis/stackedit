@@ -4,7 +4,7 @@
       <div class="modal__image">
         <icon-provider provider-id="gist"></icon-provider>
       </div>
-      <p>Publish <b>{{currentFileName}}</b> to a <b>Gist</b>.</p>
+      <p>Publish <b>{{ currentFileName }}</b> to a <b>Gist</b>.</p>
       <form-entry label="Filename" error="filename">
         <input slot="field" class="textfield" type="text" v-model.trim="filename" @keydown.enter="resolve()">
       </form-entry>

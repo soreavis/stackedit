@@ -74,6 +74,13 @@ export default {
       return this.stepStyles[this.step] || {};
     },
   },
+  mounted() {
+    this.$watch(
+      () => store.getters['layout/styles'],
+      () => this.updatePositions(),
+      { immediate: true },
+    );
+  },
   methods: {
     updatePositions() {
       document.querySelectorAll('[tour-step-anchor]').cl_each((anchorElt) => {
@@ -114,13 +121,6 @@ export default {
     next() {
       this.stepIdx += 1;
     },
-  },
-  mounted() {
-    this.$watch(
-      () => store.getters['layout/styles'],
-      () => this.updatePositions(),
-      { immediate: true },
-    );
   },
 };
 </script>

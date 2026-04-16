@@ -4,7 +4,7 @@
       <div class="modal__image">
         <icon-provider provider-id="github"></icon-provider>
       </div>
-      <p>Save <b>{{currentFileName}}</b> to your <b>GitHub</b> repository and keep it synced.</p>
+      <p>Save <b>{{ currentFileName }}</b> to your <b>GitHub</b> repository and keep it synced.</p>
       <form-entry label="Repository URL" error="repoUrl">
         <input slot="field" class="textfield" type="text" v-model.trim="repoUrl" @keydown.enter="resolve()">
         <div class="form-entry__info">

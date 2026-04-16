@@ -8,9 +8,9 @@
           </option>
         </select>
       </p>
-      <p v-if="!historyContext">Synchronize <b>{{currentFileName}}</b> to enable revision history or <a href="javascript:void(0)" @click="signin">sign in with Google</a> to synchronize your main workspace.</p>
+      <p v-if="!historyContext">Synchronize <b>{{ currentFileName }}</b> to enable revision history or <a href="javascript:void(0)" @click="signin">sign in with Google</a> to synchronize your main workspace.</p>
       <p v-else-if="loading">Loading history…</p>
-      <p v-else-if="!revisionsWithSpacer.length"><b>{{currentFileName}}</b> has no history.</p>
+      <p v-else-if="!revisionsWithSpacer.length"><b>{{ currentFileName }}</b> has no history.</p>
       <div class="menu-entry menu-entry--info flex flex--row flex--align-center" v-else>
         <div class="menu-entry__icon menu-entry__icon--image">
           <icon-provider :provider-id="syncLocation.providerId"></icon-provider>
@@ -32,7 +32,7 @@
           </div>
           <div class="revision__header flex flex--column">
             <user-name :user-id="revision.sub"></user-name>
-            <div class="revision__created">{{revision.created | formatTime}}</div>
+            <div class="revision__created">{{ revision.created | formatTime }}</div>
           </div>
         </a>
       </div>
@@ -47,7 +47,6 @@
 <script>
 import { mapState, mapMutations, mapGetters } from 'vuex';
 import providerRegistry from '../../services/providers/common/providerRegistry';
-import MenuEntry from './common/MenuEntry';
 import UserImage from '../UserImage';
 import UserName from '../UserName';
 import EditorClassApplier from '../common/EditorClassApplier';
@@ -69,7 +68,6 @@ const spacerThreshold = 6 * 60 * 60 * 1000; // 6h
 
 export default {
   components: {
-    MenuEntry,
     UserImage,
     UserName,
   },

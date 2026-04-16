@@ -8,7 +8,7 @@
       <menu-entry @click.native="openGoogleDrive(token)" v-for="token in googleDriveTokens" :key="token.sub">
         <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
         <div>Open from Google Drive</div>
-        <span>{{token.name}}</span>
+        <span>{{ token.name }}</span>
       </menu-entry>
       <menu-entry @click.native="addGoogleDriveAccount" v-if="!googleDriveTokens.length">
         <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>

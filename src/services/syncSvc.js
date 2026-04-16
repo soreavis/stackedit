@@ -511,7 +511,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
             if (store.state.offline || (err && err.message === 'TOO_LATE')) {
               throw err;
             }
-            console.error(err); // eslint-disable-line no-console
+            console.error(err);  
             store.dispatch('notification/error', err);
           }
         },
