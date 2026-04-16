@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build + Unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install
+        # --legacy-peer-deps required: some Vue-2-era devDeps have old peers
+        # that npm 9+ refuses without the flag. Also matches vercel.json.
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || 'ci-placeholder' }}
+          GITHUB_CLIENT_ID: ${{ secrets.CI_GITHUB_CLIENT_ID || 'ci-placeholder' }}
+
+      - name: Unit tests
+        run: npm run unit
+
+      - name: Upload bundle analysis (on demand)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: ANALYZE=1 npm run build
