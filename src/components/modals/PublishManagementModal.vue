@@ -29,7 +29,7 @@
               <button class="publish-entry__button button" v-clipboard="location.url" @click="info('Location URL copied to clipboard!')" v-title="'Copy URL'">
                 <icon-content-copy></icon-content-copy>
               </button>
-              <a class="publish-entry__button button" v-if="location.url" :href="location.url" target="_blank" v-title="'Open location'">
+              <a class="publish-entry__button button" v-if="location.url" :href="location.url" target="_blank" rel="noopener noreferrer" v-title="'Open location'">
                 <icon-open-in-new></icon-open-in-new>
               </a>
             </div>

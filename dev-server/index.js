@@ -6,6 +6,10 @@ export default function devApiPlugin() {
     name: 'stackedit-dev-api',
     apply: 'serve',
     configureServer(server) {
+      server.middlewares.use('/api', (req, res) => {
+        res.statusCode = 404;
+        res.end('Not found (use production rewrites in vercel.json).');
+      });
       server.middlewares.use('/pdfExport', pdfHandler);
       server.middlewares.use('/pandocExport', pandocHandler);
       server.middlewares.use('/conf', (req, res) => {

@@ -30,6 +30,7 @@ const readBody = (req) => new Promise((resolve, reject) => {
 
 const parseQuery = (url) => new URL(url, 'http://x').searchParams;
 const safeJson = (s) => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
+const metaKeyRe = /^[A-Za-z0-9_-]{1,64}$/;
 
 export async function pandocHandler(req, res) {
   if (req.method !== 'POST') {
@@ -57,7 +58,9 @@ export async function pandocHandler(req, res) {
     const highlight = highlightStyles.has(options.highlightStyle) ? options.highlightStyle : 'kate';
     params.push('--highlight-style', highlight);
     for (const [k, v] of Object.entries(metadata)) {
-      params.push('-M', `${k}=${v}`);
+      if (!metaKeyRe.test(k)) continue;
+      const value = String(v).replace(/[\r\n]+/g, ' ');
+      params.push('-M', `${k}=${value}`);
     }
     const target = outputFormat === 'pdf' ? 'latex' : outputFormat;
     params.push('-f', 'json', '-t', target, '-o', outputPath);
@@ -84,7 +87,7 @@ export async function pandocHandler(req, res) {
   } catch (err) {
     console.error('[pandoc]', err);
     res.statusCode = 500;
-    res.end(err.message || 'pandoc_failed');
+    res.end('pandoc_failed');
   } finally {
     if (outputPath) {
       unlink(outputPath).catch(() => {});

@@ -10,7 +10,7 @@ export default defineConfig({
     extensions: ['.mjs', '.js', '.ts', '.vue', '.json'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      vue: 'vue/dist/vue.esm.js',
+      vue: 'vue/dist/vue.runtime.esm.js',
       'markdown-it-imsize': path.resolve(__dirname, 'src/shims/markdown-it-imsize.js'),
     },
   },
@@ -55,10 +55,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'static',
-    sourcemap: true,
+    sourcemap: false,
     chunkSizeWarningLimit: 2000,
-  },
-  optimizeDeps: {
-    exclude: ['indexeddbshim'],
   },
 });

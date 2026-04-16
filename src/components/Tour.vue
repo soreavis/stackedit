@@ -39,8 +39,8 @@
       </div>
       <div class="tour-step__inner" v-else-if="step === 'end'">
         <h2>Enjoy!</h2>
-        <p>If you like StackEdit, please rate 5 stars on the <a target="_blank" href="https://chrome.google.com/webstore/detail/iiooodelglhkcpgbajoejffhijaclcdg/reviews">Chrome Web Store</a>.</p>
-        <p>You can also star the project on <a target="_blank" href="https://github.com/benweet/stackedit">GitHub</a> and join the <a target="_blank" href="https://community.stackedit.io/">community</a>.</p>
+        <p>If you like StackEdit, please rate 5 stars on the <a target="_blank" rel="noopener noreferrer" href="https://chrome.google.com/webstore/detail/iiooodelglhkcpgbajoejffhijaclcdg/reviews">Chrome Web Store</a>.</p>
+        <p>You can also star the project on <a target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit">GitHub</a> and join the <a target="_blank" rel="noopener noreferrer" href="https://community.stackedit.io/">community</a>.</p>
         <div class="tour-step__button-bar">
           <button class="button button--resolve" @click="finish">Ok</button>
         </div>
