@@ -18,6 +18,7 @@
     { "source": "/userInfo", "destination": "/api/userInfo" },
     { "source": "/googleDriveAction", "destination": "/api/googleDriveAction" },
     { "source": "/cspReport", "destination": "/api/cspReport" },
+    { "source": "/health", "destination": "/api/health" },
     { "source": "/oauth2/callback", "destination": "/oauth2/callback.html" },
     { "source": "/app", "destination": "/index.html" },
     { "source": "/", "destination": "/landing/index.html" }

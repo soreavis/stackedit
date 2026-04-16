@@ -1,4 +1,3 @@
-import mermaid from 'mermaid';
 import extensionSvc from '../services/extensionSvc';
 import utils from '../services/utils';
 
@@ -40,14 +39,21 @@ const config = {
   },
 };
 
-let init = () => {
-  mermaid.initialize(config);
-  init = () => {};
-};
+let mermaidPromise = null;
+
+function getMermaid() {
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then((m) => {
+      m.default.initialize(config);
+      return m.default;
+    });
+  }
+  return mermaidPromise;
+}
 
 const render = async (elt) => {
   try {
-    init();
+    const mermaid = await getMermaid();
     const svgId = `mermaid-svg-${utils.uid()}`;
     const { svg } = await mermaid.render(svgId, elt.textContent);
     elt.innerHTML = svg;
