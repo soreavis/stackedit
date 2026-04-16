@@ -32,7 +32,7 @@
 import { mapGetters } from 'vuex';
 import ModalInner from './common/ModalInner';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
-import faq from '../../data/faq.md';
+import faq from '../../data/faq.md?raw';
 
 export default {
   components: {

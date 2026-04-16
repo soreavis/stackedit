@@ -1,0 +1,31 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": null,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/conf", "destination": "/api/conf" },
+    { "source": "/oauth2/githubToken", "destination": "/api/githubToken" },
+    { "source": "/pdfExport", "destination": "/api/pdfExport" },
+    { "source": "/pandocExport", "destination": "/api/pandocExport" },
+    { "source": "/userInfo", "destination": "/api/userInfo" },
+    { "source": "/googleDriveAction", "destination": "/api/googleDriveAction" },
+    { "source": "/oauth2/callback", "destination": "/oauth2/callback.html" },
+    { "source": "/app", "destination": "/index.html" },
+    { "source": "/", "destination": "/landing/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*\\.(woff2?|ttf|eot|otf|svg))",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}

@@ -41,7 +41,7 @@ import PublishMenu from './menus/PublishMenu';
 import HistoryMenu from './menus/HistoryMenu';
 import ImportExportMenu from './menus/ImportExportMenu';
 import WorkspaceBackupMenu from './menus/WorkspaceBackupMenu';
-import markdownSample from '../data/markdownSample.md';
+import markdownSample from '../data/markdownSample.md?raw';
 import markdownConversionSvc from '../services/markdownConversionSvc';
 import store from '../store';
 

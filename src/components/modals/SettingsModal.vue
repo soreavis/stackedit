@@ -36,7 +36,7 @@ import { mapGetters } from 'vuex';
 import ModalInner from './common/ModalInner';
 import Tab from './common/Tab';
 import CodeEditor from '../CodeEditor';
-import defaultSettings from '../../data/defaults/defaultSettings.yml';
+import defaultSettings from '../../data/defaults/defaultSettings.yml?raw';
 import store from '../../store';
 import badgeSvc from '../../services/badgeSvc';
 
