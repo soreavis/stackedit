@@ -6,7 +6,14 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+## [5.15.5-fork.1] - 2026-04-17
+
+First tagged release of the community fork. Cumulates the full hardening pass plus the first fork-branded UI.
+
 ### Added
+- **Import from clipboard** menu entry in the Import/Export side-bar. Reads both `text/html` and `text/plain` clipboard flavors, prefers plain text when it already looks like Markdown (≥2 of: ATX heading, bullet, ordered list, code fence, bold, link, blockquote, hr, inline code), otherwise sanitizes + Turndowns the HTML. Auto-derives the file name from the first heading.
+- `importClipboard` feature badge.
+- Fork attribution in the About modal (version line + copyright + "Community Fork" badge + link rewrites to this repo).
 - Vercel deployment: 4 Edge-runtime API routes (`conf`, `userInfo`, `cspReport`, `googleDriveAction`), 1 Node route (`githubToken`), 2 stubs (`pdfExport`, `pandocExport`).
 - `/api/health` endpoint for uptime monitors.
 - Upstash-backed distributed rate limiting with per-instance in-memory fallback.
@@ -36,6 +43,10 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 - ~48 webpack-era devDeps (loaders, gulp, node-sass, stylelint, etc.) — Vite handles these.
 - Unused runtime deps: `aws-sdk`, `request`, `body-parser`, `compression`, `serve-static`, `tmp`, `google-id-token-verifier`, `indexeddbshim`, `babel-runtime`.
 - Upstream's Travis CI configuration (replaced with GitHub Actions).
+
+### Fixed
+- Scroll-sync: `animationSvc` calls re-wired for `bezier-easing@3` (library dropped the `.get()` / `.toCSS()` methods between v2 and v3). Preview pane again tracks editor scroll while the toggle is on.
+- Keyboard shortcuts init: hoisted the `expansions` const above the `immediate: true` watcher in `shortcuts.js` to fix a TDZ `ReferenceError` at module load.
 
 ### Security
 - DOMPurify replaces regex-based sanitizer; all `v-html` paths now route through it (including `CurrentDiscussion`, which was unsanitized upstream).
