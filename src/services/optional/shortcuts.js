@@ -92,6 +92,24 @@ const guard = fn => (event) => {
   fn();
 };
 
+// -----------------------------------------------------------------------------
+// Text expansion — decoupled from keyboard shortcuts
+// -----------------------------------------------------------------------------
+// The `expand` shortcut method (from upstream's settings YAML) replaces typed
+// sequences with arrow glyphs. Instead of tracking keystrokes, we scan the
+// content after each input event and rewrite the recent suffix when it matches.
+
+const expansions = [];
+function collectExpansions(computedSettings) {
+  expansions.length = 0;
+  Object.values(computedSettings.shortcuts || {}).forEach((shortcut) => {
+    if (shortcut && shortcut.method === 'expand' && Array.isArray(shortcut.params)) {
+      const [trigger, replacement] = shortcut.params;
+      if (trigger && replacement) expansions.push({ trigger, replacement });
+    }
+  });
+}
+
 let unbindAll = () => {};
 
 store.watch(
@@ -113,24 +131,6 @@ store.watch(
     collectExpansions(computedSettings);
   }, { immediate: true },
 );
-
-// -----------------------------------------------------------------------------
-// Text expansion — decoupled from keyboard shortcuts
-// -----------------------------------------------------------------------------
-// The `expand` shortcut method (from upstream's settings YAML) replaces typed
-// sequences with arrow glyphs. Instead of tracking keystrokes, we scan the
-// content after each input event and rewrite the recent suffix when it matches.
-
-const expansions = [];
-function collectExpansions(computedSettings) {
-  expansions.length = 0;
-  Object.values(computedSettings.shortcuts || {}).forEach((shortcut) => {
-    if (shortcut && shortcut.method === 'expand' && Array.isArray(shortcut.params)) {
-      const [trigger, replacement] = shortcut.params;
-      if (trigger && replacement) expansions.push({ trigger, replacement });
-    }
-  });
-}
 
 function applyExpansion() {
   if (!shortcutsAllowed() || !expansions.length) return;
