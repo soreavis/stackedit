@@ -68,7 +68,7 @@ export default {
 @use '../../styles/variables.scss' as *;
 
 .modal__inner-1.modal__inner-1--sponsor {
-  max-width: 400px;
+  max-width: 500px;
 }
 
 .paypal-option {

@@ -1,11 +1,13 @@
 <template>
   <modal-inner class="modal__inner-1--badge-management" aria-label="Manage badges">
-    <div class="modal__content">
+    <div class="modal__header modal__header--badge-management">
       <div class="modal__image">
         <icon-seal></icon-seal>
       </div>
       <p v-if="badgeCount > 1">{{ badgeCount }} badges earned</p>
       <p v-else>{{ badgeCount }} badge earned</p>
+    </div>
+    <div class="modal__content">
       <div class="badge-entry" v-for="badge in badgeTree" :key="badge.featureId">
         <div class="flex flex--row">
           <icon-seal class="badge-entry__icon" :class="{'badge-entry__icon--earned': badge.isEarned, 'badge-entry__icon--some-earned': badge.hasSomeEarned}"></icon-seal>
@@ -71,12 +73,23 @@ export default {
 @use '../../styles/variables.scss' as *;
 
 .modal__inner-1.modal__inner-1--badge-management {
-  max-width: 520px;
+  max-width: 650px;
+}
 
+.modal__header--badge-management {
   p {
     font-size: 1.8rem;
     font-weight: bold;
+    margin: 0;
   }
+}
+
+.modal__header--badge-management + .modal__content {
+  padding-top: 24px;
+}
+
+.badge-entry:first-child {
+  margin-top: 0;
 }
 
 .badge-entry {
