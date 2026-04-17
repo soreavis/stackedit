@@ -112,9 +112,6 @@ export default {
 
 .modal__header--settings {
   padding-bottom: 0;
-  // The Tab component already carries its own bottom border; suppress
-  // the header separator so we don't double up the line.
-  border-bottom: 0;
 }
 
 .modal__error--settings {
