@@ -17,7 +17,8 @@
       <h3>FAQ</h3>
       <div class="faq" v-html="faq"></div>
       Licensed under an
-      <a target="_blank" rel="noopener noreferrer" href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>
+      <a target="_blank" rel="noopener noreferrer" href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a><br>
+      <a target="_blank" rel="noopener noreferrer" href="/privacy.html">Privacy Policy</a>
     </div>
     <div class="modal__button-bar">
       <button class="button button--resolve" @click="config.resolve()">Close</button>
