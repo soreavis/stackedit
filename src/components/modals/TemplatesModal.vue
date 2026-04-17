@@ -186,6 +186,6 @@ export default {
 
 <style lang="scss">
 .modal__inner-1.modal__inner-1--templates {
-  max-width: 600px;
+  max-width: 750px;
 }
 </style>

@@ -244,7 +244,7 @@ export default {
 @use '../../styles/variables.scss' as *;
 
 .modal__inner-1.modal__inner-1--file-properties {
-  max-width: 520px;
+  max-width: 650px;
 }
 
 .modal__header--file-properties {

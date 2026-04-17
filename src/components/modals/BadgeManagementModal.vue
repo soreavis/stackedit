@@ -73,7 +73,7 @@ export default {
 @use '../../styles/variables.scss' as *;
 
 .modal__inner-1.modal__inner-1--badge-management {
-  max-width: 520px;
+  max-width: 650px;
 }
 
 .modal__header--badge-management {
