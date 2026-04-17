@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Privacy Policy — StackEdit (community fork)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Privacy policy for the community fork of StackEdit.">
+<link rel="icon" href="/favicon.ico">
+<!--
+  This file is a hand-synced mirror of PRIVACY.md at the repo root.
+  When you update one, update the other. Markdown is the canonical source.
+-->
+<style>
+  :root { color-scheme: light dark; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #fbfbfb;
+    color: #333;
+    line-height: 1.55;
+    padding: 48px 24px;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1b1b1d; color: #e6e6e6; }
+    a { color: #8ab4f8; }
+    hr { border-color: rgba(255, 255, 255, 0.1); }
+    .fork-badge { color: rgba(255, 255, 255, 0.75); background: rgba(255, 255, 255, 0.08); }
+    .last-updated { color: rgba(255, 255, 255, 0.55); }
+    .legal-note { color: rgba(255, 255, 255, 0.55); }
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  header { margin-bottom: 2em; }
+  header .nav { font-size: 0.9em; margin-bottom: 1.5em; }
+  h1 { font-size: 2em; margin: 0 0 0.25em; font-weight: 500; }
+  h2 { font-size: 1.3em; margin: 2em 0 0.5em; font-weight: 500; }
+  h3 { font-size: 1.05em; margin: 1.5em 0 0.4em; font-weight: 600; }
+  p { margin: 0.8em 0; }
+  ul { padding-left: 1.3em; }
+  li { margin: 0.25em 0; }
+  a { color: #3268bf; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9em; opacity: 0.85; }
+  hr { border: 0; border-top: 1px solid rgba(0, 0, 0, 0.1); margin: 2.5em 0 1.5em; }
+  .fork-badge {
+    display: inline-block;
+    padding: 0.15em 0.6em;
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #555;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 999px;
+    vertical-align: middle;
+  }
+  .last-updated { color: #777; font-size: 0.9em; margin-top: 0; }
+  .legal-note { color: #777; font-size: 0.85em; font-style: italic; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="nav"><a href="/app">← Back to the editor</a></div>
+    <h1>Privacy Policy <span class="fork-badge">Community Fork</span></h1>
+    <p class="last-updated">Last updated: 2026-04-17</p>
+  </header>
+
+  <p>This policy covers the community fork of StackEdit maintained at
+  <a href="https://github.com/soreavis/stackedit">github.com/soreavis/stackedit</a>
+  and its Vercel deployment. StackEdit is a Markdown editor that runs
+  entirely in your browser. The short version: your documents live in
+  your browser or in the cloud provider you connect them to — never on a
+  server operated by this fork. The longer version is below.</p>
+
+  <p>If you are using a different deployment or the original upstream
+  (<code>benweet/stackedit</code>), that deployment has its own policy.</p>
+
+  <h2>What stays in your browser</h2>
+  <p>By default, StackEdit stores everything locally using the browser's
+  <code>IndexedDB</code> and <code>localStorage</code>:</p>
+  <ul>
+    <li>The documents you write and their revision history</li>
+    <li>Workspace settings and layout preferences</li>
+    <li>OAuth access tokens for any cloud provider you connect</li>
+    <li>Session state (current file, cursor position, undo history)</li>
+  </ul>
+  <p>None of this is transmitted to a server operated by this fork.
+  Clearing your browser's site data removes it.</p>
+
+  <h2>What leaves your browser (only if you opt in)</h2>
+  <p>If you connect an external storage provider, your files are stored
+  by that provider, not by us. You grant access explicitly via OAuth, and
+  you can revoke it at any time from the provider's account settings.</p>
+  <p>Supported providers and their privacy policies:</p>
+  <ul>
+    <li><strong>Google Drive</strong> — <a href="https://policies.google.com/privacy">policies.google.com/privacy</a></li>
+    <li><strong>Dropbox</strong> — <a href="https://www.dropbox.com/privacy">dropbox.com/privacy</a></li>
+    <li><strong>GitHub</strong> — <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">docs.github.com/site-policy</a></li>
+    <li><strong>GitLab</strong> — <a href="https://about.gitlab.com/privacy/">about.gitlab.com/privacy</a></li>
+    <li><strong>WordPress</strong> — depends on the host you publish to</li>
+    <li><strong>Zendesk</strong> — <a href="https://www.zendesk.com/company/agreements-and-terms/privacy-notice/">zendesk.com/company/privacy</a></li>
+    <li><strong>CouchDB</strong> — depends on the instance you connect to</li>
+  </ul>
+  <p>When you sync or publish, the fork holds an OAuth access token in
+  your browser's local storage and sends it directly to the provider's
+  API to complete the request. The token is not stored on a server
+  operated by this fork.</p>
+
+  <h2>What the server sees</h2>
+  <p>The fork is hosted on <a href="https://vercel.com">Vercel</a>.
+  Vercel's edge network processes requests; standard web-server logs
+  apply. The fork does not operate its own database or account system.</p>
+
+  <h3>Vercel platform</h3>
+  <ul>
+    <li><strong>Request logs.</strong> Vercel logs HTTP requests (URL,
+    status, IP, user-agent, timing) for operational purposes. Retention
+    and access are governed by Vercel's
+    <a href="https://vercel.com/legal/privacy-policy">privacy policy</a>.</li>
+    <li><strong>Vercel Analytics.</strong> Anonymized page-view events
+    are collected to measure site traffic. They honor the <code>DNT</code>
+    (Do Not Track) header and do not use cookies. See
+    <a href="https://vercel.com/docs/analytics/privacy">Vercel Analytics privacy</a>.</li>
+    <li><strong>Vercel Speed Insights.</strong> Real-user Web Vitals
+    metrics (LCP, CLS, etc.). Performance numbers only — no document
+    content.</li>
+  </ul>
+
+  <h3>Rate limiting</h3>
+  <p>A small number of API routes
+  (<code>/api/conf</code>, <code>/api/userInfo</code>,
+  <code>/api/cspReport</code>, <code>/api/googleDriveAction</code>,
+  <code>/api/githubToken</code>) are rate-limited via Upstash Redis. Your
+  IP address is used as the key; keys expire within minutes and are not
+  correlated across requests or joined to any other identifier.</p>
+
+  <h3>OAuth token exchange</h3>
+  <p><code>/api/githubToken</code> performs the server-side leg of the
+  GitHub OAuth flow (PKCE S256). The GitHub client secret lives on the
+  server; the access token returned by GitHub is handed back to your
+  browser and stored client-side. The fork does not retain the token
+  after returning it.</p>
+
+  <h3>CSP reports</h3>
+  <p><code>/api/cspReport</code> receives Content Security Policy
+  violation reports generated by your browser when the CSP blocks
+  something. Reports include the violated policy, the blocked URL, and
+  the document URL. They are used to detect deployment regressions and
+  are not correlated to users.</p>
+
+  <h2>Features that read local device data</h2>
+  <ul>
+    <li><strong>"Import from clipboard"</strong> reads from your OS
+    clipboard only when you click the menu entry. The content is parsed
+    locally and imported as a new file. It never leaves your browser.</li>
+    <li><strong>Image paste</strong> (Ctrl/Cmd+V into the editor)
+    accepts image data from the clipboard and uploads it to whichever
+    provider you have configured for image hosting (Google Drive, Imgur,
+    etc., as explicitly selected). It follows the same "only if you opt
+    in" rule as document sync.</li>
+    <li><strong>Google Drive image picker</strong> opens a picker UI
+    provided by Google; any data exchange happens between your browser
+    and Google's servers under the token you granted.</li>
+  </ul>
+
+  <h2>What we don't do</h2>
+  <ul>
+    <li>No cookies for tracking or advertising</li>
+    <li>No third-party advertising networks</li>
+    <li>No sale of data to anyone</li>
+    <li>No email lists, newsletters, or account system</li>
+    <li>No tracking pixels or fingerprinting</li>
+    <li>No correlation across sessions or devices</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>This application is not directed at children under 13. No personal
+  data is collected from anyone, including children.</p>
+
+  <h2>Your rights (GDPR / CCPA / similar)</h2>
+  <p>Because the fork holds no server-side user profile, data-subject
+  rights are satisfied trivially:</p>
+  <ul>
+    <li><strong>Access / export.</strong> Your files live in your browser
+    (File → Export as Markdown) or with the provider you connected (use
+    the provider's export tools).</li>
+    <li><strong>Rectification.</strong> Edit the file in the editor or in
+    the provider.</li>
+    <li><strong>Erasure.</strong> Clear your browser's site data, or
+    delete the file from the provider.</li>
+    <li><strong>Portability.</strong> Export as Markdown; it's already a
+    portable format.</li>
+  </ul>
+  <p>Server-side logs held by Vercel and Upstash are deleted on their
+  own retention schedules; see their policies.</p>
+
+  <h2>Contact</h2>
+  <p>Privacy questions: open an issue at
+  <a href="https://github.com/soreavis/stackedit/issues">github.com/soreavis/stackedit/issues</a>.</p>
+
+  <h2>Changes</h2>
+  <p>This policy is version-controlled in the repository. Material
+  changes are noted in the
+  <a href="https://github.com/soreavis/stackedit/blob/master/CHANGELOG.md">CHANGELOG</a>.</p>
+
+  <hr>
+  <p class="legal-note">This policy is provided in good faith as an
+  accurate description of the fork's data handling. It is not legal
+  advice.</p>
+</main>
+</body>
+</html>
