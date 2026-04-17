@@ -269,7 +269,7 @@ export default {
 .modal__inner-1 {
   width: 100%;
   min-width: 320px;
-  max-width: 480px;
+  max-width: 600px;
   max-height: 100%;
   display: flex;
 }
@@ -329,6 +329,36 @@ export default {
   overflow-y: auto;
   min-height: 0;
   padding: 50px 0 0;
+
+  // Scrollbars: invisible by default, fade in on hover. Matches macOS
+  // behaviour and keeps the modal chrome clean when content fits.
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 200ms ease-out;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    transition: background-color 200ms ease-out;
+  }
+
+  &:hover {
+    scrollbar-color: rgba(0, 0, 0, 0.22) transparent;
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.22);
+    }
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+  }
 }
 
 // When a sticky header is present, the content below doesn't need the

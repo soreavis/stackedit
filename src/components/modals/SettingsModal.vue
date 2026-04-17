@@ -107,7 +107,7 @@ export default {
 @use '../../styles/variables.scss' as *;
 
 .modal__inner-1.modal__inner-1--settings {
-  max-width: 560px;
+  max-width: 700px;
 }
 
 .modal__header--settings {
