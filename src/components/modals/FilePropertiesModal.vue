@@ -1,6 +1,6 @@
 <template>
   <modal-inner class="modal__inner-1--file-properties" aria-label="File properties">
-    <div class="modal__content">
+    <div class="modal__header modal__header--file-properties">
       <div class="tabs flex flex--row">
         <tab :active="tab === 'simple'" @click="setSimpleTab()">
           Simple properties
@@ -9,6 +9,8 @@
           YAML properties
         </tab>
       </div>
+    </div>
+    <div class="modal__content">
       <div v-if="tab === 'simple'">
         <div class="modal__title">Extensions</div>
         <div class="modal__sub-title">Configure the Markdown engine.</div>
@@ -243,6 +245,10 @@ export default {
 
 .modal__inner-1.modal__inner-1--file-properties {
   max-width: 520px;
+}
+
+.modal__header--file-properties {
+  padding-bottom: 0;
 }
 
 .modal__error--file-properties {
