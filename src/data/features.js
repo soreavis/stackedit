@@ -467,6 +467,11 @@ export default [
         'Use the "Import/export" menu to import an HTML file from disk and convert it to Markdown.',
       ),
       new Feature(
+        'importClipboard',
+        'Clipboard importer',
+        'Use the "Import/export" menu to paste Markdown or HTML from the clipboard as a new file.',
+      ),
+      new Feature(
         'exportHtml',
         'HTML exporter',
         'Use the "Import/export" menu to export a file to disk as an HTML file using a Handlebars template.',

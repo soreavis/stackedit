@@ -20,6 +20,11 @@
         <span>Convert an HTML file to Markdown.</span>
       </div>
     </label>
+    <menu-entry @click.native="onImportClipboard">
+      <icon-content-copy slot="icon"></icon-content-copy>
+      <div>Import from clipboard</div>
+      <span>Paste Markdown or HTML as a new file.</span>
+    </menu-entry>
     <hr>
     <menu-entry @click.native="exportMarkdown">
       <icon-download slot="icon"></icon-download>
@@ -56,6 +61,25 @@ import exportSvc from '../../services/exportSvc';
 import badgeSvc from '../../services/badgeSvc';
 
 const turndownService = new TurndownService(store.getters['data/computedSettings'].turndown);
+
+// Heuristic: does this string already look like hand-written Markdown? Used to
+// decide whether to skip the HTML→Markdown conversion when the clipboard has
+// both flavors (e.g. pasting from ChatGPT, Notion, or a raw .md file).
+const MARKDOWN_PATTERNS = [
+  /^#{1,6}\s+\S/m,
+  /^\s*[-*+]\s+\S/m,
+  /^\s*\d+\.\s+\S/m,
+  /^\s*```/m,
+  /\*\*[^*\n]+\*\*/,
+  /\[[^\]]+\]\([^)]+\)/,
+  /^\s*>\s+\S/m,
+  /^\s*---\s*$/m,
+  /`[^`\n]+`/,
+];
+const looksLikeMarkdown = (text) => {
+  if (!text || text.length < 3) return false;
+  return MARKDOWN_PATTERNS.filter(re => re.test(text)).length >= 2;
+};
 
 const readFile = file => new Promise((resolve) => {
   if (file) {
@@ -99,6 +123,64 @@ export default {
       });
       store.commit('file/setCurrentId', item.id);
       badgeSvc.addBadge('importHtml');
+    },
+    async onImportClipboard() {
+      try {
+        let markdown = null;
+        // Prefer clipboard.read() so we can detect rich HTML and convert it;
+        // readText() loses formatting. Fall back to readText() when read() is
+        // unavailable (Firefox <127, some embedded webviews).
+        if (navigator.clipboard && typeof navigator.clipboard.read === 'function') {
+          const items = await navigator.clipboard.read();
+          let plainText = null;
+          let html = null;
+          for (const clipItem of items) {
+            if (!plainText && clipItem.types.includes('text/plain')) {
+              plainText = await (await clipItem.getType('text/plain')).text();
+            }
+            if (!html && clipItem.types.includes('text/html')) {
+              html = await (await clipItem.getType('text/html')).text();
+            }
+          }
+          // If the plain-text flavor is already Markdown (common when copying
+          // from ChatGPT / Notion / a markdown file), use it verbatim. Running
+          // Turndown on the HTML wrapper would double-escape every #, *, -, `,
+          // producing unreadable output.
+          if (plainText && looksLikeMarkdown(plainText)) {
+            markdown = plainText;
+          } else if (html) {
+            const sanitized = htmlSanitizer.sanitizeHtml(html).replace(/&#160;/g, ' ');
+            markdown = turndownService.turndown(sanitized);
+          } else if (plainText) {
+            markdown = plainText;
+          }
+        } else if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+          markdown = await navigator.clipboard.readText();
+        } else {
+          store.dispatch('notification/error', 'Clipboard access is not supported in this browser.');
+          return;
+        }
+
+        if (!markdown || !markdown.trim()) {
+          store.dispatch('notification/info', 'Clipboard is empty.');
+          return;
+        }
+
+        const headingMatch = markdown.match(/^#{1,6}\s+(.+?)\s*$/m);
+        const name = headingMatch ? headingMatch[1] : 'Clipboard';
+        const item = await workspaceSvc.createFile({
+          ...Provider.parseContent(markdown),
+          name,
+        });
+        store.commit('file/setCurrentId', item.id);
+        badgeSvc.addBadge('importClipboard');
+      } catch (err) {
+        if (err && err.name === 'NotAllowedError') {
+          store.dispatch('notification/error', 'Clipboard permission denied. Allow clipboard access and try again.');
+        } else {
+          store.dispatch('notification/error', 'Could not read clipboard.');
+        }
+      }
     },
     async exportMarkdown() {
       const currentFile = store.getters['file/current'];
