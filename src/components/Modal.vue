@@ -1,5 +1,5 @@
 <template>
-  <div class="modal" v-if="config" @keydown.esc.stop="onEscape" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
+  <div class="modal" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
     <div class="modal__sponsor-banner" v-if="!isSponsor">
       StackEdit is <a class="not-tabbable" target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">open source</a>, please consider
       <a class="not-tabbable" href="javascript:void(0)" @click="sponsor">sponsoring</a> for just $5.
@@ -212,11 +212,23 @@ export default {
   width: 100%;
   height: 100%;
   background-color: rgba(160, 160, 160, 0.5);
-  overflow: auto;
+  // Flex-center the card on both axes so modals land in the middle of
+  // the viewport instead of floating 40px from the top.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
 
   p {
     line-height: 1.5;
   }
+}
+
+// When the sponsor banner is visible, reserve space for it so centered
+// modals don't slide under it.
+.modal--with-banner {
+  padding-top: 52px;
 }
 
 .modal__sponsor-banner {
@@ -232,16 +244,21 @@ export default {
 }
 
 .modal__inner-1 {
-  margin: 0 auto;
   width: 100%;
   min-width: 320px;
   max-width: 480px;
+  max-height: 100%;
+  display: flex;
 }
 
 .modal__inner-2 {
-  margin: 40px 10px 100px;
+  flex: 1 1 auto;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background-color: #f8f8f8;
-  padding: 50px 50px 40px;
+  padding: 0 50px;
   border-radius: $border-radius-base;
   position: relative;
   overflow: hidden;
@@ -254,6 +271,7 @@ export default {
     height: $border-radius-base;
     width: 100%;
     background-image: linear-gradient(to left, #ffd700, #ffd700 23%, #a5c700 27%, #a5c700 48%, #ff8a00 52%, #ff8a00 73%, #66aefd 77%);
+    z-index: 2;
   }
 
   &::after {
@@ -264,7 +282,37 @@ export default {
     height: $border-radius-base;
     width: 100%;
     background-image: linear-gradient(to right, #ffd700, #ffd700 23%, #a5c700 27%, #a5c700 48%, #ff8a00 52%, #ff8a00 73%, #66aefd 77%);
+    z-index: 2;
   }
+}
+
+// Optional pinned header — opt-in via `.modal__header` in the modal's
+// template. Does not scroll with the body. Used on long modals where
+// the intro / tabs / selector should stay reachable (Badges, Settings,
+// Templates).
+.modal__header {
+  flex: 0 0 auto;
+  padding: 50px 0 16px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 1;
+}
+
+.modal__content {
+  // Scrollable middle of the modal card. The header (if present) stays
+  // pinned above and the button bar stays pinned below; only this
+  // region scrolls when content exceeds the card's max-height.
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 50px 0 0;
+}
+
+// When a sticky header is present, the content below doesn't need the
+// full 50px top padding — the header already provides separation.
+.modal__header + .modal__content {
+  padding-top: 16px;
 }
 
 .modal__content > :first-child,
@@ -321,10 +369,15 @@ export default {
 }
 
 .modal__button-bar {
-  margin-top: 2rem;
+  flex: 0 0 auto;
+  padding: 16px 0 40px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: #f8f8f8;
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
+  position: relative;
+  z-index: 1;
 }
 
 .form-entry {
