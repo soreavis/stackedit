@@ -1,18 +1,20 @@
 <template>
-  <div class="modal" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
-    <div class="modal__sponsor-banner" v-if="!isSponsor">
-      StackEdit is <a class="not-tabbable" target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">open source</a>, please consider
-      <a class="not-tabbable" href="javascript:void(0)" @click="sponsor">sponsoring</a> for just $5.
-    </div>
-    <component v-if="currentModalComponent" :is="currentModalComponent"></component>
-    <modal-inner v-else aria-label="Dialog">
-      <div class="modal__content" v-html="simpleModal.contentHtml(config)"></div>
-      <div class="modal__button-bar">
-        <button class="button" v-if="simpleModal.rejectText" @click="config.reject()">{{ simpleModal.rejectText }}</button>
-        <button class="button button--resolve" v-if="simpleModal.resolveText" @click="config.resolve()">{{ simpleModal.resolveText }}</button>
+  <transition name="modal-fade">
+    <div class="modal" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
+      <div class="modal__sponsor-banner" v-if="!isSponsor">
+        StackEdit is <a class="not-tabbable" target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">open source</a>, please consider
+        <a class="not-tabbable" href="javascript:void(0)" @click="sponsor">sponsoring</a> for just $5.
       </div>
-    </modal-inner>
-  </div>
+      <component v-if="currentModalComponent" :is="currentModalComponent"></component>
+      <modal-inner v-else aria-label="Dialog">
+        <div class="modal__content" v-html="simpleModal.contentHtml(config)"></div>
+        <div class="modal__button-bar">
+          <button class="button" v-if="simpleModal.rejectText" @click="config.reject()">{{ simpleModal.rejectText }}</button>
+          <button class="button button--resolve" v-if="simpleModal.resolveText" @click="config.resolve()">{{ simpleModal.resolveText }}</button>
+        </div>
+      </modal-inner>
+    </div>
+  </transition>
 </template>
 
 <script>
@@ -217,7 +219,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 60px 20px;
   overflow: hidden;
 
   p {
@@ -226,9 +228,30 @@ export default {
 }
 
 // When the sponsor banner is visible, reserve space for it so centered
-// modals don't slide under it.
+// modals don't slide under it. (60px base + 32px banner.)
 .modal--with-banner {
-  padding-top: 52px;
+  padding-top: 92px;
+}
+
+// Fast open/close easing so modals don't blink in/out. Fades the overlay
+// and gently scales the card up from 96% → 100%. 150ms ease-out feels
+// responsive but not jarring.
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 150ms ease-out;
+
+  .modal__inner-1 {
+    transition: transform 150ms ease-out;
+  }
+}
+
+.modal-fade-enter,
+.modal-fade-leave-to {
+  opacity: 0;
+
+  .modal__inner-1 {
+    transform: scale(0.96);
+  }
 }
 
 .modal__sponsor-banner {
@@ -294,7 +317,6 @@ export default {
   flex: 0 0 auto;
   padding: 50px 0 16px;
   background-color: #f8f8f8;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   position: relative;
   z-index: 1;
 }
@@ -371,7 +393,6 @@ export default {
 .modal__button-bar {
   flex: 0 0 auto;
   padding: 16px 0 40px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
   background-color: #f8f8f8;
   display: flex;
   flex-direction: row;
