@@ -272,6 +272,16 @@ export default {
   max-width: 600px;
   max-height: 100%;
   display: flex;
+
+  // Ease window-resize and max-width override changes so modals don't
+  // snap to a new width when the viewport / per-modal class changes.
+  // `interpolate-size: allow-keywords` (Chrome 129+, Firefox 130+)
+  // additionally lets the card animate between auto-driven widths;
+  // unsupported browsers silently fall back to the snap.
+  interpolate-size: allow-keywords;
+  transition:
+    max-width 250ms ease-out,
+    width 250ms ease-out;
 }
 
 .modal__inner-2 {
@@ -282,6 +292,13 @@ export default {
   flex-direction: column;
   background-color: #f8f8f8;
   padding: 0 50px;
+
+  // Smooth height changes (tab switches, "Show" expanders, etc.).
+  // Same progressive-enhancement pattern as .modal__inner-1.
+  interpolate-size: allow-keywords;
+  transition:
+    max-height 250ms ease-out,
+    height 250ms ease-out;
   border-radius: $border-radius-base;
   position: relative;
   overflow: hidden;
@@ -334,7 +351,12 @@ export default {
   // behaviour and keeps the modal chrome clean when content fits.
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
-  transition: scrollbar-color 200ms ease-out;
+  // Combine the scrollbar fade with a height ease so tab switches and
+  // "Show more" expanders resize the body smoothly.
+  interpolate-size: allow-keywords;
+  transition:
+    scrollbar-color 200ms ease-out,
+    height 250ms ease-out;
 
   &::-webkit-scrollbar {
     width: 8px;
