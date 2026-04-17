@@ -11,18 +11,20 @@
       </div>
     </div>
     <div class="modal__content">
-      <div class="form-entry" v-if="tab === 'custom'" role="tabpanel" aria-label="Custom settings">
-        <label class="form-entry__label">YAML</label>
-        <div class="form-entry__field form-entry__field--code-editor">
-          <code-editor lang="yaml" :value="customSettings" key="custom-settings" @changed="setCustomSettings"></code-editor>
+      <transition name="tab-swap" mode="out-in">
+        <div class="form-entry" v-if="tab === 'custom'" key="tab-custom" role="tabpanel" aria-label="Custom settings">
+          <label class="form-entry__label">YAML</label>
+          <div class="form-entry__field form-entry__field--code-editor">
+            <code-editor lang="yaml" :value="customSettings" key="custom-settings" @changed="setCustomSettings"></code-editor>
+          </div>
         </div>
-      </div>
-      <div class="form-entry" v-else-if="tab === 'default'" role="tabpanel" aria-label="Default settings">
-        <label class="form-entry__label">YAML</label>
-        <div class="form-entry__field form-entry__field--code-editor">
-          <code-editor lang="yaml" :value="defaultSettings" key="default-settings" disabled="true"></code-editor>
+        <div class="form-entry" v-else-if="tab === 'default'" key="tab-default" role="tabpanel" aria-label="Default settings">
+          <label class="form-entry__label">YAML</label>
+          <div class="form-entry__field form-entry__field--code-editor">
+            <code-editor lang="yaml" :value="defaultSettings" key="default-settings" disabled="true"></code-editor>
+          </div>
         </div>
-      </div>
+      </transition>
       <div class="modal__error modal__error--settings">{{ error }}</div>
     </div>
     <div class="modal__button-bar">

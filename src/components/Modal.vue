@@ -254,6 +254,27 @@ export default {
   }
 }
 
+// Tab-swap transition — used by Settings / File Properties tab panels
+// (wrap them in <transition name="tab-swap" mode="out-in">). Cross-fade
+// with a small vertical slide so the content change reads as a smooth
+// swap rather than a snap. Container height still jumps (CSS can't
+// transition flex-auto height in a cross-browser way), but the opacity
+// overlap masks it.
+.tab-swap-enter-active,
+.tab-swap-leave-active {
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+
+.tab-swap-enter {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.tab-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
 .modal__sponsor-banner {
   position: fixed;
   z-index: 1;
