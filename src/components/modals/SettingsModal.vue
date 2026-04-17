@@ -1,6 +1,6 @@
 <template>
   <modal-inner class="modal__inner-1--settings" aria-label="Settings">
-    <div class="modal__content">
+    <div class="modal__header modal__header--settings">
       <div class="tabs flex flex--row">
         <tab :active="tab === 'custom'" @click="tab = 'custom'">
           Custom settings
@@ -9,18 +9,22 @@
           Default settings
         </tab>
       </div>
-      <div class="form-entry" v-if="tab === 'custom'" role="tabpanel" aria-label="Custom settings">
-        <label class="form-entry__label">YAML</label>
-        <div class="form-entry__field form-entry__field--code-editor">
-          <code-editor lang="yaml" :value="customSettings" key="custom-settings" @changed="setCustomSettings"></code-editor>
+    </div>
+    <div class="modal__content">
+      <transition name="tab-swap" mode="out-in">
+        <div class="form-entry" v-if="tab === 'custom'" key="tab-custom" role="tabpanel" aria-label="Custom settings">
+          <label class="form-entry__label">YAML</label>
+          <div class="form-entry__field form-entry__field--code-editor">
+            <code-editor lang="yaml" :value="customSettings" key="custom-settings" @changed="setCustomSettings"></code-editor>
+          </div>
         </div>
-      </div>
-      <div class="form-entry" v-else-if="tab === 'default'" role="tabpanel" aria-label="Default settings">
-        <label class="form-entry__label">YAML</label>
-        <div class="form-entry__field form-entry__field--code-editor">
-          <code-editor lang="yaml" :value="defaultSettings" key="default-settings" disabled="true"></code-editor>
+        <div class="form-entry" v-else-if="tab === 'default'" key="tab-default" role="tabpanel" aria-label="Default settings">
+          <label class="form-entry__label">YAML</label>
+          <div class="form-entry__field form-entry__field--code-editor">
+            <code-editor lang="yaml" :value="defaultSettings" key="default-settings" disabled="true"></code-editor>
+          </div>
         </div>
-      </div>
+      </transition>
       <div class="modal__error modal__error--settings">{{ error }}</div>
     </div>
     <div class="modal__button-bar">
@@ -105,7 +109,11 @@ export default {
 @use '../../styles/variables.scss' as *;
 
 .modal__inner-1.modal__inner-1--settings {
-  max-width: 560px;
+  max-width: 700px;
+}
+
+.modal__header--settings {
+  padding-bottom: 0;
 }
 
 .modal__error--settings {

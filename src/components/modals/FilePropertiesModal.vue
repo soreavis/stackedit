@@ -1,6 +1,6 @@
 <template>
   <modal-inner class="modal__inner-1--file-properties" aria-label="File properties">
-    <div class="modal__content">
+    <div class="modal__header modal__header--file-properties">
       <div class="tabs flex flex--row">
         <tab :active="tab === 'simple'" @click="setSimpleTab()">
           Simple properties
@@ -9,7 +9,10 @@
           YAML properties
         </tab>
       </div>
-      <div v-if="tab === 'simple'">
+    </div>
+    <div class="modal__content">
+      <transition name="tab-swap" mode="out-in">
+        <div v-if="tab === 'simple'" key="tab-simple">
         <div class="modal__title">Extensions</div>
         <div class="modal__sub-title">Configure the Markdown engine.</div>
         <form-entry label="Preset">
@@ -49,7 +52,7 @@
           <input slot="field" class="textfield" type="text" v-model.trim="date" @keydown.enter="resolve()">
         </form-entry>
       </div>
-      <div v-if="tab === 'yaml'">
+      <div v-else-if="tab === 'yaml'" key="tab-yaml">
         <div class="form-entry" role="tabpanel" aria-label="YAML properties">
           <label class="form-entry__label">YAML</label>
           <div class="form-entry__field">
@@ -75,6 +78,7 @@
           <p>For the full list of options, see <a href="https://github.com/benweet/stackedit/blob/master/src/data/presets.js" target="_blank" rel="noopener noreferrer">here</a>.</p>
         </div>
       </div>
+      </transition>
     </div>
     <div class="modal__button-bar">
       <button class="button" @click="config.reject()">Cancel</button>
@@ -242,7 +246,11 @@ export default {
 @use '../../styles/variables.scss' as *;
 
 .modal__inner-1.modal__inner-1--file-properties {
-  max-width: 520px;
+  max-width: 650px;
+}
+
+.modal__header--file-properties {
+  padding-bottom: 0;
 }
 
 .modal__error--file-properties {

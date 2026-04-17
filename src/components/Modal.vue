@@ -1,18 +1,20 @@
 <template>
-  <div class="modal" v-if="config" @keydown.esc.stop="onEscape" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
-    <div class="modal__sponsor-banner" v-if="!isSponsor">
-      StackEdit is <a class="not-tabbable" target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">open source</a>, please consider
-      <a class="not-tabbable" href="javascript:void(0)" @click="sponsor">sponsoring</a> for just $5.
-    </div>
-    <component v-if="currentModalComponent" :is="currentModalComponent"></component>
-    <modal-inner v-else aria-label="Dialog">
-      <div class="modal__content" v-html="simpleModal.contentHtml(config)"></div>
-      <div class="modal__button-bar">
-        <button class="button" v-if="simpleModal.rejectText" @click="config.reject()">{{ simpleModal.rejectText }}</button>
-        <button class="button button--resolve" v-if="simpleModal.resolveText" @click="config.resolve()">{{ simpleModal.resolveText }}</button>
+  <transition name="modal-fade">
+    <div class="modal" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
+      <div class="modal__sponsor-banner" v-if="!isSponsor">
+        StackEdit is <a class="not-tabbable" target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">open source</a>, please consider
+        <a class="not-tabbable" href="javascript:void(0)" @click="sponsor">sponsoring</a> for just $5.
       </div>
-    </modal-inner>
-  </div>
+      <component v-if="currentModalComponent" :is="currentModalComponent"></component>
+      <modal-inner v-else aria-label="Dialog">
+        <div class="modal__content" v-html="simpleModal.contentHtml(config)"></div>
+        <div class="modal__button-bar">
+          <button class="button" v-if="simpleModal.rejectText" @click="config.reject()">{{ simpleModal.rejectText }}</button>
+          <button class="button button--resolve" v-if="simpleModal.resolveText" @click="config.resolve()">{{ simpleModal.resolveText }}</button>
+        </div>
+      </modal-inner>
+    </div>
+  </transition>
 </template>
 
 <script>
@@ -212,11 +214,65 @@ export default {
   width: 100%;
   height: 100%;
   background-color: rgba(160, 160, 160, 0.5);
-  overflow: auto;
+  // Flex-center the card on both axes so modals land in the middle of
+  // the viewport instead of floating 40px from the top.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  overflow: hidden;
 
   p {
     line-height: 1.5;
   }
+}
+
+// When the sponsor banner is visible, reserve space for it so centered
+// modals don't slide under it. (60px base + 32px banner.)
+.modal--with-banner {
+  padding-top: 92px;
+}
+
+// Fast open/close easing so modals don't blink in/out. Fades the overlay
+// and gently scales the card up from 96% → 100%. 150ms ease-out feels
+// responsive but not jarring.
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 150ms ease-out;
+
+  .modal__inner-1 {
+    transition: transform 150ms ease-out;
+  }
+}
+
+.modal-fade-enter,
+.modal-fade-leave-to {
+  opacity: 0;
+
+  .modal__inner-1 {
+    transform: scale(0.96);
+  }
+}
+
+// Tab-swap transition — used by Settings / File Properties tab panels
+// (wrap them in <transition name="tab-swap" mode="out-in">). Cross-fade
+// with a small vertical slide so the content change reads as a smooth
+// swap rather than a snap. Container height still jumps (CSS can't
+// transition flex-auto height in a cross-browser way), but the opacity
+// overlap masks it.
+.tab-swap-enter-active,
+.tab-swap-leave-active {
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+
+.tab-swap-enter {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.tab-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .modal__sponsor-banner {
@@ -232,16 +288,38 @@ export default {
 }
 
 .modal__inner-1 {
-  margin: 0 auto;
   width: 100%;
   min-width: 320px;
-  max-width: 480px;
+  max-width: 600px;
+  max-height: 100%;
+  display: flex;
+
+  // Ease window-resize and max-width override changes so modals don't
+  // snap to a new width when the viewport / per-modal class changes.
+  // `interpolate-size: allow-keywords` (Chrome 129+, Firefox 130+)
+  // additionally lets the card animate between auto-driven widths;
+  // unsupported browsers silently fall back to the snap.
+  interpolate-size: allow-keywords;
+  transition:
+    max-width 250ms ease-out,
+    width 250ms ease-out;
 }
 
 .modal__inner-2 {
-  margin: 40px 10px 100px;
+  flex: 1 1 auto;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background-color: #f8f8f8;
-  padding: 50px 50px 40px;
+  padding: 0 50px;
+
+  // Smooth height changes (tab switches, "Show" expanders, etc.).
+  // Same progressive-enhancement pattern as .modal__inner-1.
+  interpolate-size: allow-keywords;
+  transition:
+    max-height 250ms ease-out,
+    height 250ms ease-out;
   border-radius: $border-radius-base;
   position: relative;
   overflow: hidden;
@@ -254,6 +332,7 @@ export default {
     height: $border-radius-base;
     width: 100%;
     background-image: linear-gradient(to left, #ffd700, #ffd700 23%, #a5c700 27%, #a5c700 48%, #ff8a00 52%, #ff8a00 73%, #66aefd 77%);
+    z-index: 2;
   }
 
   &::after {
@@ -264,7 +343,71 @@ export default {
     height: $border-radius-base;
     width: 100%;
     background-image: linear-gradient(to right, #ffd700, #ffd700 23%, #a5c700 27%, #a5c700 48%, #ff8a00 52%, #ff8a00 73%, #66aefd 77%);
+    z-index: 2;
   }
+}
+
+// Optional pinned header — opt-in via `.modal__header` in the modal's
+// template. Does not scroll with the body. Used on long modals where
+// the intro / tabs / selector should stay reachable (Badges, Settings,
+// Templates).
+.modal__header {
+  flex: 0 0 auto;
+  padding: 50px 0 16px;
+  background-color: #f8f8f8;
+  position: relative;
+  z-index: 1;
+}
+
+.modal__content {
+  // Scrollable middle of the modal card. The header (if present) stays
+  // pinned above and the button bar stays pinned below; only this
+  // region scrolls when content exceeds the card's max-height.
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 50px 0 0;
+
+  // Scrollbars: invisible by default, fade in on hover. Matches macOS
+  // behaviour and keeps the modal chrome clean when content fits.
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  // Combine the scrollbar fade with a height ease so tab switches and
+  // "Show more" expanders resize the body smoothly.
+  interpolate-size: allow-keywords;
+  transition:
+    scrollbar-color 200ms ease-out,
+    height 250ms ease-out;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    transition: background-color 200ms ease-out;
+  }
+
+  &:hover {
+    scrollbar-color: rgba(0, 0, 0, 0.22) transparent;
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.22);
+    }
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+}
+
+// When a sticky header is present, the content below doesn't need the
+// full 50px top padding — the header already provides separation.
+.modal__header + .modal__content {
+  padding-top: 16px;
 }
 
 .modal__content > :first-child,
@@ -321,10 +464,14 @@ export default {
 }
 
 .modal__button-bar {
-  margin-top: 2rem;
+  flex: 0 0 auto;
+  padding: 16px 0 40px;
+  background-color: #f8f8f8;
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
+  position: relative;
+  z-index: 1;
 }
 
 .form-entry {
