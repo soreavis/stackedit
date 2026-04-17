@@ -1,9 +1,19 @@
 import bezierEasing from 'bezier-easing';
 
+// bezier-easing@3 returns a plain `(t) => y` function; the `.get()` and
+// `.toCSS()` methods that animationSvc relies on were v2-only, so re-attach
+// them to preserve the existing call sites.
+const makeEasing = (x1, y1, x2, y2) => {
+  const fn = bezierEasing(x1, y1, x2, y2);
+  fn.get = (t) => fn(t);
+  fn.toCSS = () => `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`;
+  return fn;
+};
+
 const easings = {
-  materialIn: bezierEasing(0.75, 0, 0.8, 0.25),
-  materialOut: bezierEasing(0.25, 0.8, 0.25, 1),
-  inOut: bezierEasing(0.25, 0.1, 0.67, 1),
+  materialIn: makeEasing(0.75, 0, 0.8, 0.25),
+  materialOut: makeEasing(0.25, 0.8, 0.25, 1),
+  inOut: makeEasing(0.25, 0.1, 0.67, 1),
 };
 
 const vendors = ['moz', 'webkit'];
