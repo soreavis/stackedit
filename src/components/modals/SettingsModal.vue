@@ -1,6 +1,6 @@
 <template>
   <modal-inner class="modal__inner-1--settings" aria-label="Settings">
-    <div class="modal__content">
+    <div class="modal__header modal__header--settings">
       <div class="tabs flex flex--row">
         <tab :active="tab === 'custom'" @click="tab = 'custom'">
           Custom settings
@@ -9,6 +9,8 @@
           Default settings
         </tab>
       </div>
+    </div>
+    <div class="modal__content">
       <div class="form-entry" v-if="tab === 'custom'" role="tabpanel" aria-label="Custom settings">
         <label class="form-entry__label">YAML</label>
         <div class="form-entry__field form-entry__field--code-editor">
@@ -106,6 +108,13 @@ export default {
 
 .modal__inner-1.modal__inner-1--settings {
   max-width: 560px;
+}
+
+.modal__header--settings {
+  padding-bottom: 0;
+  // The Tab component already carries its own bottom border; suppress
+  // the header separator so we don't double up the line.
+  border-bottom: 0;
 }
 
 .modal__error--settings {

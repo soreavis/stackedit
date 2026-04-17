@@ -1,6 +1,6 @@
 <template>
   <modal-inner class="modal__inner-1--templates" aria-label="Manage templates">
-    <div class="modal__content">
+    <div class="modal__header modal__header--templates">
       <div class="form-entry">
         <label class="form-entry__label" for="template">Template</label>
         <div class="form-entry__field">
@@ -26,6 +26,8 @@
           </button>
         </div>
       </div>
+    </div>
+    <div class="modal__content">
       <div class="form-entry">
         <label class="form-entry__label">Value</label>
         <div class="form-entry__field" v-if="selectedTemplate">
