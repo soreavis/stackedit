@@ -6,6 +6,9 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+### Added
+- **Mermaid diagram lightbox**: each rendered Mermaid diagram gets a hover-revealed "⤢ Enlarge" and "⧉ Copy source" button. Enlarge opens a fullscreen viewer that defaults to fit-to-viewport with drag-to-pan, scroll-to-zoom (cursor-anchored), and a toolbar for zoom in / zoom out / reset / copy source. Double-click the diagram to reset to fit. Esc or the × button closes. The copy button writes the original Mermaid source to the clipboard for pasting into external tools (mermaid.live, etc.).
+
 ## [5.15.5-fork.1] - 2026-04-17
 
 First tagged release of the community fork. Cumulates the full hardening pass plus the first fork-branded UI.

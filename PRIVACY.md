@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: 2026-04-17_
+_Last updated: 2026-04-21_
 
 This policy covers the community fork of StackEdit maintained at
 [`github.com/soreavis/stackedit`](https://github.com/soreavis/stackedit) and
@@ -98,6 +98,10 @@ to detect deployment regressions and are not correlated to users.
 - **Google Drive image picker** opens a picker UI provided by Google; any
   data exchange happens between your browser and Google's servers under
   the token you granted.
+- **"Copy diagram source"** on rendered Mermaid diagrams writes the
+  diagram's own source text to your OS clipboard only when you click
+  the button. The content comes from the document you already have
+  open and never leaves your browser.
 
 ## What we don't do
 
