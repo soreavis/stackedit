@@ -62,7 +62,7 @@
   <header>
     <div class="nav"><a href="/app">← Back to the editor</a></div>
     <h1>Privacy Policy <span class="fork-badge">Community Fork</span></h1>
-    <p class="last-updated">Last updated: 2026-04-17</p>
+    <p class="last-updated">Last updated: 2026-04-21</p>
   </header>
 
   <p>This policy covers the community fork of StackEdit maintained at
@@ -86,6 +86,11 @@
   </ul>
   <p>None of this is transmitted to a server operated by this fork.
   Clearing your browser's site data removes it.</p>
+  <p>Files you drag-and-drop onto the file explorer panel are read in
+  your browser via the standard <code>FileReader</code> /
+  <code>FileSystemEntry</code> APIs and stored in the same local
+  workspace. Their contents are never sent to a server operated by
+  this fork.</p>
 
   <h2>What leaves your browser (only if you opt in)</h2>
   <p>If you connect an external storage provider, your files are stored
@@ -161,6 +166,10 @@
     <li><strong>Google Drive image picker</strong> opens a picker UI
     provided by Google; any data exchange happens between your browser
     and Google's servers under the token you granted.</li>
+    <li><strong>"Copy diagram source"</strong> on rendered Mermaid
+    diagrams writes the diagram's own source text to your OS clipboard
+    only when you click the button. The content comes from the document
+    you already have open and never leaves your browser.</li>
   </ul>
 
   <h2>What we don't do</h2>

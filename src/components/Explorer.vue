@@ -1,5 +1,5 @@
 <template>
-  <div class="explorer flex flex--column">
+  <div class="explorer flex flex--column" @dragover.prevent @drop.prevent>
     <div class="side-title flex flex--row flex--space-between">
       <div class="flex flex--row">
         <button class="side-title__button side-title__button--new-file button" @click="newItem()" v-title="'New file'">
