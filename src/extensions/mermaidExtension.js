@@ -338,8 +338,14 @@ function openLightbox(sourceSvg, sourceText) {
   let panX = initialPanX;
   let panY = initialPanY;
 
+  // Resize the SVG via its layout width/height (native vector re-layout at
+  // every zoom) instead of `transform: scale()` (which rasterizes first and
+  // then scales the bitmap — pixelated at high zoom). `transform: translate`
+  // is kept for pan only, since translation doesn't rasterize.
   const apply = () => {
-    clone.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    clone.style.width = `${svgW * scale}px`;
+    clone.style.height = `${svgH * scale}px`;
+    clone.style.transform = `translate(${panX}px, ${panY}px)`;
   };
   apply();
 
