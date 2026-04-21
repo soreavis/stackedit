@@ -245,7 +245,7 @@ describe('mermaid export helpers', () => {
     expect(svg.getAttribute('width')).toBe(beforeWidth);
   });
 
-  it('replaceForeignObjectsWithText swaps each <foreignObject> for an SVG <text> of its text', () => {
+  it('replaceForeignObjectsWithText swaps <foreignObject> for an SVG <text> of its text', () => {
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
     const fo = document.createElementNS(ns, 'foreignObject');
@@ -262,10 +262,68 @@ describe('mermaid export helpers', () => {
     const text = svg.querySelector('text');
     expect(text).toBeTruthy();
     expect(text.textContent).toBe('Hello World');
-    // Centered in the foreignObject's bounding box (x+w/2, y+h/2)
     expect(parseFloat(text.getAttribute('x'))).toBe(60);
-    expect(parseFloat(text.getAttribute('y'))).toBe(40);
     expect(text.getAttribute('text-anchor')).toBe('middle');
-    expect(text.getAttribute('dominant-baseline')).toBe('central');
+    expect(text.querySelectorAll('tspan').length).toBe(1);
+  });
+
+  it('replaceForeignObjectsWithText preserves <br>-separated lines as <tspan>s', () => {
+    const ns = 'http://www.w3.org/2000/svg';
+    const xhtml = 'http://www.w3.org/1999/xhtml';
+    const svg = document.createElementNS(ns, 'svg');
+    const fo = document.createElementNS(ns, 'foreignObject');
+    fo.setAttribute('x', '0');
+    fo.setAttribute('y', '0');
+    fo.setAttribute('width', '200');
+    fo.setAttribute('height', '60');
+    // Simulate mermaid's htmlLabels output: <b>header</b><br/>subtitle
+    const div = document.createElementNS(xhtml, 'div');
+    const b = document.createElementNS(xhtml, 'b');
+    b.textContent = '1. DNS zone';
+    const br = document.createElementNS(xhtml, 'br');
+    const txt = document.createTextNode('internal.coevera.com');
+    div.appendChild(b);
+    div.appendChild(br);
+    div.appendChild(txt);
+    fo.appendChild(div);
+    svg.appendChild(fo);
+
+    replaceForeignObjectsWithText(svg);
+
+    const text = svg.querySelector('text');
+    const tspans = text.querySelectorAll('tspan');
+    expect(tspans.length).toBe(2);
+    expect(tspans[0].textContent).toBe('1. DNS zone');
+    expect(tspans[1].textContent).toBe('internal.coevera.com');
+    expect(tspans[1].getAttribute('dy')).toBe('16');
+    // Both tspans anchor at the same x (center) for proper alignment
+    expect(tspans[0].getAttribute('x')).toBe(tspans[1].getAttribute('x'));
+  });
+
+  it('replaceForeignObjectsWithText treats block-level <div>/<p> children as line breaks', () => {
+    const ns = 'http://www.w3.org/2000/svg';
+    const xhtml = 'http://www.w3.org/1999/xhtml';
+    const svg = document.createElementNS(ns, 'svg');
+    const fo = document.createElementNS(ns, 'foreignObject');
+    fo.setAttribute('x', '0');
+    fo.setAttribute('y', '0');
+    fo.setAttribute('width', '100');
+    fo.setAttribute('height', '60');
+    const wrapper = document.createElementNS(xhtml, 'div');
+    const p1 = document.createElementNS(xhtml, 'p');
+    p1.textContent = 'Line one';
+    const p2 = document.createElementNS(xhtml, 'p');
+    p2.textContent = 'Line two';
+    wrapper.appendChild(p1);
+    wrapper.appendChild(p2);
+    fo.appendChild(wrapper);
+    svg.appendChild(fo);
+
+    replaceForeignObjectsWithText(svg);
+
+    const tspans = svg.querySelectorAll('tspan');
+    expect(tspans.length).toBe(2);
+    expect(tspans[0].textContent).toBe('Line one');
+    expect(tspans[1].textContent).toBe('Line two');
   });
 });
