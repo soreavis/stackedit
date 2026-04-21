@@ -21,6 +21,7 @@
 import { mapMutations, mapActions } from 'vuex';
 import workspaceSvc from '../services/workspaceSvc';
 import explorerSvc from '../services/explorerSvc';
+import fileImportSvc from '../services/fileImportSvc';
 import store from '../store';
 import badgeSvc from '../services/badgeSvc';
 
@@ -144,12 +145,25 @@ export default {
       // See https://stackoverflow.com/a/3977637/1333165
       evt.dataTransfer.setData('Text', '');
     },
-    onDrop() {
-      const sourceNode = store.getters['explorer/dragSourceNode'];
+    async onDrop(evt) {
       const targetNode = store.getters['explorer/dragTargetNodeFolder'];
       this.setDragTarget();
+      if (targetNode.isNil) return;
+
+      // External file drop (from OS) — import .md files into the drop target.
+      if (fileImportSvc.hasMarkdownPayload(evt.dataTransfer)) {
+        const parentId = targetNode.isRoot ? null : targetNode.item.id;
+        try {
+          await fileImportSvc.importDataTransfer(evt.dataTransfer, parentId);
+        } catch (e) {
+          console.error(e);
+        }
+        return;
+      }
+
+      // Internal drag (existing behavior) — move a workspace item.
+      const sourceNode = store.getters['explorer/dragSourceNode'];
       if (!sourceNode.isNil
-        && !targetNode.isNil
         && sourceNode.item.id !== targetNode.item.id
       ) {
         workspaceSvc.storeItem({
