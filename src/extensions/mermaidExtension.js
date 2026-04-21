@@ -135,34 +135,29 @@ const LIGHTBOX_STYLES = `
   position: fixed;
   top: 16px;
   right: 16px;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   padding: 0;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  border-radius: 999px;
-  background: #fff;
-  color: #222;
-  font-family: ui-sans-serif, -apple-system, "Segoe UI", Arial, sans-serif;
-  font-size: 26px;
-  font-weight: 400;
-  line-height: 1;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(20, 20, 22, 0.88);
+  color: #fff;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-  transition: background 0.1s, color 0.1s, transform 0.1s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.1s;
 }
-.mermaid-lightbox-close svg { display: block; }
-.mermaid-lightbox-close:hover {
-  background: #e53935;
-  color: #fff;
-  border-color: #e53935;
-  transform: scale(1.05);
-}
+.mermaid-lightbox-close:hover { background: rgba(40, 40, 44, 0.95); }
 .mermaid-lightbox-close:focus-visible {
   outline: 2px solid #39f;
   outline-offset: 2px;
+}
+.mermaid-lightbox-close svg {
+  display: block;
+  pointer-events: none;
 }
 .mermaid-lightbox-hint {
   position: fixed;
@@ -299,9 +294,9 @@ function openLightbox(sourceSvg, sourceText) {
   // Inline SVG × — pixel-exact centering regardless of font metrics.
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const closeIcon = document.createElementNS(SVG_NS, 'svg');
-  closeIcon.setAttribute('viewBox', '0 0 24 24');
-  closeIcon.setAttribute('width', '22');
-  closeIcon.setAttribute('height', '22');
+  closeIcon.setAttribute('viewBox', '0 0 20 20');
+  closeIcon.setAttribute('width', '18');
+  closeIcon.setAttribute('height', '18');
   closeIcon.setAttribute('aria-hidden', 'true');
   const mkLine = (x1, y1, x2, y2) => {
     const l = document.createElementNS(SVG_NS, 'line');
@@ -310,12 +305,12 @@ function openLightbox(sourceSvg, sourceText) {
     l.setAttribute('x2', x2);
     l.setAttribute('y2', y2);
     l.setAttribute('stroke', 'currentColor');
-    l.setAttribute('stroke-width', '2.5');
+    l.setAttribute('stroke-width', '2');
     l.setAttribute('stroke-linecap', 'round');
     return l;
   };
-  closeIcon.appendChild(mkLine(6, 6, 18, 18));
-  closeIcon.appendChild(mkLine(18, 6, 6, 18));
+  closeIcon.appendChild(mkLine(5, 5, 15, 15));
+  closeIcon.appendChild(mkLine(15, 5, 5, 15));
   closeBtn.appendChild(closeIcon);
   closeBtn.addEventListener('click', (evt) => {
     evt.stopPropagation();
