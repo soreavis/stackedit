@@ -89,14 +89,18 @@ const LIGHTBOX_STYLES = `
 .mermaid-lightbox-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   z-index: 1000;
   overflow: hidden;
   user-select: none;
   cursor: grab;
 }
 .mermaid-lightbox-overlay--dragging { cursor: grabbing; }
-.mermaid-lightbox-overlay svg {
+/* Direct-child selector: applies only to the enlarged diagram SVG, not
+   to any icon SVGs inside toolbar/close buttons. Early iterations used
+   a plain descendant selector here, which painted a white background
+   onto the close button's child SVG and masked its contents. */
+.mermaid-lightbox-overlay > svg {
   position: absolute;
   top: 0;
   left: 0;
@@ -148,6 +152,11 @@ const LIGHTBOX_STYLES = `
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: inherit;
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+  padding-bottom: 4px;
   transition: background 0.1s;
 }
 .mermaid-lightbox-close:hover { background: rgba(40, 40, 44, 0.95); }
@@ -291,22 +300,8 @@ function openLightbox(sourceSvg, sourceText) {
   closeBtn.type = 'button';
   closeBtn.className = 'mermaid-lightbox-close';
   closeBtn.setAttribute('aria-label', 'Close');
-  // Inline SVG × — pixel-exact centering regardless of font metrics.
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-  const closeIcon = document.createElementNS(SVG_NS, 'svg');
-  closeIcon.setAttribute('viewBox', '0 0 20 20');
-  closeIcon.setAttribute('width', '16');
-  closeIcon.setAttribute('height', '16');
-  closeIcon.setAttribute('fill', 'none');
-  closeIcon.setAttribute('aria-hidden', 'true');
-  const closePath = document.createElementNS(SVG_NS, 'path');
-  closePath.setAttribute('d', 'M5 5 L15 15 M15 5 L5 15');
-  closePath.setAttribute('stroke', 'currentColor');
-  closePath.setAttribute('stroke-width', '2');
-  closePath.setAttribute('stroke-linecap', 'round');
-  closePath.setAttribute('fill', 'none');
-  closeIcon.appendChild(closePath);
-  closeBtn.appendChild(closeIcon);
+  // Text × — same approach as the toolbar buttons, which render reliably.
+  closeBtn.textContent = '×';
   closeBtn.addEventListener('click', (evt) => {
     evt.stopPropagation();
     closeLightbox();
