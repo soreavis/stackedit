@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: 2026-04-17_
+_Last updated: 2026-04-21_
 
 This policy covers the community fork of StackEdit maintained at
 [`github.com/soreavis/stackedit`](https://github.com/soreavis/stackedit) and
@@ -24,6 +24,11 @@ By default, StackEdit stores everything locally using the browser's
 
 None of this is transmitted to a server operated by this fork. Clearing your
 browser's site data removes it.
+
+Files you drag-and-drop onto the file explorer panel are read in your browser
+via the standard `FileReader` / `FileSystemEntry` APIs and stored in the same
+local workspace. Their contents are never sent to a server operated by this
+fork.
 
 ## What leaves your browser (only if you opt in)
 
