@@ -111,9 +111,10 @@ const LIGHTBOX_STYLES = `
   display: flex;
   gap: 6px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(20, 20, 22, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 .mermaid-lightbox-tool {
   min-width: 36px;
@@ -121,15 +122,15 @@ const LIGHTBOX_STYLES = `
   padding: 0 10px;
   border: 0;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   color: #fff;
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
   font-family: inherit;
 }
-.mermaid-lightbox-tool:hover { background: rgba(255, 255, 255, 0.3); }
-.mermaid-lightbox-tool.is-success { background: rgba(50, 180, 80, 0.5); }
+.mermaid-lightbox-tool:hover { background: rgba(255, 255, 255, 0.28); }
+.mermaid-lightbox-tool.is-success { background: rgba(50, 180, 80, 0.6); }
 .mermaid-lightbox-close {
   position: fixed;
   top: 16px;
@@ -169,12 +170,13 @@ const LIGHTBOX_STYLES = `
   left: 50%;
   transform: translateX(-50%);
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.85);
+  background: rgba(20, 20, 22, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
   border-radius: 6px;
   font-size: 12px;
   pointer-events: none;
-  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 @media print {
   .mermaid-wrapper-actions { display: none !important; }
