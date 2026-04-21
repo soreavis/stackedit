@@ -271,8 +271,13 @@ function openLightbox(sourceSvg, sourceText) {
   overlay.setAttribute('aria-label', 'Enlarged diagram');
 
   const clone = sourceSvg.cloneNode(true);
-  // Keep mermaid's intrinsic width/height so the browser can render the SVG
-  // at its natural CSS-pixel size before we measure and scale it.
+  // Strip mermaid's own sizing hints. It emits `width="100%"` plus an inline
+  // `style="max-width: <natural>px"` which, left in place, clamps our
+  // style.width on zoom → diagram can't grow past its intrinsic size. We
+  // drive layout entirely from style.width / style.height ourselves.
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  clone.removeAttribute('style');
   overlay.appendChild(clone);
 
   // Toolbar (top-left)
@@ -318,17 +323,16 @@ function openLightbox(sourceSvg, sourceText) {
   document.body.appendChild(overlay);
   activeOverlay = overlay;
 
-  // Measure the SVG's natural rendered size (CSS pixels) AFTER it is in the
-  // DOM but BEFORE any transform is applied. This is the correct unit for
-  // fit-to-viewport math — SVG internal coordinates (getBBox) would be wrong
-  // whenever viewBox scaling differs from 1:1.
+  // Natural SVG size = viewBox dimensions. That's what we treat as "100%"
+  // for fit-to-viewport math and for scaling on zoom. Reading viewBox is
+  // more reliable than measuring the rendered box, since a freshly-stripped
+  // SVG with no width/height defaults to a browser-chosen size.
   const vw = overlay.clientWidth || window.innerWidth;
   const vh = overlay.clientHeight || window.innerHeight;
-  const rect = clone.getBoundingClientRect();
-  const attrW = parseFloat(clone.getAttribute('width')) || 0;
-  const attrH = parseFloat(clone.getAttribute('height')) || 0;
-  const svgW = rect.width || attrW || 400;
-  const svgH = rect.height || attrH || 300;
+  const vb = sourceSvg.viewBox && sourceSvg.viewBox.baseVal;
+  const fallbackRect = sourceSvg.getBoundingClientRect();
+  const svgW = (vb && vb.width) || fallbackRect.width || 400;
+  const svgH = (vb && vb.height) || fallbackRect.height || 300;
 
   // Fit-to-viewport with a ~2.5% gutter on each side.
   const fitScale = Math.min(vw / svgW, vh / svgH) * 0.95;
@@ -374,9 +378,9 @@ function openLightbox(sourceSvg, sourceText) {
   toolbar.appendChild(mkToolBtn('−', 'Zoom out', () => zoomCenter(0.8)));
   toolbar.appendChild(mkToolBtn('⤾', 'Reset view', resetView));
   if (sourceText) {
-    const copyBtn = mkToolBtn('Copy', 'Copy diagram source', async (btn) => {
+    const copyBtn = mkToolBtn('⧉', 'Copy diagram source', async (btn) => {
       const ok = await copyText(sourceText);
-      if (ok) flashSuccess(btn, 'Copy');
+      if (ok) flashSuccess(btn, '⧉');
     });
     toolbar.appendChild(copyBtn);
   }
