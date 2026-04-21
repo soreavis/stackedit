@@ -9,7 +9,13 @@ vi.mock('../../../src/services/utils.js', () => ({
 }));
 
 const { __test__ } = await import('../../../src/extensions/mermaidExtension.js');
-const { addLightboxButton, closeLightbox } = __test__;
+const {
+  addLightboxButton,
+  closeLightbox,
+  serializeSvg,
+  diagramFilename,
+  replaceForeignObjectsWithText,
+} = __test__;
 
 const mkWrapperWithSvg = () => {
   const wrapper = document.createElement('div');
@@ -190,5 +196,76 @@ describe('mermaid lightbox toolbar copy', () => {
     copyBtn.click();
     await Promise.resolve();
     expect(writeText).toHaveBeenCalledWith(src);
+  });
+});
+
+describe('mermaid export helpers', () => {
+  const mkSvgWithViewBox = () => {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 200 100');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('style', 'max-width: 200px;');
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('width', '50');
+    rect.setAttribute('height', '30');
+    svg.appendChild(rect);
+    document.body.appendChild(svg);
+    return svg;
+  };
+
+  it('diagramFilename produces a timestamped name with the requested extension', () => {
+    const name = diagramFilename('svg');
+    expect(name).toMatch(/^mermaid-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.svg$/);
+    expect(diagramFilename('png')).toMatch(/\.png$/);
+  });
+
+  it('serializeSvg emits an XML prolog + namespace-qualified SVG', () => {
+    const svg = mkSvgWithViewBox();
+    const out = serializeSvg(svg);
+    expect(out.startsWith('<?xml version="1.0"')).toBe(true);
+    expect(out).toContain('xmlns="http://www.w3.org/2000/svg"');
+    expect(out).toContain('<rect');
+  });
+
+  it('serializeSvg pins width/height to viewBox dims and strips inline style', () => {
+    const svg = mkSvgWithViewBox();
+    const out = serializeSvg(svg);
+    expect(out).toContain('width="200"');
+    expect(out).toContain('height="100"');
+    expect(out).not.toContain('max-width');
+  });
+
+  it('serializeSvg does not mutate the source node', () => {
+    const svg = mkSvgWithViewBox();
+    const beforeStyle = svg.getAttribute('style');
+    const beforeWidth = svg.getAttribute('width');
+    serializeSvg(svg);
+    expect(svg.getAttribute('style')).toBe(beforeStyle);
+    expect(svg.getAttribute('width')).toBe(beforeWidth);
+  });
+
+  it('replaceForeignObjectsWithText swaps each <foreignObject> for an SVG <text> of its text', () => {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    const fo = document.createElementNS(ns, 'foreignObject');
+    fo.setAttribute('x', '10');
+    fo.setAttribute('y', '20');
+    fo.setAttribute('width', '100');
+    fo.setAttribute('height', '40');
+    fo.textContent = '  Hello World  ';
+    svg.appendChild(fo);
+
+    replaceForeignObjectsWithText(svg);
+
+    expect(svg.querySelector('foreignObject')).toBeNull();
+    const text = svg.querySelector('text');
+    expect(text).toBeTruthy();
+    expect(text.textContent).toBe('Hello World');
+    // Centered in the foreignObject's bounding box (x+w/2, y+h/2)
+    expect(parseFloat(text.getAttribute('x'))).toBe(60);
+    expect(parseFloat(text.getAttribute('y'))).toBe(40);
+    expect(text.getAttribute('text-anchor')).toBe('middle');
+    expect(text.getAttribute('dominant-baseline')).toBe('central');
   });
 });
