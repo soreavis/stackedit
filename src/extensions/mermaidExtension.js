@@ -140,7 +140,7 @@ const LIGHTBOX_STYLES = `
   padding: 0;
   box-sizing: border-box;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: 999px;
   background: rgba(20, 20, 22, 0.88);
   color: #fff;
   cursor: pointer;
@@ -295,22 +295,17 @@ function openLightbox(sourceSvg, sourceText) {
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const closeIcon = document.createElementNS(SVG_NS, 'svg');
   closeIcon.setAttribute('viewBox', '0 0 20 20');
-  closeIcon.setAttribute('width', '18');
-  closeIcon.setAttribute('height', '18');
+  closeIcon.setAttribute('width', '16');
+  closeIcon.setAttribute('height', '16');
+  closeIcon.setAttribute('fill', 'none');
   closeIcon.setAttribute('aria-hidden', 'true');
-  const mkLine = (x1, y1, x2, y2) => {
-    const l = document.createElementNS(SVG_NS, 'line');
-    l.setAttribute('x1', x1);
-    l.setAttribute('y1', y1);
-    l.setAttribute('x2', x2);
-    l.setAttribute('y2', y2);
-    l.setAttribute('stroke', 'currentColor');
-    l.setAttribute('stroke-width', '2');
-    l.setAttribute('stroke-linecap', 'round');
-    return l;
-  };
-  closeIcon.appendChild(mkLine(5, 5, 15, 15));
-  closeIcon.appendChild(mkLine(15, 5, 5, 15));
+  const closePath = document.createElementNS(SVG_NS, 'path');
+  closePath.setAttribute('d', 'M5 5 L15 15 M15 5 L5 15');
+  closePath.setAttribute('stroke', 'currentColor');
+  closePath.setAttribute('stroke-width', '2');
+  closePath.setAttribute('stroke-linecap', 'round');
+  closePath.setAttribute('fill', 'none');
+  closeIcon.appendChild(closePath);
   closeBtn.appendChild(closeIcon);
   closeBtn.addEventListener('click', (evt) => {
     evt.stopPropagation();
