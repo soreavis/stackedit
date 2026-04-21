@@ -7,6 +7,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 ## [Unreleased]
 
 ### Added
+- **Drag-and-drop import**: drop `.md` / `.markdown` files (or whole folders of them) onto the file explorer panel to import them. Drop target determines the destination — drop on a folder lands inside it, drop on a file lands in its parent, drop on the empty area lands at the workspace root. Folder structure is mirrored; non-markdown files are silently skipped. Uses `FileReader` + `FileSystemEntry`, no network.
 - **Mermaid diagram lightbox**: each rendered Mermaid diagram gets a hover-revealed "⤢ Enlarge" and "⧉ Copy source" button. Enlarge opens a fullscreen viewer that defaults to fit-to-viewport with drag-to-pan, scroll-to-zoom (cursor-anchored), and a toolbar for zoom in / zoom out / reset / copy source. Double-click the diagram to reset to fit. Esc or the × button closes. The copy button writes the original Mermaid source to the clipboard for pasting into external tools (mermaid.live, etc.).
 
 ## [5.15.5-fork.1] - 2026-04-17
