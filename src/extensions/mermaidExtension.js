@@ -234,6 +234,169 @@ function flashSuccess(btn, originalText) {
   }, 1200);
 }
 
+// -------- Export helpers (SVG + PNG) --------
+
+// Build a portable, self-contained SVG string from the rendered diagram.
+// Mermaid already inlines its fonts and styles via a <style> child, so no
+// external fetches are needed — the resulting file opens in any viewer.
+function serializeSvg(sourceSvg) {
+  const clone = sourceSvg.cloneNode(true);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  // Strip any layout styles the lightbox may have set on the live node.
+  clone.removeAttribute('style');
+  const vb = sourceSvg.viewBox && sourceSvg.viewBox.baseVal;
+  if (vb && vb.width && vb.height) {
+    // Pin intrinsic dimensions so external viewers render at a sane size.
+    clone.setAttribute('width', vb.width);
+    clone.setAttribute('height', vb.height);
+  }
+  return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n${new XMLSerializer().serializeToString(clone)}`;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Revoke on next tick so the browser has time to dispatch the download.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function diagramFilename(ext) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  return `mermaid-${stamp}.${ext}`;
+}
+
+function exportSvg(sourceSvg) {
+  const svgText = serializeSvg(sourceSvg);
+  const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+  downloadBlob(blob, diagramFilename('svg'));
+}
+
+// Drawing an SVG containing <foreignObject> onto a <canvas> taints the canvas
+// (browsers treat foreignObject content as a potential cross-origin vector),
+// so `canvas.toBlob()` throws SecurityError. Mermaid's flowchart labels live
+// in foreignObject → we replace each with a plain SVG <text> of the same
+// label text before rasterizing. Visual fidelity drops slightly (no bold/
+// italic emphasis) but the node labels — including multi-line breaks — are
+// preserved, which is what matters for a PNG export.
+
+// Walk a foreignObject DOM and produce the label text as an array of lines,
+// splitting on <br> elements and block-level children (<div>, <p>).
+function extractLabelLines(root) {
+  const lines = [];
+  let current = '';
+  const push = () => {
+    const trimmed = current.replace(/\s+/g, ' ').trim();
+    if (trimmed) lines.push(trimmed);
+    current = '';
+  };
+  const walk = (node) => {
+    if (node.nodeType === 3) { // Node.TEXT_NODE
+      current += node.textContent;
+      return;
+    }
+    if (node.nodeType !== 1) return; // Non-element, non-text: skip.
+    const tag = node.tagName.toUpperCase();
+    if (tag === 'BR') {
+      push();
+      return;
+    }
+    const isBlock = tag === 'P' || tag === 'DIV';
+    if (isBlock) push();
+    node.childNodes.forEach(walk);
+    if (isBlock) push();
+  };
+  walk(root);
+  push();
+  return lines.length ? lines : [''];
+}
+
+function replaceForeignObjectsWithText(svg) {
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const LINE_HEIGHT = 16;
+  const FONT_SIZE = 14;
+  const foreignObjects = svg.querySelectorAll('foreignObject');
+  foreignObjects.forEach((fo) => {
+    const x = parseFloat(fo.getAttribute('x')) || 0;
+    const y = parseFloat(fo.getAttribute('y')) || 0;
+    const w = parseFloat(fo.getAttribute('width')) || 0;
+    const h = parseFloat(fo.getAttribute('height')) || 0;
+    const lines = extractLabelLines(fo);
+
+    const cx = x + w / 2;
+    // Vertically center the block of lines inside the foreignObject's box.
+    const blockHeight = lines.length * LINE_HEIGHT;
+    const firstBaselineY = y + h / 2 - blockHeight / 2 + LINE_HEIGHT * 0.8;
+
+    const replacement = document.createElementNS(SVG_NS, 'text');
+    replacement.setAttribute('x', cx);
+    replacement.setAttribute('y', firstBaselineY);
+    replacement.setAttribute('text-anchor', 'middle');
+    replacement.setAttribute('font-family', '"trebuchet ms", verdana, arial, sans-serif');
+    replacement.setAttribute('font-size', String(FONT_SIZE));
+    replacement.setAttribute('fill', '#000');
+
+    lines.forEach((line, i) => {
+      const tspan = document.createElementNS(SVG_NS, 'tspan');
+      tspan.setAttribute('x', cx);
+      if (i > 0) tspan.setAttribute('dy', String(LINE_HEIGHT));
+      tspan.textContent = line;
+      replacement.appendChild(tspan);
+    });
+
+    fo.parentNode.replaceChild(replacement, fo);
+  });
+  return svg;
+}
+
+async function exportPng(sourceSvg, _sourceText, scale = 3) {
+  let svgForExport = sourceSvg;
+  if (sourceSvg.querySelector('foreignObject')) {
+    // Work on a disposable clone; don't mutate the live preview SVG.
+    svgForExport = sourceSvg.cloneNode(true);
+    replaceForeignObjectsWithText(svgForExport);
+  }
+
+  const vb = svgForExport.viewBox && svgForExport.viewBox.baseVal;
+  const naturalW = (vb && vb.width) || svgForExport.clientWidth || 400;
+  const naturalH = (vb && vb.height) || svgForExport.clientHeight || 300;
+
+  const svgText = serializeSvg(svgForExport);
+  const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  try {
+    const img = new Image();
+    img.decoding = 'sync';
+    await new Promise((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('SVG image load failed'));
+      img.src = url;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(naturalW * scale);
+    canvas.height = Math.round(naturalH * scale);
+    const ctx = canvas.getContext('2d');
+    // Opaque white background — diagrams are designed against white.
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const pngBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+    });
+    downloadBlob(pngBlob, diagramFilename('png'));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 // -------- Lightbox (pan + zoom) --------
 
 let activeOverlay = null;
@@ -373,7 +536,7 @@ function openLightbox(sourceSvg, sourceText) {
     apply();
   };
 
-  // Toolbar: zoom in, zoom out, reset, copy-source
+  // Toolbar: zoom in, zoom out, reset, copy-source, export
   toolbar.appendChild(mkToolBtn('+', 'Zoom in', () => zoomCenter(1.25)));
   toolbar.appendChild(mkToolBtn('−', 'Zoom out', () => zoomCenter(0.8)));
   toolbar.appendChild(mkToolBtn('⤾', 'Reset view', resetView));
@@ -384,6 +547,22 @@ function openLightbox(sourceSvg, sourceText) {
     });
     toolbar.appendChild(copyBtn);
   }
+  toolbar.appendChild(mkToolBtn('SVG', 'Download as SVG', (btn) => {
+    try {
+      exportSvg(sourceSvg);
+      flashSuccess(btn, 'SVG');
+    } catch (e) {
+      console.error('SVG export failed:', e);
+    }
+  }));
+  toolbar.appendChild(mkToolBtn('PNG', 'Download as PNG (3×)', async (btn) => {
+    try {
+      await exportPng(sourceSvg, sourceText, 3);
+      flashSuccess(btn, 'PNG');
+    } catch (e) {
+      console.error('PNG export failed:', e);
+    }
+  }));
 
   // Wheel zoom (cursor-anchored). exp-of-deltaY gives mouse wheels ~5%/tick
   // and trackpads sub-percent increments — smooth on both.
@@ -516,4 +695,7 @@ export const __test__ = {
   closeLightbox,
   addLightboxButton,
   copyText,
+  serializeSvg,
+  diagramFilename,
+  replaceForeignObjectsWithText,
 };
