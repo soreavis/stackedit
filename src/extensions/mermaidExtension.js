@@ -96,6 +96,7 @@ const LIGHTBOX_STYLES = `
   cursor: grab;
 }
 .mermaid-lightbox-overlay--dragging { cursor: grabbing; }
+.mermaid-lightbox-overlay--light { background: #fff; }
 /* Direct-child selector: applies only to the enlarged diagram SVG, not
    to any icon SVGs inside toolbar/close buttons. Early iterations used
    a plain descendant selector here, which painted a white background
@@ -536,10 +537,17 @@ function openLightbox(sourceSvg, sourceText) {
     apply();
   };
 
-  // Toolbar: zoom in, zoom out, reset, copy-source, export
+  // Toolbar: zoom in, zoom out, reset, toggle background, copy-source, export
   toolbar.appendChild(mkToolBtn('+', 'Zoom in', () => zoomCenter(1.25)));
   toolbar.appendChild(mkToolBtn('−', 'Zoom out', () => zoomCenter(0.8)));
   toolbar.appendChild(mkToolBtn('⤾', 'Reset view', resetView));
+  const bgBtn = mkToolBtn('☀', 'Toggle background (light / dark)', (btn) => {
+    const isLight = overlay.classList.toggle('mermaid-lightbox-overlay--light');
+    btn.textContent = isLight ? '☾' : '☀';
+    btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+  });
+  bgBtn.setAttribute('aria-pressed', 'false');
+  toolbar.appendChild(bgBtn);
   if (sourceText) {
     const copyBtn = mkToolBtn('⧉', 'Copy diagram source', async (btn) => {
       const ok = await copyText(sourceText);
