@@ -3,3 +3,4 @@ import './abcExtension';
 import './katexExtension';
 import './markdownExtension';
 import './mermaidExtension';
+import './codeBlockExtension';
