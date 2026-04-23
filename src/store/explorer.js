@@ -194,24 +194,30 @@ export default {
     setDragTarget({ commit, getters, dispatch }, node) {
       if (!node) {
         commit('setDragTargetId');
-      } else {
-        // Make sure target node is not a child of source node
-        const folderNode = getFolder(node, getters);
-        const sourceId = getters.dragSourceNode.item.id;
-        const { nodeMap } = getters;
-        for (let parentNode = folderNode;
-          parentNode;
-          parentNode = nodeMap[parentNode.item.parentId]
-        ) {
-          if (parentNode.item.id === sourceId) {
-            commit('setDragTargetId');
-            return;
-          }
-        }
-
-        commit('setDragTargetId', node.item.id);
-        dispatch('openDragTarget');
+        return;
       }
+      // Root has no real id; route through the 'fake' sentinel so
+      // dragTargetNodeFolder resolves back to rootNode (see getters).
+      if (node.isRoot) {
+        commit('setDragTargetId', 'fake');
+        return;
+      }
+      // Make sure target node is not a child of source node
+      const folderNode = getFolder(node, getters);
+      const sourceId = getters.dragSourceNode.item.id;
+      const { nodeMap } = getters;
+      for (let parentNode = folderNode;
+        parentNode;
+        parentNode = nodeMap[parentNode.item.parentId]
+      ) {
+        if (parentNode.item.id === sourceId) {
+          commit('setDragTargetId');
+          return;
+        }
+      }
+
+      commit('setDragTargetId', node.item.id);
+      dispatch('openDragTarget');
     },
   },
 };
