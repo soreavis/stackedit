@@ -6,6 +6,9 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+### Changed
+- **Drag-and-drop to workspace root**: the entire empty area of the file explorer is now a drop zone for "move to document root". Drag any folder or file onto the explorer background (or hover over the root itself during a drag) to move it back to the top level. Previously the only drop target for root was a barely-visible 20 px strip at the bottom of the root file list. A subtle blue inset border highlights the tree while root is the active drop target.
+
 ### Added
 - **Drag-and-drop import**: drop `.md` / `.markdown` files (or whole folders of them) onto the file explorer panel to import them. Drop target determines the destination — drop on a folder lands inside it, drop on a file lands in its parent, drop on the empty area lands at the workspace root. Folder structure is mirrored; non-markdown files are silently skipped. Uses `FileReader` + `FileSystemEntry`, no network.
 - **Mermaid diagram lightbox**: each rendered Mermaid diagram gets a hover-revealed "⤢ Enlarge" and "⧉ Copy source" button. Enlarge opens a fullscreen viewer that defaults to fit-to-viewport with drag-to-pan, scroll-to-zoom (cursor-anchored), and a toolbar for zoom in / zoom out / reset / copy source. Double-click the diagram to reset to fit. Esc or the × button closes. The copy button writes the original Mermaid source to the clipboard for pasting into external tools (mermaid.live, etc.).
