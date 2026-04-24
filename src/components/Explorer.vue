@@ -14,11 +14,11 @@
         <button class="side-title__button side-title__button--rename button" v-show="!isMultiSelect" :disabled="!canRename" @click="editItem()" v-title="'Rename'">
           <icon-pen></icon-pen>
         </button>
-        <button class="side-title__button button" @click="expandAll" v-title="'Expand all folders'">
-          <icon-folder-plus></icon-folder-plus><span class="side-title__button-plus">+</span>
+        <button class="side-title__button side-title__button--tree-glyph button" @click="expandAll" v-title="'Expand all folders'">
+          <span class="side-title__tree-glyph">⊞</span>
         </button>
-        <button class="side-title__button button" @click="collapseAll" v-title="'Collapse all folders'">
-          <icon-folder></icon-folder><span class="side-title__button-plus">−</span>
+        <button class="side-title__button side-title__button--tree-glyph button" @click="collapseAll" v-title="'Collapse all folders'">
+          <span class="side-title__tree-glyph">⊟</span>
         </button>
         <button class="side-title__button button" @click="cycleSort" v-title="`Sort: ${sortLabel} (click to cycle)`">
           <span class="side-title__sort-glyph">{{ sortGlyph }}</span>
@@ -53,6 +53,7 @@
       v-if="!light"
       tabindex="0"
       @keydown.delete="deleteItem()"
+      @keydown="onTreeKeyDown"
       @mousedown="onTreeMouseDown"
       @dragover.prevent
       @dragenter="onTreeDragEnter"
@@ -158,6 +159,97 @@ export default {
       const current = this.sortMode;
       const next = order[(order.indexOf(current) + 1) % order.length];
       store.dispatch('data/patchLocalSettings', { explorerSort: next });
+    },
+    visibleNodeIds() {
+      const els = this.$refs.tree
+        ? Array.from(this.$refs.tree.querySelectorAll('.explorer-node__item[data-node-id]'))
+        : [];
+      return els
+        .map(el => el.getAttribute('data-node-id'))
+        .filter(id => id && id !== 'fake' && id !== 'trash' && id !== 'temp' && id !== 'recent');
+    },
+    onTreeKeyDown(evt) {
+      // Let the Delete-key handler on the template own removal.
+      if (evt.key === 'Delete' || evt.key === 'Backspace') return;
+
+      const primaryId = store.state.explorer.selectedId;
+      const ids = this.visibleNodeIds();
+
+      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+        if (!ids.length) return;
+        evt.preventDefault();
+        const currentIdx = ids.indexOf(primaryId);
+        const step = evt.key === 'ArrowDown' ? 1 : -1;
+        let nextIdx = currentIdx === -1
+          ? (step > 0 ? 0 : ids.length - 1)
+          : Math.max(0, Math.min(ids.length - 1, currentIdx + step));
+        const nextId = ids[nextIdx];
+        if (evt.shiftKey && primaryId && primaryId !== nextId) {
+          // Build range from anchor (primaryId) to next in visible order.
+          const a = ids.indexOf(primaryId);
+          const b = nextIdx;
+          const [lo, hi] = a < b ? [a, b] : [b, a];
+          store.commit('explorer/setSelectedIds', ids.slice(lo, hi + 1));
+          store.commit('explorer/setSelectedId', nextId);
+        } else {
+          store.commit('explorer/setSelectedIds', [nextId]);
+        }
+        this.$nextTick(() => {
+          const el = this.$refs.tree && this.$refs.tree
+            .querySelector(`.explorer-node__item[data-node-id="${nextId}"]`);
+          if (el) el.scrollIntoView({ block: 'nearest' });
+        });
+        return;
+      }
+
+      if (evt.key === 'Enter') {
+        if (!primaryId) return;
+        evt.preventDefault();
+        const node = store.getters['explorer/nodeMap'][primaryId];
+        if (!node) return;
+        if (node.isFolder) {
+          store.commit('explorer/toggleOpenNode', primaryId);
+        } else {
+          store.commit('file/setCurrentId', primaryId);
+        }
+        return;
+      }
+
+      if (evt.key === 'F2') {
+        if (!primaryId) return;
+        const node = store.getters['explorer/nodeMap'][primaryId];
+        if (!node || node.isTrash || node.isTemp || node.isRecent) return;
+        evt.preventDefault();
+        store.commit('explorer/setEditingId', primaryId);
+        return;
+      }
+
+      if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === 'd') {
+        if (!primaryId) return;
+        const node = store.getters['explorer/nodeMap'][primaryId];
+        if (!node || node.isFolder) return;
+        evt.preventDefault();
+        this.duplicatePrimary();
+      }
+    },
+    async duplicatePrimary() {
+      const primaryId = store.state.explorer.selectedId;
+      if (!primaryId) return;
+      const original = store.state.file.itemsById[primaryId];
+      if (!original) return;
+      try {
+        const localDbSvc = (await import('../services/localDbSvc')).default;
+        const content = await localDbSvc.loadItem(`${original.id}/content`);
+        const copy = await workspaceSvc.createFile({
+          name: `${original.name} (copy)`,
+          parentId: original.parentId || null,
+          text: (content && content.text) || '',
+          properties: (content && content.properties) || '',
+        }, true);
+        store.commit('file/setCurrentId', copy.id);
+      } catch (e) {
+        console.error(e);
+      }
     },
     editItem() {
       const node = this.selectedNode;
@@ -322,17 +414,13 @@ export default {
   flex-shrink: 0;
 }
 
-.side-title__button-plus {
-  font-size: 9px;
-  margin-left: -2px;
-  line-height: 1;
-  align-self: flex-start;
-}
-
+.side-title__tree-glyph,
 .side-title__sort-glyph {
-  font-size: 11px;
+  font-size: 20px;
   font-weight: 600;
   font-family: inherit;
+  line-height: 1;
+  display: inline-block;
 }
 
 .explorer__search-input {

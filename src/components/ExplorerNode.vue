@@ -3,7 +3,7 @@
     <div class="explorer-node__item-editor" v-if="isEditing" :style="{paddingLeft: leftPadding}" draggable="true" @dragstart.stop.prevent>
       <input type="text" class="text-input" v-focus @blur="submitEdit()" @keydown.stop @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingNodeName">
     </div>
-    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="setDragTarget()"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span>
+    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span>
       <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
     </div>
     <div class="explorer-node__children" v-if="node.isFolder && isOpen">
@@ -227,6 +227,33 @@ export default {
       // Fix for Firefox
       // See https://stackoverflow.com/a/3977637/1333165
       evt.dataTransfer.setData('Text', '');
+
+      // If the file's content is already loaded in memory, attach a
+      // DownloadURL + text/plain payload so dragging onto the OS /
+      // Finder / desktop produces a real .md file. No-op for folders,
+      // multi-select drags, and unloaded files.
+      if (!this.node.isFolder && !isInMulti) {
+        const entry = store.state.content.itemsById[`${id}/content`];
+        if (entry && typeof entry.text === 'string') {
+          try {
+            const blob = new Blob([entry.text], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const filename = `${this.node.item.name || 'untitled'}.md`;
+            evt.dataTransfer.setData('DownloadURL', `text/markdown:${filename}:${url}`);
+            evt.dataTransfer.setData('text/plain', entry.text);
+            this._dragBlobUrl = url;
+          } catch (e) {
+            // Swallow — internal drag still works.
+          }
+        }
+      }
+    },
+    onDragEnd() {
+      this.setDragTarget();
+      if (this._dragBlobUrl) {
+        URL.revokeObjectURL(this._dragBlobUrl);
+        this._dragBlobUrl = null;
+      }
     },
     async submitNewChild(cancel) {
       const { newChildNode } = store.state.explorer;
@@ -513,6 +540,19 @@ $item-font-size: 14px;
   font-size: 0.7em;
   margin-left: 4px;
   opacity: 0.7;
+}
+
+.explorer-node__ts {
+  float: right;
+  margin-left: 6px;
+  font-size: 0.7em;
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+
+  .explorer__tree:focus .explorer-node--selected > .explorer-node__item & {
+    opacity: 0.85;
+    color: rgba(255, 255, 255, 0.9);
+  }
 }
 
 .explorer-node--recent > .explorer-node__item {

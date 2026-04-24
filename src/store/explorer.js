@@ -235,11 +235,22 @@ export default {
         .map(([id]) => id)
         .filter(id => nodeMap[id] && !nodeMap[id].isFolder && nodeMap[id].item.parentId !== 'trash')
         .slice(0, 10);
+      const formatRelative = (ts) => {
+        if (!ts) return '';
+        const diff = Date.now() - ts;
+        const min = 60000;
+        if (diff < min) return 'now';
+        if (diff < 60 * min) return `${Math.round(diff / min)}m`;
+        if (diff < 24 * 60 * min) return `${Math.round(diff / (60 * min))}h`;
+        if (diff < 7 * 24 * 60 * min) return `${Math.round(diff / (24 * 60 * min))}d`;
+        return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      };
       recentFolderNode.files = recentIds.map((id) => {
         const original = nodeMap[id];
         const clone = new Node(original.item, original.locations);
         clone.parentNode = recentFolderNode;
         clone.noDrag = true;
+        clone.recentLabel = formatRelative(lastOpened[id]);
         return clone;
       });
       recentFolderNode.fileCount = recentFolderNode.files.length;
