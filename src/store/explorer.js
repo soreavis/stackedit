@@ -60,17 +60,48 @@ export default {
   namespaced: true,
   state: {
     selectedId: null,
+    selectedIds: {}, // map of id → true; includes the primary selectedId
     editingId: null,
     dragSourceId: null,
+    dragSourceIds: [], // ordered list for multi-drag; falls back to [dragSourceId]
     dragTargetId: null,
     newChildNode: nilFileNode,
     openNodes: {},
+    searchQuery: '',
+    userClosedFile: false, // set when user explicitly closes current file
   },
   mutations: {
     setSelectedId: setter('selectedId'),
+    setSelectedIds(state, ids) {
+      const map = {};
+      (ids || []).forEach((id) => { if (id) map[id] = true; });
+      state.selectedIds = map;
+      // Keep selectedId inside the set — pick last if it drifted out.
+      if (!state.selectedId || !map[state.selectedId]) {
+        state.selectedId = ids && ids.length ? ids[ids.length - 1] : null;
+      }
+    },
+    toggleSelectedId(state, id) {
+      if (!id) return;
+      const next = { ...state.selectedIds };
+      if (next[id]) {
+        delete next[id];
+        if (state.selectedId === id) {
+          const keys = Object.keys(next);
+          state.selectedId = keys[keys.length - 1] || null;
+        }
+      } else {
+        next[id] = true;
+        state.selectedId = id;
+      }
+      state.selectedIds = next;
+    },
     setEditingId: setter('editingId'),
     setDragSourceId: setter('dragSourceId'),
+    setDragSourceIds: setter('dragSourceIds'),
     setDragTargetId: setter('dragTargetId'),
+    setSearchQuery: setter('searchQuery'),
+    setUserClosedFile: setter('userClosedFile'),
     setNewItem(state, item) {
       state.newChildNode = item ? new Node(item, [], item.type === 'folder') : nilFileNode;
     },
@@ -158,6 +189,35 @@ export default {
     newChildNodeParent: (state, getters) => getParent(state.newChildNode, getters),
     selectedNode: ({ selectedId }, { nodeMap }) => nodeMap[selectedId] || nilFileNode,
     selectedNodeFolder: (state, getters) => getFolder(getters.selectedNode, getters),
+    selectedNodes: ({ selectedIds }, { nodeMap }) => Object.keys(selectedIds)
+      .map(id => nodeMap[id])
+      .filter(node => node && !node.isNil),
+    searchMatchIds: ({ searchQuery }, { rootNode }) => {
+      const q = (searchQuery || '').trim().toLowerCase();
+      if (!q) return null;
+      const matches = new Set();
+      const visit = (node) => {
+        if (!node || !node.item) return false;
+        let any = false;
+        if (node.item.name && node.item.name.toLowerCase().includes(q)) {
+          matches.add(node.item.id);
+          any = true;
+        }
+        if (node.isFolder) {
+          node.folders.forEach((child) => {
+            if (visit(child)) any = true;
+          });
+          (node.files || []).forEach((child) => {
+            if (child.item.id === 'fake') return;
+            if (visit(child)) any = true;
+          });
+          if (any && node.item.id) matches.add(node.item.id);
+        }
+        return any;
+      };
+      visit(rootNode);
+      return matches;
+    },
     editingNode: ({ editingId }, { nodeMap }) => nodeMap[editingId] || nilFileNode,
     dragSourceNode: ({ dragSourceId }, { nodeMap }) => nodeMap[dragSourceId] || nilFileNode,
     dragTargetNode: ({ dragTargetId }, { nodeMap }) => {
@@ -191,7 +251,7 @@ export default {
     openDragTarget: debounceAction(({ state, dispatch }) => {
       dispatch('openNode', state.dragTargetId);
     }, 1000),
-    setDragTarget({ commit, getters, dispatch }, node) {
+    setDragTarget({ state, commit, getters, dispatch }, node) {
       if (!node) {
         commit('setDragTargetId');
         return;
@@ -202,15 +262,17 @@ export default {
         commit('setDragTargetId', 'fake');
         return;
       }
-      // Make sure target node is not a child of source node
+      // Make sure target folder is not a descendant of any dragged source.
       const folderNode = getFolder(node, getters);
-      const sourceId = getters.dragSourceNode.item.id;
+      const sourceIds = state.dragSourceIds && state.dragSourceIds.length
+        ? state.dragSourceIds
+        : [getters.dragSourceNode.item.id];
       const { nodeMap } = getters;
       for (let parentNode = folderNode;
         parentNode;
         parentNode = nodeMap[parentNode.item.parentId]
       ) {
-        if (parentNode.item.id === sourceId) {
+        if (sourceIds.includes(parentNode.item.id)) {
           commit('setDragTargetId');
           return;
         }
