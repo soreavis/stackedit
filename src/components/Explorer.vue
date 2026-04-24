@@ -8,10 +8,10 @@
         <button class="side-title__button side-title__button--new-folder button" @click="newItem(true)" v-title="'New folder'">
           <icon-folder-plus></icon-folder-plus>
         </button>
-        <button class="side-title__button side-title__button--delete button" @click="deleteItem()" v-title="'Delete'">
+        <button class="side-title__button side-title__button--delete button" :disabled="!hasTargetItem" @click="deleteItem()" v-title="'Delete'">
           <icon-delete></icon-delete>
         </button>
-        <button class="side-title__button side-title__button--rename button" @click="editItem()" v-title="'Rename'">
+        <button class="side-title__button side-title__button--rename button" :disabled="!canRename" @click="editItem()" v-title="'Rename'">
           <icon-pen></icon-pen>
         </button>
       </div>
@@ -86,6 +86,16 @@ export default {
     ]),
     isRootDropTarget() {
       return this.dragTargetNodeFolder && this.dragTargetNodeFolder.isRoot;
+    },
+    hasTargetItem() {
+      // Any real node (file or folder) counts; sentinels do not so the
+      // toolbar buttons don't light up when only Trash/Temp is selected.
+      return store.getters['explorer/selectedNodes']
+        .some(n => !n.isNil && !n.isTrash && !n.isTemp && !n.isRoot);
+    },
+    canRename() {
+      const node = this.selectedNode;
+      return !node.isNil && !node.isTrash && !node.isTemp && !node.isRoot;
     },
     searchQuery: {
       get() { return store.state.explorer.searchQuery; },
