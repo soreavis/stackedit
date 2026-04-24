@@ -1,19 +1,45 @@
-// Drag-and-drop import for Markdown files (and folders of them) from the OS
-// into the explorer panel. Folder traversal uses the FileSystemEntry API
-// (webkitGetAsEntry) which is supported across all evergreen browsers.
+// Drag-and-drop import for Markdown and HTML files (and folders of them)
+// from the OS into the explorer panel. Folder traversal uses the
+// FileSystemEntry API (webkitGetAsEntry) which is supported across all
+// evergreen browsers.
 //
-// Non-markdown files are silently skipped. Folders that hit the workspace's
-// reserved-name guard (.stackedit-data, etc.) are skipped without aborting
-// the rest of the import.
+// HTML files are run through DOMPurify + Turndown before storage so the
+// workspace only ever contains Markdown.
+//
+// Unrecognized file types are silently skipped. Folders that hit the
+// workspace's reserved-name guard (.stackedit-data, etc.) are skipped
+// without aborting the rest of the import.
 
+import TurndownService from 'turndown/lib/turndown.browser.umd';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
+import htmlSanitizer from '../libs/htmlSanitizer';
+import store from '../store';
 
 const MD_EXT_RE = /\.(md|markdown|mdown|mkd|mkdn)$/i;
+const HTML_EXT_RE = /\.(html?|xhtml)$/i;
 
 const isMarkdown = file => MD_EXT_RE.test(file.name) || file.type === 'text/markdown';
+const isHtml = file => HTML_EXT_RE.test(file.name)
+  || file.type === 'text/html'
+  || file.type === 'application/xhtml+xml';
 
 const stripMdExt = name => name.replace(MD_EXT_RE, '');
+const stripHtmlExt = name => name.replace(HTML_EXT_RE, '');
+
+let turndownService = null;
+const getTurndown = () => {
+  if (!turndownService) {
+    const settings = (store.getters['data/computedSettings'] || {}).turndown;
+    turndownService = new TurndownService(settings || {});
+  }
+  return turndownService;
+};
+
+const htmlToMarkdown = (html) => {
+  const sanitized = htmlSanitizer.sanitizeHtml(html || '');
+  return getTurndown().turndown(sanitized);
+};
 
 const readAsText = file => new Promise((resolve, reject) => {
   const reader = new FileReader();
@@ -40,14 +66,26 @@ const batch = await new Promise((resolve, reject) => {
 };
 
 const importFile = async (file, parentId) => {
-  if (!isMarkdown(file)) return false;
-  const text = await readAsText(file);
-  await workspaceSvc.createFile({
-    name: stripMdExt(file.name),
-    parentId,
-    text,
-  }, true);
-  return true;
+  if (isMarkdown(file)) {
+    const text = await readAsText(file);
+    await workspaceSvc.createFile({
+      name: stripMdExt(file.name),
+      parentId,
+      text,
+    }, true);
+    return true;
+  }
+  if (isHtml(file)) {
+    const html = await readAsText(file);
+    const markdown = htmlToMarkdown(html);
+    await workspaceSvc.createFile({
+      name: stripHtmlExt(file.name),
+      parentId,
+      text: markdown,
+    }, true);
+    return true;
+  }
+  return false;
 };
 
 const importEntry = async (entry, parentId, counter) => {

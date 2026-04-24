@@ -10,6 +10,14 @@ const config = {
   flowchart: {
     htmlLabels: true,
     curve: 'linear',
+    // Generous padding so shape labels and subgraph titles breathe. The
+    // earlier bumps (20 / 70 / 16 / 10) still read tight around subgraph
+    // titles, so bump padding 20 → 32 and subGraphTitleMargin 10 → 22.
+    padding: 32,
+    nodeSpacing: 80,
+    rankSpacing: 80,
+    diagramPadding: 24,
+    subGraphTitleMargin: { top: 22, bottom: 22 },
   },
   sequence: {
     diagramMarginX: 50,
@@ -54,7 +62,8 @@ function getMermaid() {
 // -------- Styles (injected once) --------
 
 const LIGHTBOX_STYLES = `
-.mermaid-wrapper { position: relative; }
+.mermaid-wrapper { position: relative; text-align: center; }
+.mermaid-wrapper > svg { display: inline-block; max-width: 100%; }
 .mermaid-wrapper-actions {
   position: absolute;
   top: 6px;
@@ -68,8 +77,8 @@ const LIGHTBOX_STYLES = `
 .mermaid-wrapper:hover .mermaid-wrapper-actions,
 .mermaid-wrapper-actions:focus-within { opacity: 1; }
 .mermaid-action-btn {
-  width: 28px;
-  height: 28px;
+  width: 35px;
+  height: 35px;
   padding: 0;
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 4px;
@@ -79,7 +88,7 @@ const LIGHTBOX_STYLES = `
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1;
   font-family: inherit;
 }
@@ -694,8 +703,12 @@ extensionSvc.onGetOptions((options, properties) => {
 });
 
 extensionSvc.onSectionPreview((elt) => {
+  const pending = [];
   elt.querySelectorAll('.prism.language-mermaid')
-    .cl_each(diagramElt => render(diagramElt.parentNode));
+    .cl_each(diagramElt => pending.push(render(diagramElt.parentNode)));
+  // Returned so export callers that await sectionPreview can see the
+  // rendered SVG in innerHTML. Live preview just ignores the promise.
+  return Promise.all(pending);
 });
 
 export const __test__ = {
