@@ -66,20 +66,6 @@ function getMermaid() {
 const LIGHTBOX_STYLES = `
 .mermaid-wrapper { position: relative; text-align: center; }
 .mermaid-wrapper > svg { display: inline-block; max-width: 100%; }
-
-/* Edge-label breathing room. Mermaid emits inline foreignObject labels
-   ("PR review time grows", etc.) with near-zero padding — they end up
-   butting against the edge line. Add symmetric horizontal padding so
-   the label sits inside a small white pill. */
-.mermaid-wrapper .edgeLabel,
-.mermaid-wrapper .edgeLabel p,
-.mermaid-wrapper .labelBkg {
-  padding: 3px 10px !important;
-}
-.mermaid-wrapper .edgeLabel {
-  background-color: rgba(255, 255, 255, 0.92) !important;
-  border-radius: 3px;
-}
 .mermaid-wrapper-actions {
   position: absolute;
   top: 6px;
