@@ -81,5 +81,22 @@ export default {
   // Trash.
   restoreCurrentFile() {
     restoreCurrentId();
+    seedRecentSnapshot();
   },
 };
+
+// Freeze the "Recent" folder ordering at the start of the session so
+// clicking a file (which bumps its lastOpened timestamp) doesn't shuffle
+// the list under the user. Reload reseeds.
+function seedRecentSnapshot() {
+  const lastOpened = store.getters['data/lastOpened'] || {};
+  const snapshot = Object.entries(lastOpened)
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, ts]) => ({ id, ts }))
+    .filter((entry) => {
+      const f = store.state.file.itemsById[entry.id];
+      return f && f.parentId !== 'trash';
+    })
+    .slice(0, 10);
+  store.commit('explorer/setRecentSnapshot', snapshot);
+}
