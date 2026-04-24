@@ -1,10 +1,9 @@
 <template>
-  <div class="explorer-node" :class="{'explorer-node--selected': isSelected, 'explorer-node--folder': node.isFolder, 'explorer-node--open': isOpen, 'explorer-node--trash': node.isTrash, 'explorer-node--temp': node.isTemp, 'explorer-node--drag-target': isDragTargetFolder}" @dragover.prevent @dragenter.stop="node.noDrop || setDragTarget(node)" @dragleave.stop="isDragTarget && setDragTarget()" @drop.prevent.stop="onDrop" @contextmenu="onContextMenu">
+  <div v-if="isVisible" class="explorer-node" :class="{'explorer-node--selected': isSelected, 'explorer-node--primary': isPrimary, 'explorer-node--folder': node.isFolder, 'explorer-node--open': isOpen, 'explorer-node--trash': node.isTrash, 'explorer-node--temp': node.isTemp, 'explorer-node--drag-target': isDragTargetFolder}" @dragover.prevent @dragenter.stop="node.noDrop || setDragTarget(node)" @dragleave.stop="isDragTarget && setDragTarget()" @drop.prevent.stop="onDrop" @contextmenu="onContextMenu">
     <div class="explorer-node__item-editor" v-if="isEditing" :style="{paddingLeft: leftPadding}" draggable="true" @dragstart.stop.prevent>
       <input type="text" class="text-input" v-focus @blur="submitEdit()" @keydown.stop @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingNodeName">
     </div>
-    <div class="explorer-node__item" v-else :style="{paddingLeft: leftPadding}" @click="select()" draggable="true" @dragstart.stop="setDragSourceId" @dragend.stop="setDragTarget()">
-      {{ node.item.name }}
+    <div class="explorer-node__item" v-else :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="setDragTarget()"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span>
       <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
     </div>
     <div class="explorer-node__children" v-if="node.isFolder && isOpen">
@@ -22,6 +21,7 @@ import { mapMutations, mapActions } from 'vuex';
 import workspaceSvc from '../services/workspaceSvc';
 import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
+import draftFilesSvc from '../services/draftFilesSvc';
 import store from '../store';
 import badgeSvc from '../services/badgeSvc';
 
@@ -39,7 +39,43 @@ export default {
       return `${(this.depth + 1) * 15}px`;
     },
     isSelected() {
+      return !!store.state.explorer.selectedIds[this.node.item.id]
+        || store.getters['explorer/selectedNode'] === this.node;
+    },
+    isPrimary() {
       return store.getters['explorer/selectedNode'] === this.node;
+    },
+    showCaret() {
+      // Real clickable caret for regular folders only. Sentinels (Trash/Temp)
+      // keep their legacy pseudo-element caret and single-click toggle.
+      return this.node.isFolder && !this.node.isTrash && !this.node.isTemp;
+    },
+    isVisible() {
+      const matchIds = store.getters['explorer/searchMatchIds'];
+      if (!matchIds) return true;
+      if (this.node.isRoot) return true;
+      return matchIds.has(this.node.item.id);
+    },
+    nameParts() {
+      const name = this.node.item.name || '';
+      const q = (store.state.explorer.searchQuery || '').trim();
+      if (!q) return [{ text: name, match: false }];
+      const lowerName = name.toLowerCase();
+      const lowerQ = q.toLowerCase();
+      const parts = [];
+      let i = 0;
+      while (i < name.length) {
+        const idx = lowerName.indexOf(lowerQ, i);
+        if (idx === -1) {
+          parts.push({ text: name.slice(i), match: false });
+          break;
+        }
+        if (idx > i) parts.push({ text: name.slice(i, idx), match: false });
+        parts.push({ text: name.slice(idx, idx + q.length), match: true });
+        i = idx + q.length;
+      }
+      if (!parts.length) parts.push({ text: name, match: false });
+      return parts;
     },
     isEditing() {
       return store.getters['explorer/editingNode'] === this.node;
@@ -51,7 +87,14 @@ export default {
       return store.getters['explorer/dragTargetNodeFolder'] === this.node;
     },
     isOpen() {
-      return store.state.explorer.openNodes[this.node.item.id] || this.node.isRoot;
+      if (this.node.isRoot) return true;
+      // While searching, any folder that contains a match expands automatically
+      // so the user can see the match without manually drilling in.
+      const matchIds = store.getters['explorer/searchMatchIds'];
+      if (matchIds && this.node.isFolder && matchIds.has(this.node.item.id)) {
+        return true;
+      }
+      return !!store.state.explorer.openNodes[this.node.item.id];
     },
     newChild() {
       return store.getters['explorer/newChildNodeParent'] === this.node
@@ -86,12 +129,16 @@ export default {
       if (!node) {
         return false;
       }
-      store.commit('explorer/setSelectedId', id);
+      store.commit('explorer/setSelectedIds', [id]);
       if (doOpen) {
-        // Prevent from freezing the UI while loading the file
+        // Files open in the editor. Regular folders are selected but no
+        // longer toggle open on a plain click — the caret or a second
+        // click on the already-selected folder handles that.
         setTimeout(() => {
           if (node.isFolder) {
-            store.commit('explorer/toggleOpenNode', id);
+            if (node.isTrash || node.isTemp || node.isRoot) {
+              store.commit('explorer/toggleOpenNode', id);
+            }
           } else if (store.state.file.currentId !== id) {
             store.commit('file/setCurrentId', id);
             badgeSvc.addBadge('switchFile');
@@ -99,6 +146,62 @@ export default {
         }, 10);
       }
       return true;
+    },
+    onClick(evt) {
+      const id = this.node.item.id;
+      // Sentinel nodes (trash/temp/root) don't participate in multi-select.
+      if (this.node.isTrash || this.node.isTemp || this.node.isRoot) {
+        this.select();
+        return;
+      }
+      if (evt.shiftKey) {
+        const ids = this.collectRange(store.state.explorer.selectedId, id);
+        store.commit('explorer/setSelectedIds', ids);
+        return;
+      }
+      if (evt.metaKey || evt.ctrlKey) {
+        store.commit('explorer/toggleSelectedId', id);
+        return;
+      }
+      // Second plain click on an already-selected regular folder toggles
+      // its open/close state. First click just selects.
+      if (this.node.isFolder && store.state.explorer.selectedId === id) {
+        store.commit('explorer/toggleOpenNode', id);
+        return;
+      }
+      this.select();
+    },
+    onCaretClick() {
+      // Caret toggles open/close independently of selection.
+      store.commit('explorer/toggleOpenNode', this.node.item.id);
+    },
+    collectRange(anchorId, targetId) {
+      // Use the live DOM to get visible nodes in render order.
+      const nodes = Array.from(document.querySelectorAll('.explorer__tree .explorer-node__item[data-node-id]'));
+      const ids = nodes
+        .map(el => el.getAttribute('data-node-id'))
+        .filter(id => id && id !== 'trash' && id !== 'temp');
+      if (!anchorId || !ids.includes(anchorId)) return [targetId];
+      const a = ids.indexOf(anchorId);
+      const b = ids.indexOf(targetId);
+      if (a === -1 || b === -1) return [targetId];
+      const [lo, hi] = a < b ? [a, b] : [b, a];
+      return ids.slice(lo, hi + 1);
+    },
+    onDragStart(evt) {
+      if (this.node.noDrag) {
+        evt.preventDefault();
+        return;
+      }
+      const id = this.node.item.id;
+      const selected = store.state.explorer.selectedIds;
+      const isInMulti = !!selected[id] && Object.keys(selected).length > 1;
+      const ids = isInMulti ? Object.keys(selected) : [id];
+      store.commit('explorer/setDragSourceId', id);
+      store.commit('explorer/setDragSourceIds', ids);
+      // Fix for Firefox
+      // See https://stackoverflow.com/a/3977637/1333165
+      evt.dataTransfer.setData('Text', '');
     },
     async submitNewChild(cancel) {
       const { newChildNode } = store.state.explorer;
@@ -110,6 +213,7 @@ export default {
             badgeSvc.addBadge('createFolder');
           } else {
             const item = await workspaceSvc.createFile(newChildNode.item);
+            draftFilesSvc.markAsDraft(item.id);
             this.select(item.id);
             badgeSvc.addBadge('createFile');
           }
@@ -135,16 +239,6 @@ export default {
         }
       }
     },
-    setDragSourceId(evt) {
-      if (this.node.noDrag) {
-        evt.preventDefault();
-        return;
-      }
-      store.commit('explorer/setDragSourceId', this.node.item.id);
-      // Fix for Firefox
-      // See https://stackoverflow.com/a/3977637/1333165
-      evt.dataTransfer.setData('Text', '');
-    },
     async onDrop(evt) {
       const targetNode = store.getters['explorer/dragTargetNodeFolder'];
       this.setDragTarget();
@@ -161,17 +255,28 @@ export default {
         return;
       }
 
-      // Internal drag (existing behavior) — move a workspace item.
-      const sourceNode = store.getters['explorer/dragSourceNode'];
-      if (!sourceNode.isNil
-        && sourceNode.item.id !== targetNode.item.id
-      ) {
+      // Internal drag — move one or many workspace items into the target folder.
+      const sourceIds = store.state.explorer.dragSourceIds;
+      const { nodeMap } = store.getters['explorer/nodeStructure'];
+      let folderMoved = false;
+      let fileMoved = false;
+      sourceIds.forEach((sourceId) => {
+        const sourceNode = nodeMap[sourceId];
+        if (!sourceNode || sourceNode.isNil) return;
+        if (sourceNode.item.id === targetNode.item.id) return;
+        // Prevent moving a folder into itself or its own descendants.
+        for (let walk = targetNode; walk; walk = nodeMap[walk.item.parentId]) {
+          if (walk.item.id === sourceNode.item.id) return;
+        }
         workspaceSvc.storeItem({
           ...sourceNode.item,
           parentId: targetNode.item.id,
         });
-        badgeSvc.addBadge(sourceNode.isFolder ? 'moveFolder' : 'moveFile');
-      }
+        if (sourceNode.isFolder) folderMoved = true;
+        else fileMoved = true;
+      });
+      if (folderMoved) badgeSvc.addBadge('moveFolder');
+      else if (fileMoved) badgeSvc.addBadge('moveFile');
     },
     async onContextMenu(evt) {
       if (this.select(undefined, false)) {
@@ -252,7 +357,11 @@ $item-font-size: 14px;
   color: rgba(0, 0, 0, 0.5);
 }
 
-.explorer-node--folder > .explorer-node__item,
+// Sentinel folders (Trash/Temp) and edit/new-child placeholders keep the
+// pseudo-element caret. Regular folders use the real <span> caret so it
+// can receive its own click without selecting the row.
+.explorer-node--trash > .explorer-node__item,
+.explorer-node--temp > .explorer-node__item,
 .explorer-node--folder > .explorer-node__item-editor,
 .explorer-node__new-child--folder {
   &::before {
@@ -262,10 +371,32 @@ $item-font-size: 14px;
   }
 }
 
-.explorer-node--folder.explorer-node--open > .explorer-node__item,
+.explorer-node--trash.explorer-node--open > .explorer-node__item,
+.explorer-node--temp.explorer-node--open > .explorer-node__item,
 .explorer-node--folder.explorer-node--open > .explorer-node__item-editor {
   &::before {
     content: '▾';
+  }
+}
+
+.explorer-node__caret {
+  position: absolute;
+  width: 13px;
+  margin-left: -13px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  line-height: inherit;
+}
+
+.explorer-node__match {
+  background-color: rgba(255, 210, 0, 0.55);
+  color: inherit;
+  border-radius: 2px;
+
+  .explorer-node--selected > .explorer-node__item & {
+    background-color: rgba(255, 220, 0, 0.85);
+    color: #000;
   }
 }
 
