@@ -3,7 +3,7 @@
     <div class="explorer-node__item-editor" v-if="isEditing" :style="{paddingLeft: leftPadding}" draggable="true" @dragstart.stop.prevent>
       <input type="text" class="text-input" v-focus @blur="submitEdit()" @keydown.stop @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingNodeName">
     </div>
-    <div class="explorer-node__item" v-else :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="setDragTarget()"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span>
+    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="setDragTarget()"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span>
       <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
     </div>
     <div class="explorer-node__children" v-if="node.isFolder && isOpen">
@@ -46,13 +46,22 @@ export default {
       return store.getters['explorer/selectedNode'] === this.node;
     },
     showCaret() {
-      // Real clickable caret for regular folders only. Sentinels (Trash/Temp)
-      // keep their legacy pseudo-element caret and single-click toggle.
-      return this.node.isFolder && !this.node.isTrash && !this.node.isTemp;
+      // Real clickable caret for regular folders only. Sentinels (Trash /
+      // Temp / Recent) keep their legacy pseudo-element caret and single-
+      // click toggle.
+      return this.node.isFolder
+        && !this.node.isTrash
+        && !this.node.isTemp
+        && !this.node.isRecent;
     },
     showFileCount() {
       // Don't show (0) for empty regular folders — less visual noise.
-      return this.node.isFolder && typeof this.node.fileCount === 'number' && this.node.fileCount > 0;
+      // Skip the synthetic root too: its count covers the whole workspace
+      // but the row itself has no name, so the badge looks orphaned.
+      return this.node.isFolder
+        && !this.node.isRoot
+        && typeof this.node.fileCount === 'number'
+        && this.node.fileCount > 0;
     },
     isPinned() {
       if (!this.node.isFolder || this.node.isTrash || this.node.isTemp || this.node.isRecent || this.node.isRoot) {
@@ -160,9 +169,14 @@ export default {
     },
     onClick(evt) {
       const id = this.node.item.id;
-      // Sentinel nodes (trash/temp/root) don't participate in multi-select.
+      // Sentinel nodes (trash/temp/recent/root) don't participate in multi-
+      // select. A plain click just toggles their open state.
       if (this.node.isTrash || this.node.isTemp || this.node.isRoot) {
         this.select();
+        return;
+      }
+      if (this.node.isRecent) {
+        store.commit('explorer/toggleOpenNode', id);
         return;
       }
       if (evt.shiftKey) {
@@ -433,11 +447,12 @@ $item-font-size: 14px;
   color: rgba(0, 0, 0, 0.5);
 }
 
-// Sentinel folders (Trash/Temp) and edit/new-child placeholders keep the
-// pseudo-element caret. Regular folders use the real <span> caret so it
-// can receive its own click without selecting the row.
+// Sentinel folders (Trash / Temp / Recent) and edit/new-child placeholders
+// keep the pseudo-element caret. Regular folders use the real <span> caret
+// so it can receive its own click without selecting the row.
 .explorer-node--trash > .explorer-node__item,
 .explorer-node--temp > .explorer-node__item,
+.explorer-node--recent > .explorer-node__item,
 .explorer-node--folder > .explorer-node__item-editor,
 .explorer-node__new-child--folder {
   &::before {
@@ -449,6 +464,7 @@ $item-font-size: 14px;
 
 .explorer-node--trash.explorer-node--open > .explorer-node__item,
 .explorer-node--temp.explorer-node--open > .explorer-node__item,
+.explorer-node--recent.explorer-node--open > .explorer-node__item,
 .explorer-node--folder.explorer-node--open > .explorer-node__item-editor {
   &::before {
     content: '▾';
