@@ -96,6 +96,7 @@ export default {
     openNodes: {},
     searchQuery: '',
     userClosedFile: false, // set when user explicitly closes current file
+    recentSnapshot: null, // [{ id, ts }] captured at boot; stable within session
   },
   mutations: {
     setSelectedId: setter('selectedId'),
@@ -129,6 +130,7 @@ export default {
     setDragTargetId: setter('dragTargetId'),
     setSearchQuery: setter('searchQuery'),
     setUserClosedFile: setter('userClosedFile'),
+    setRecentSnapshot: setter('recentSnapshot'),
     setNewItem(state, item) {
       state.newChildNode = item ? new Node(item, [], item.type === 'folder') : nilFileNode;
     },
@@ -230,11 +232,20 @@ export default {
       recentFolderNode.noDrop = true;
       recentFolderNode.isRecent = true;
       recentFolderNode.parentNode = rootNode;
-      const recentIds = Object.entries(lastOpened)
-        .sort((a, b) => b[1] - a[1])
-        .map(([id]) => id)
+      // Prefer the session snapshot so clicking a file in Recent doesn't
+      // re-sort the list under the user. uiPersistence seeds the snapshot
+      // at boot from data/lastOpened; within a session the ordering is
+      // frozen until reload.
+      const snapshot = state.recentSnapshot && state.recentSnapshot.length
+        ? state.recentSnapshot
+        : Object.entries(lastOpened)
+          .sort((a, b) => b[1] - a[1])
+          .map(([id, ts]) => ({ id, ts }));
+      const recentIds = snapshot
+        .map(entry => entry.id)
         .filter(id => nodeMap[id] && !nodeMap[id].isFolder && nodeMap[id].item.parentId !== 'trash')
         .slice(0, 10);
+      const tsById = Object.fromEntries(snapshot.map(e => [e.id, e.ts]));
       const formatRelative = (ts) => {
         if (!ts) return '';
         const diff = Date.now() - ts;
@@ -250,7 +261,7 @@ export default {
         const clone = new Node(original.item, original.locations);
         clone.parentNode = recentFolderNode;
         clone.noDrag = true;
-        clone.recentLabel = formatRelative(lastOpened[id]);
+        clone.recentLabel = formatRelative(tsById[id]);
         return clone;
       });
       recentFolderNode.fileCount = recentFolderNode.files.length;
