@@ -6,7 +6,7 @@
 ![Node](https://img.shields.io/badge/node-22.x-green?logo=nodedotjs&logoColor=white)
 ![Vue 2](https://img.shields.io/badge/vue-2.7-42b883?logo=vuedotjs&logoColor=white)
 ![Vite](https://img.shields.io/badge/vite-7.3-646cff?logo=vite&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-224_passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-231_passing-brightgreen)
 
 > **Full-featured, open-source Markdown editor** based on [PageDown](https://code.google.com/archive/p/pagedown/), the Markdown library originally written for Stack Overflow and the other Stack Exchange sites. Fork of [`benweet/stackedit`](https://github.com/benweet/stackedit), modernized for Vercel deployment.
 
@@ -204,7 +204,7 @@ npm run dev                      # http://localhost:8080
 npm run unit
 ```
 
-202 tests across 16 files under `test/unit/hardening/`. Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (sanitizer XSS vectors, KaTeX, Mermaid, YAML front-matter).
+231 tests across 18 files under `test/unit/hardening/`. Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (sanitizer XSS vectors, KaTeX, Mermaid, YAML front-matter).
 
 ## Project structure
 
