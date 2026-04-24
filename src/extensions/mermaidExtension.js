@@ -10,12 +10,14 @@ const config = {
   flowchart: {
     htmlLabels: true,
     curve: 'linear',
-    // Mermaid 11 has edge-label placement bugs that manifest as empty
-    // "pills" when nonstandard padding / rankSpacing / subGraphTitle-
-    // Margin values are configured — the label's bbox gets placed
-    // outside the computed edge midpoint. Leaving spacing at mermaid's
-    // own defaults fixes label rendering; the tradeoff is a little
-    // more whitespace inside shapes/subgraphs than we'd like.
+    // Tighten the vertical gap between ranks in TB flowcharts. Stacked
+    // "Pillar 1 → Pillar 2 …" diagrams otherwise stretch across multiple
+    // screens with whitespace between boxes. 30 is well below mermaid's
+    // default 50. Leaving padding / nodeSpacing / diagramPadding /
+    // subGraphTitleMargin at defaults — overriding those simultaneously
+    // in an earlier release caused edge labels to render as empty pills
+    // (mermaid 11 bbox bug).
+    rankSpacing: 30,
   },
   sequence: {
     diagramMarginX: 50,
