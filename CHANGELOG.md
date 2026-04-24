@@ -6,6 +6,10 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+## [5.15.5-fork.2] - 2026-04-24
+
+Explorer multi-select + search, PDF mermaid rendering + fit-to-page, top-bar file metadata, empty-state placeholder, close-file + draft auto-discard, and general mermaid polish.
+
 ### Added
 - **Explorer multi-select** (Cmd/Ctrl-click to toggle, Shift-click for range in visible order, drag a marquee on empty tree space; hold a modifier during marquee to add to the current selection). Multi-drag moves every selected node in one gesture, drop-to-trash / drop-to-folder / drop-to-root all iterate the set, and a single aggregate `bulkDeletion` modal replaces the per-item prompts ("Move N items to Trash and permanently delete M items (including X folders with their contents). Are you sure?"). Descendants are pruned from the set so a folder's recursive delete doesn't double-process its own children, and the `setDragTarget` circularity check now rejects targets nested inside ANY dragged source.
 - **Explorer search** — input below the toolbar filters the tree as you type. Matching files and their ancestor folders stay visible; folders containing a match auto-expand regardless of their user-toggle state; the matched substring is highlighted inline with a yellow pill (brighter yellow on black when the row is also the blue-selected primary). Esc clears. Pure local string match, no network. The input itself fades into the panel when idle (muted background, transparent border) and lights up on hover / focus with a soft blue focus-ring.
