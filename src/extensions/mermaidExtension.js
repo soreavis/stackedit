@@ -10,13 +10,15 @@ const config = {
   flowchart: {
     htmlLabels: true,
     curve: 'linear',
-    // All spacing values left at mermaid defaults. Every knob we tried
-    // (padding, rankSpacing, nodeSpacing, diagramPadding, subGraph-
-    // TitleMargin) moved diagrams off mermaid's well-tested layout
-    // path — either breaking edge-label placement (empty "pills" at
-    // edge midpoints) or crushing subgraph-title breathing room.
-    // Accepting the library's native vertical gaps in exchange for
-    // correct label rendering and predictable subgraph layout.
+    // Narrower retry: rankSpacing pulls stacked TB flowcharts in so
+    // "Pillar 1 → Pillar 2 → …" doesn't span multiple screens, and
+    // subGraphTitleMargin separately restores the breathing room above
+    // the subgraph title that rankSpacing eats. Leaving padding /
+    // nodeSpacing / diagramPadding at mermaid defaults — the earlier
+    // "everything bumped at once" config was what tripped mermaid 11's
+    // edge-label bbox bug.
+    rankSpacing: 30,
+    subGraphTitleMargin: { top: 20, bottom: 20 },
   },
   sequence: {
     diagramMarginX: 50,
