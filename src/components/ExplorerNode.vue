@@ -3,7 +3,7 @@
     <div class="explorer-node__item-editor" v-if="isEditing" :style="{paddingLeft: leftPadding}" draggable="true" @dragstart.stop.prevent>
       <input type="text" class="text-input" v-focus @blur="submitEdit()" @keydown.stop @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingNodeName">
     </div>
-    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span>
+    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span><span v-if="showNerdInfo" class="explorer-node__info" v-title="nerdInfo" @click.stop @mousedown.stop>ⓘ</span>
       <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
     </div>
     <div class="explorer-node__children" v-if="node.isFolder && isOpen">
@@ -69,6 +69,49 @@ export default {
       }
       const pinned = (store.getters['data/localSettings'] || {}).pinnedFolderIds || {};
       return !!pinned[this.node.item.id];
+    },
+    showNerdInfo() {
+      // Show a hover-only info glyph on the primary-selected row — gives a
+      // tooltip with size/words/path/etc without cluttering every row.
+      return this.isPrimary
+        && !this.node.isNil
+        && !this.node.isTrash
+        && !this.node.isTemp
+        && !this.node.isRecent
+        && !this.node.isRoot;
+    },
+    nerdInfo() {
+      const id = this.node.item.id;
+      const path = store.getters.pathsByItemId[id] || '';
+      const rows = [
+        `Name: ${this.node.item.name || '—'}`,
+        `Path: ${path || '—'}`,
+        `Type: ${this.node.isFolder ? 'Folder' : 'File'}`,
+        `ID: ${id}`,
+      ];
+      if (this.node.isFolder) {
+        rows.push(`Contains: ${this.node.fileCount || 0} files`);
+      } else {
+        const entry = store.state.content.itemsById[`${id}/content`];
+        const text = (entry && entry.text) || '';
+        if (text) {
+          const bytes = new Blob([text]).size;
+          const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+          const lines = text.split(/\r\n|\r|\n/).length;
+          const mins = words ? Math.max(1, Math.round(words / 220)) : 0;
+          rows.push(`Size: ${bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`}`);
+          rows.push(`Words: ${words.toLocaleString()}`);
+          rows.push(`Lines: ${lines.toLocaleString()}`);
+          rows.push(`Reading time: ${mins} min (~220 wpm)`);
+        } else {
+          rows.push('Size: (open the file to see stats)');
+        }
+      }
+      const lastOpened = (store.getters['data/lastOpened'] || {})[id];
+      if (lastOpened) {
+        rows.push(`Opened: ${new Date(lastOpened).toLocaleString()}`);
+      }
+      return rows.join('\n');
     },
     isVisible() {
       const matchIds = store.getters['explorer/searchMatchIds'];
@@ -540,6 +583,25 @@ $item-font-size: 14px;
   font-size: 0.7em;
   margin-left: 4px;
   opacity: 0.7;
+}
+
+.explorer-node__info {
+  float: right;
+  margin-left: 6px;
+  margin-right: 2px;
+  font-size: 0.9em;
+  opacity: 0.65;
+  cursor: help;
+  line-height: 1.4;
+
+  &:hover { opacity: 1; }
+
+  .explorer__tree:focus .explorer-node--selected > .explorer-node__item & {
+    color: rgba(255, 255, 255, 0.9);
+    opacity: 0.8;
+
+    &:hover { opacity: 1; }
+  }
 }
 
 .explorer-node__ts {
