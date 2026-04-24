@@ -12,6 +12,9 @@
           <a href="javascript:void(0)" @click="configureTemplates">Configure templates</a>
         </div>
       </form-entry>
+      <div class="modal__info">
+        <b>Diagrams:</b> Mermaid diagrams are included in the PDF. Each diagram is kept together on a single page and scaled down to fit when it would otherwise overflow. Applies to the <b>Styled HTML</b> and <b>Styled HTML with TOC</b> templates; custom templates need their own print styles.
+      </div>
     </div>
     <div class="modal__button-bar">
       <button class="button" @click="config.reject()">Cancel</button>
