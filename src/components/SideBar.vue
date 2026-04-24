@@ -1,8 +1,8 @@
 <template>
   <div class="side-bar flex flex--column">
     <div class="side-title flex flex--row">
-      <button v-if="panel !== 'menu'" class="side-title__button button" @click="setPanel('menu')" v-title="'Main menu'">
-        <icon-dots-horizontal></icon-dots-horizontal>
+      <button v-if="panel !== 'menu'" class="side-title__button button" @click="setPanel('menu')" v-title="'Back to main menu'">
+        <icon-arrow-left></icon-arrow-left>
       </button>
       <div class="side-title__title">
         {{ panelName }}
