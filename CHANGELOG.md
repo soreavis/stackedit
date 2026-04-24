@@ -6,6 +6,19 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+### Added
+- **Enter = confirm in every modal** — Modal root listens for keydown.enter and forwards to `.button--resolve` unless the target is a `TEXTAREA` or contenteditable. No per-modal wiring needed; covers simpleModals, FilePropertiesModal, export modals, etc.
+- **Right-click menu on the nav-bar filename** — contextual menu with Rename / File properties / Copy path / Close file, using the existing `contextMenu/open` store action.
+
+### Changed
+- **Recent folder ordering frozen per session** — opening a file bumps its `data/lastOpened` timestamp, which previously re-sorted the Recent folder on every click. `uiPersistence.restoreCurrentFile` now seeds `explorer.recentSnapshot` once at boot; `nodeStructure` prefers the snapshot. Reload reseeds. Relative-time labels ("5m", "2h") still age live.
+- **Mermaid spacing**: `rankSpacing: 30` (down from library default 50) tightens vertical gaps in stacked TB flowcharts without spanning screens. Paired with `subGraphTitleMargin: { top: 20, bottom: 20 }` to keep subgraph titles clear of their first child. Other flowchart knobs stay at mermaid defaults — every combination we tried beyond these two triggered mermaid 11's edge-label bbox bug (empty "pill" where the label should be).
+- **Mermaid action-icons enlarged** earlier in the 5.15.5-fork.2 release (28 → 35 px) stay.
+
+### Fixed
+- **Edge labels render correctly again** — wholesale revert of the earlier five-knob spacing override (padding / nodeSpacing / rankSpacing / diagramPadding / subGraphTitleMargin), replaced with the minimal two-knob combo above. "framework forbids same" and "PR review time grows" both draw text instead of empty pills.
+- **Empty pages in PDF export** — the aggressive `page-break-after: avoid` on every heading + `page-break-before: avoid` on every mermaid wrapper was forcing Chromium to leave huge blank slabs when a heading + diagram couldn't fit on the current page. Relaxed to just `page-break-inside: avoid` on mermaid wrappers; diagrams still don't split mid-box, headings can break where they naturally fall.
+
 ## [5.15.5-fork.2] - 2026-04-24
 
 Explorer multi-select + search, PDF mermaid rendering + fit-to-page, top-bar file metadata, empty-state placeholder, close-file + draft auto-discard, general mermaid polish, plus explorer power-features (sort, pinning, Recent folder, keyboard nav, drag-out export, per-row nerd-info, reload persistence).
