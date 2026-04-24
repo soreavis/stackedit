@@ -10,16 +10,12 @@ const config = {
   flowchart: {
     htmlLabels: true,
     curve: 'linear',
-    // Keep INSIDE-shape padding generous (32) — labels inside nodes and
-    // subgraph titles both looked cramped at mermaid's defaults. But
-    // rankSpacing controls the OUTSIDE gap between stacked nodes, which
-    // was making vertical TB flowcharts feel sparse — pulled that back
-    // in. nodeSpacing too, a touch.
-    padding: 32,
-    nodeSpacing: 50,
-    rankSpacing: 30,
-    diagramPadding: 16,
-    subGraphTitleMargin: { top: 14, bottom: 14 },
+    // Mermaid 11 has edge-label placement bugs that manifest as empty
+    // "pills" when nonstandard padding / rankSpacing / subGraphTitle-
+    // Margin values are configured — the label's bbox gets placed
+    // outside the computed edge midpoint. Leaving spacing at mermaid's
+    // own defaults fixes label rendering; the tradeoff is a little
+    // more whitespace inside shapes/subgraphs than we'd like.
   },
   sequence: {
     diagramMarginX: 50,
@@ -66,19 +62,6 @@ function getMermaid() {
 const LIGHTBOX_STYLES = `
 .mermaid-wrapper { position: relative; text-align: center; }
 .mermaid-wrapper > svg { display: inline-block; max-width: 100%; }
-
-/* Horizontal breathing room for edge-label pills ("PR review time
-   grows" etc). Mermaid's .edgeLabel class is attached to BOTH the
-   outer <g> group (which ignores padding / background) AND the inner
-   <span class="edgeLabel"> inside the foreignObject. Tag-scoping to
-   span.edgeLabel hits only the span; padding-left/right is what
-   inline elements respect, and the foreignObject is already 10×
-   oversized so the overflow is harmless. We deliberately don't
-   touch background-color or color — those are driven by the mermaid
-   theme and overriding them masked text in neutral theme. */
-.mermaid-wrapper span.edgeLabel {
-  padding: 0 10px;
-}
 .mermaid-wrapper-actions {
   position: absolute;
   top: 6px;
