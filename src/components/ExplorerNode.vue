@@ -1,9 +1,9 @@
 <template>
-  <div v-if="isVisible" class="explorer-node" :class="{'explorer-node--selected': isSelected, 'explorer-node--primary': isPrimary, 'explorer-node--folder': node.isFolder, 'explorer-node--open': isOpen, 'explorer-node--trash': node.isTrash, 'explorer-node--temp': node.isTemp, 'explorer-node--drag-target': isDragTargetFolder}" @dragover.prevent @dragenter.stop="node.noDrop || setDragTarget(node)" @dragleave.stop="isDragTarget && setDragTarget()" @drop.prevent.stop="onDrop" @contextmenu="onContextMenu">
+  <div v-if="isVisible" class="explorer-node" :class="{'explorer-node--selected': isSelected, 'explorer-node--primary': isPrimary, 'explorer-node--folder': node.isFolder, 'explorer-node--open': isOpen, 'explorer-node--trash': node.isTrash, 'explorer-node--temp': node.isTemp, 'explorer-node--recent': node.isRecent, 'explorer-node--pinned': isPinned, 'explorer-node--drag-target': isDragTargetFolder}" @dragover.prevent @dragenter.stop="node.noDrop || setDragTarget(node)" @dragleave.stop="isDragTarget && setDragTarget()" @drop.prevent.stop="onDrop" @contextmenu="onContextMenu">
     <div class="explorer-node__item-editor" v-if="isEditing" :style="{paddingLeft: leftPadding}" draggable="true" @dragstart.stop.prevent>
       <input type="text" class="text-input" v-focus @blur="submitEdit()" @keydown.stop @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingNodeName">
     </div>
-    <div class="explorer-node__item" v-else :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="setDragTarget()"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span>
+    <div class="explorer-node__item" v-else :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="setDragTarget()"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span>
       <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
     </div>
     <div class="explorer-node__children" v-if="node.isFolder && isOpen">
@@ -49,6 +49,17 @@ export default {
       // Real clickable caret for regular folders only. Sentinels (Trash/Temp)
       // keep their legacy pseudo-element caret and single-click toggle.
       return this.node.isFolder && !this.node.isTrash && !this.node.isTemp;
+    },
+    showFileCount() {
+      // Don't show (0) for empty regular folders — less visual noise.
+      return this.node.isFolder && typeof this.node.fileCount === 'number' && this.node.fileCount > 0;
+    },
+    isPinned() {
+      if (!this.node.isFolder || this.node.isTrash || this.node.isTemp || this.node.isRecent || this.node.isRoot) {
+        return false;
+      }
+      const pinned = (store.getters['data/localSettings'] || {}).pinnedFolderIds || {};
+      return !!pinned[this.node.item.id];
     },
     isVisible() {
       const matchIds = store.getters['explorer/searchMatchIds'];
@@ -282,6 +293,9 @@ export default {
       if (this.select(undefined, false)) {
         evt.preventDefault();
         evt.stopPropagation();
+        const isFile = !this.node.isFolder && !this.node.isNil;
+        const isRegularFolder = this.node.isFolder && !this.node.isTrash && !this.node.isTemp && !this.node.isRecent && !this.node.isRoot;
+        const isPinned = this.isPinned;
         const item = await store.dispatch('contextMenu/open', {
           coordinates: {
             left: evt.clientX,
@@ -289,17 +303,35 @@ export default {
           },
           items: [{
             name: 'New file',
-            disabled: !this.node.isFolder || this.node.isTrash,
+            disabled: !this.node.isFolder || this.node.isTrash || this.node.isRecent,
             perform: () => explorerSvc.newItem(false),
           }, {
             name: 'New folder',
-            disabled: !this.node.isFolder || this.node.isTrash || this.node.isTemp,
+            disabled: !this.node.isFolder || this.node.isTrash || this.node.isTemp || this.node.isRecent,
             perform: () => explorerSvc.newItem(true),
           }, {
             type: 'separator',
           }, {
+            name: 'Duplicate',
+            disabled: !isFile,
+            perform: () => this.duplicateFile(),
+          }, {
+            name: 'Reveal in editor',
+            disabled: !isFile,
+            perform: () => this.revealInEditor(),
+          }, {
+            name: 'Copy path',
+            disabled: this.node.isTrash || this.node.isTemp || this.node.isRecent || this.node.isRoot,
+            perform: () => this.copyPath(),
+          }, {
+            name: isPinned ? 'Unpin folder' : 'Pin folder',
+            disabled: !isRegularFolder,
+            perform: () => this.togglePin(),
+          }, {
+            type: 'separator',
+          }, {
             name: 'Rename',
-            disabled: this.node.isTrash || this.node.isTemp,
+            disabled: this.node.isTrash || this.node.isTemp || this.node.isRecent,
             perform: () => this.setEditingId(this.node.item.id),
           }, {
             name: 'Delete',
@@ -310,6 +342,50 @@ export default {
           item.perform();
         }
       }
+    },
+    async duplicateFile() {
+      try {
+        const original = store.state.file.itemsById[this.node.item.id];
+        if (!original) return;
+        const content = await (await import('../services/localDbSvc')).default
+          .loadItem(`${original.id}/content`);
+        const copy = await workspaceSvc.createFile({
+          name: `${original.name} (copy)`,
+          parentId: original.parentId || null,
+          text: (content && content.text) || '',
+          properties: (content && content.properties) || '',
+        }, true);
+        store.commit('file/setCurrentId', copy.id);
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    async copyPath() {
+      const path = store.getters.pathsByItemId[this.node.item.id] || this.node.item.name || '';
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(path);
+          return;
+        }
+      } catch (e) { /* fall through */ }
+      const ta = document.createElement('textarea');
+      ta.value = path;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    },
+    revealInEditor() {
+      store.commit('file/setCurrentId', this.node.item.id);
+    },
+    togglePin() {
+      const pinned = { ...((store.getters['data/localSettings'] || {}).pinnedFolderIds || {}) };
+      const id = this.node.item.id;
+      if (pinned[id]) delete pinned[id];
+      else pinned[id] = true;
+      store.dispatch('data/patchLocalSettings', { pinnedFolderIds: pinned });
     },
   },
 };
@@ -398,6 +474,33 @@ $item-font-size: 14px;
     background-color: rgba(255, 220, 0, 0.85);
     color: #000;
   }
+}
+
+.explorer-node__count {
+  float: right;
+  margin-left: 6px;
+  font-size: 0.7em;
+  font-weight: 500;
+  padding: 0 6px;
+  background-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
+  line-height: 1.6;
+
+  .explorer__tree:focus .explorer-node--selected > .explorer-node__item & {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+}
+
+.explorer-node__pin {
+  font-size: 0.7em;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.explorer-node--recent > .explorer-node__item {
+  font-style: italic;
 }
 
 $new-child-height: 25px;

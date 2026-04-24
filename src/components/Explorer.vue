@@ -2,17 +2,26 @@
   <div class="explorer flex flex--column" @dragover.prevent @drop.prevent>
     <div class="side-title flex flex--row flex--space-between">
       <div class="flex flex--row">
-        <button class="side-title__button side-title__button--new-file button" @click="newItem()" v-title="'New file'">
+        <button class="side-title__button side-title__button--new-file button" v-show="!isMultiSelect" @click="newItem()" v-title="'New file'">
           <icon-file-plus></icon-file-plus>
         </button>
-        <button class="side-title__button side-title__button--new-folder button" @click="newItem(true)" v-title="'New folder'">
+        <button class="side-title__button side-title__button--new-folder button" v-show="!isMultiSelect" @click="newItem(true)" v-title="'New folder'">
           <icon-folder-plus></icon-folder-plus>
         </button>
         <button class="side-title__button side-title__button--delete button" :disabled="!hasTargetItem" @click="deleteItem()" v-title="'Delete'">
           <icon-delete></icon-delete>
         </button>
-        <button class="side-title__button side-title__button--rename button" :disabled="!canRename" @click="editItem()" v-title="'Rename'">
+        <button class="side-title__button side-title__button--rename button" v-show="!isMultiSelect" :disabled="!canRename" @click="editItem()" v-title="'Rename'">
           <icon-pen></icon-pen>
+        </button>
+        <button class="side-title__button button" @click="expandAll" v-title="'Expand all folders'">
+          <icon-folder-plus></icon-folder-plus><span class="side-title__button-plus">+</span>
+        </button>
+        <button class="side-title__button button" @click="collapseAll" v-title="'Collapse all folders'">
+          <icon-folder></icon-folder><span class="side-title__button-plus">−</span>
+        </button>
+        <button class="side-title__button button" @click="cycleSort" v-title="`Sort: ${sortLabel} (click to cycle)`">
+          <span class="side-title__sort-glyph">{{ sortGlyph }}</span>
         </button>
       </div>
       <button class="side-title__button side-title__button--close button" @click="toggleExplorer(false)" v-title="'Close explorer'">
@@ -97,6 +106,18 @@ export default {
       const node = this.selectedNode;
       return !node.isNil && !node.isTrash && !node.isTemp && !node.isRoot;
     },
+    isMultiSelect() {
+      return Object.keys(store.state.explorer.selectedIds).length > 1;
+    },
+    sortMode() {
+      return (store.getters['data/localSettings'] || {}).explorerSort || 'name';
+    },
+    sortLabel() {
+      return { name: 'by name', modified: 'recently opened', created: 'recently created' }[this.sortMode];
+    },
+    sortGlyph() {
+      return { name: 'A↓', modified: '◷', created: '✱' }[this.sortMode];
+    },
     searchQuery: {
       get() { return store.state.explorer.searchQuery; },
       set(value) { store.commit('explorer/setSearchQuery', value); },
@@ -121,6 +142,23 @@ export default {
     ]),
     newItem: isFolder => explorerSvc.newItem(isFolder),
     deleteItem: () => explorerSvc.deleteItem(),
+    expandAll() {
+      const open = {};
+      store.getters['folder/items'].forEach((f) => { open[f.id] = true; });
+      open.trash = true;
+      open.temp = true;
+      open.recent = true;
+      store.commit('explorer/setOpenNodes', open);
+    },
+    collapseAll() {
+      store.commit('explorer/setOpenNodes', {});
+    },
+    cycleSort() {
+      const order = ['name', 'modified', 'created'];
+      const current = this.sortMode;
+      const next = order[(order.indexOf(current) + 1) % order.length];
+      store.dispatch('data/patchLocalSettings', { explorerSort: next });
+    },
     editItem() {
       const node = this.selectedNode;
       if (!node.isTrash && !node.isTemp) {
@@ -282,6 +320,19 @@ export default {
   position: relative;
   padding: 4px 6px 6px 6px;
   flex-shrink: 0;
+}
+
+.side-title__button-plus {
+  font-size: 9px;
+  margin-left: -2px;
+  line-height: 1;
+  align-self: flex-start;
+}
+
+.side-title__sort-glyph {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
 }
 
 .explorer__search-input {
