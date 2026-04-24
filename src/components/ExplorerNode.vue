@@ -3,8 +3,11 @@
     <div class="explorer-node__item-editor" v-if="isEditing" :style="{paddingLeft: leftPadding}" draggable="true" @dragstart.stop.prevent>
       <input type="text" class="text-input" v-focus @blur="submitEdit()" @keydown.stop @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingNodeName">
     </div>
-    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span><span v-if="showNerdInfo" class="explorer-node__info" v-title="nerdInfo" @click.stop @mousedown.stop>ⓘ</span>
+    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span><span v-if="showNerdInfo" class="explorer-node__info" @click.stop @mousedown.stop @mouseenter="onInfoEnter" @mouseleave="onInfoLeave">ⓘ</span>
       <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
+      <div v-if="infoOpen" class="explorer-node__info-popover" :style="infoPopoverStyle">
+        <div class="explorer-node__info-row" v-for="row in nerdInfoRows" :key="row.k"><span class="explorer-node__info-k">{{ row.k }}</span><span class="explorer-node__info-v">{{ row.v }}</span></div>
+      </div>
     </div>
     <div class="explorer-node__children" v-if="node.isFolder && isOpen">
       <explorer-node v-for="node in node.folders" :key="node.item.id" :node="node" :depth="depth + 1"></explorer-node>
@@ -30,6 +33,8 @@ export default {
   props: ['node', 'depth'],
   data: () => ({
     editingValue: '',
+    infoOpen: false,
+    infoPopoverStyle: null,
   }),
   computed: {
     leftPadding() {
@@ -80,17 +85,17 @@ export default {
         && !this.node.isRecent
         && !this.node.isRoot;
     },
-    nerdInfo() {
+    nerdInfoRows() {
       const id = this.node.item.id;
       const path = store.getters.pathsByItemId[id] || '';
       const rows = [
-        `Name: ${this.node.item.name || '—'}`,
-        `Path: ${path || '—'}`,
-        `Type: ${this.node.isFolder ? 'Folder' : 'File'}`,
-        `ID: ${id}`,
+        { k: 'Name', v: this.node.item.name || '—' },
+        { k: 'Path', v: path || '—' },
+        { k: 'Type', v: this.node.isFolder ? 'Folder' : 'File' },
+        { k: 'ID', v: id },
       ];
       if (this.node.isFolder) {
-        rows.push(`Contains: ${this.node.fileCount || 0} files`);
+        rows.push({ k: 'Contains', v: `${this.node.fileCount || 0} files` });
       } else {
         const entry = store.state.content.itemsById[`${id}/content`];
         const text = (entry && entry.text) || '';
@@ -99,19 +104,19 @@ export default {
           const words = text.trim() ? text.trim().split(/\s+/).length : 0;
           const lines = text.split(/\r\n|\r|\n/).length;
           const mins = words ? Math.max(1, Math.round(words / 220)) : 0;
-          rows.push(`Size: ${bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`}`);
-          rows.push(`Words: ${words.toLocaleString()}`);
-          rows.push(`Lines: ${lines.toLocaleString()}`);
-          rows.push(`Reading time: ${mins} min (~220 wpm)`);
+          rows.push({ k: 'Size', v: bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB` });
+          rows.push({ k: 'Words', v: words.toLocaleString() });
+          rows.push({ k: 'Lines', v: lines.toLocaleString() });
+          rows.push({ k: 'Read', v: `${mins} min` });
         } else {
-          rows.push('Size: (open the file to see stats)');
+          rows.push({ k: 'Size', v: '(open file to load)' });
         }
       }
       const lastOpened = (store.getters['data/lastOpened'] || {})[id];
       if (lastOpened) {
-        rows.push(`Opened: ${new Date(lastOpened).toLocaleString()}`);
+        rows.push({ k: 'Opened', v: new Date(lastOpened).toLocaleString() });
       }
-      return rows.join('\n');
+      return rows;
     },
     isVisible() {
       const matchIds = store.getters['explorer/searchMatchIds'];
@@ -464,6 +469,19 @@ export default {
     revealInEditor() {
       store.commit('file/setCurrentId', this.node.item.id);
     },
+    onInfoEnter(evt) {
+      const r = evt.currentTarget.getBoundingClientRect();
+      // Anchor the popover just below the icon, aligned to its right edge
+      // so it doesn't clip off-screen when the explorer is at the left.
+      this.infoPopoverStyle = {
+        top: `${r.bottom + 6}px`,
+        left: `${r.left - 240}px`,
+      };
+      this.infoOpen = true;
+    },
+    onInfoLeave() {
+      this.infoOpen = false;
+    },
     togglePin() {
       const pinned = { ...((store.getters['data/localSettings'] || {}).pinnedFolderIds || {}) };
       const id = this.node.item.id;
@@ -586,22 +604,62 @@ $item-font-size: 14px;
 }
 
 .explorer-node__info {
-  float: right;
-  margin-left: 6px;
-  margin-right: 2px;
-  font-size: 0.9em;
-  opacity: 0.65;
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.7;
   cursor: help;
-  line-height: 1.4;
 
   &:hover { opacity: 1; }
 
   .explorer__tree:focus .explorer-node--selected > .explorer-node__item & {
-    color: rgba(255, 255, 255, 0.9);
-    opacity: 0.8;
+    color: rgba(255, 255, 255, 0.95);
+    opacity: 0.9;
 
     &:hover { opacity: 1; }
   }
+}
+
+.explorer-node__info-popover {
+  position: fixed;
+  z-index: 20;
+  min-width: 240px;
+  max-width: 320px;
+  padding: 8px 10px;
+  background-color: rgba(25, 27, 30, 0.96);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  font-size: 11px;
+  line-height: 1.45;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+}
+
+.explorer-node__info-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+
+  & + & { margin-top: 2px; }
+}
+
+.explorer-node__info-k {
+  flex: 0 0 58px;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+}
+
+.explorer-node__info-v {
+  flex: 1 1 auto;
+  color: rgba(255, 255, 255, 0.95);
+  word-break: break-all;
 }
 
 .explorer-node__ts {
