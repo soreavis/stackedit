@@ -10,14 +10,14 @@ const config = {
   flowchart: {
     htmlLabels: true,
     curve: 'linear',
-    // More breathing room inside node shapes and subgraphs than mermaid's
-    // default (padding: 8). Labels were hugging borders, especially the
-    // subgraph title row above inner nodes.
-    padding: 20,
-    nodeSpacing: 70,
-    rankSpacing: 70,
-    diagramPadding: 16,
-    subGraphTitleMargin: { top: 10, bottom: 10 },
+    // Generous padding so shape labels and subgraph titles breathe. The
+    // earlier bumps (20 / 70 / 16 / 10) still read tight around subgraph
+    // titles, so bump padding 20 → 32 and subGraphTitleMargin 10 → 22.
+    padding: 32,
+    nodeSpacing: 80,
+    rankSpacing: 80,
+    diagramPadding: 24,
+    subGraphTitleMargin: { top: 22, bottom: 22 },
   },
   sequence: {
     diagramMarginX: 50,
