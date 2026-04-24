@@ -21,7 +21,7 @@
       <!-- Title -->
       <div class="navigation-bar__title navigation-bar__title--fake text-input"></div>
       <div class="navigation-bar__title navigation-bar__title--text text-input" :style="{width: titleWidth + 'px'}">{{ title }}</div>
-      <input class="navigation-bar__title navigation-bar__title--input text-input" :class="{'navigation-bar__title--focus': titleFocus, 'navigation-bar__title--scrolling': titleScrolling}" :style="{width: titleWidth + 'px'}" @focus="editTitle(true)" @blur="editTitle(false)" @keydown.enter="submitTitle(false)" @keydown.esc.stop="submitTitle(true)" @mouseenter="titleHover = true" @mouseleave="titleHover = false" v-model="title">
+      <input class="navigation-bar__title navigation-bar__title--input text-input" :class="{'navigation-bar__title--focus': titleFocus, 'navigation-bar__title--scrolling': titleScrolling}" :style="{width: titleWidth + 'px'}" @focus="editTitle(true)" @blur="editTitle(false)" @keydown.enter="submitTitle(false)" @keydown.esc.stop="submitTitle(true)" @mouseenter="titleHover = true" @mouseleave="titleHover = false" @contextmenu="onTitleContextMenu" v-model="title">
       <button class="navigation-bar__button navigation-bar__button--close-file button" v-if="hasCurrentFile" @click="closeCurrentFile" v-title="'Close file'"><icon-close></icon-close></button>
       <!-- Sync/Publish -->
       <div class="flex flex--row" :class="{'navigation-bar__hidden': styles.hideLocations}">
@@ -269,6 +269,39 @@ export default {
     closeCurrentFile() {
       store.commit('explorer/setUserClosedFile', true);
       store.commit('file/setCurrentId', null);
+    },
+    async onTitleContextMenu(evt) {
+      if (!this.hasCurrentFile) return;
+      evt.preventDefault();
+      const item = await store.dispatch('contextMenu/open', {
+        coordinates: { left: evt.clientX, top: evt.clientY },
+        items: [{
+          name: 'Rename',
+          perform: () => this.titleInputElt && this.titleInputElt.focus(),
+        }, {
+          name: 'File properties',
+          perform: () => store.dispatch('modal/open', 'fileProperties').catch(() => {}),
+        }, {
+          name: 'Copy path',
+          perform: () => this.copyCurrentFilePath(),
+        }, {
+          type: 'separator',
+        }, {
+          name: 'Close file',
+          perform: () => this.closeCurrentFile(),
+        }],
+      });
+      if (item) item.perform();
+    },
+    async copyCurrentFilePath() {
+      const id = store.getters['file/current'].id;
+      if (!id) return;
+      const path = store.getters.pathsByItemId[id] || store.getters['file/current'].name || '';
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(path);
+        }
+      } catch (e) { /* ignore */ }
     },
     pagedownClick(name) {
       if (store.getters['content/isCurrentEditable']) {
