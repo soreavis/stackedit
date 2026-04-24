@@ -35,6 +35,16 @@
           <div class="layout__panel layout__panel--find-replace" v-if="showFindReplace">
             <find-replace></find-replace>
           </div>
+          <div class="layout__empty flex flex--column flex--center" v-if="!hasCurrentFile">
+            <div class="layout__empty-inner">
+              <div class="layout__empty-icon">
+                <icon-file-multiple></icon-file-multiple>
+              </div>
+              <div class="layout__empty-title">No file selected</div>
+              <p class="layout__empty-hint">Create a new file or pick one from the explorer on the left.</p>
+              <button class="button layout__empty-button" @click="createNewFile">New file</button>
+            </div>
+          </div>
         </div>
         <div class="layout__panel layout__panel--status-bar" v-show="styles.showStatusBar" :style="{height: constants.statusBarHeight + 'px'}">
           <status-bar></status-bar>
@@ -63,6 +73,8 @@ import CurrentDiscussion from './gutters/CurrentDiscussion';
 import FindReplace from './FindReplace';
 import editorSvc from '../services/editorSvc';
 import markdownConversionSvc from '../services/markdownConversionSvc';
+import workspaceSvc from '../services/workspaceSvc';
+import draftFilesSvc from '../services/draftFilesSvc';
 import store from '../store';
 
 export default {
@@ -99,12 +111,31 @@ export default {
     showFindReplace() {
       return !!store.state.findReplace.type;
     },
+    hasCurrentFile() {
+      // Show the editor only when a real file is actually selected. If
+      // currentId is null (last file deleted, nothing opened yet, etc.)
+      // the placeholder takes over regardless of whether the workspace
+      // still contains other files.
+      const current = store.getters['file/current'];
+      return !!current.id && current.parentId !== 'trash';
+    },
   },
   methods: {
     ...mapActions('layout', [
       'updateBodySize',
     ]),
     saveSelection: () => editorSvc.saveSelection(true),
+    async createNewFile() {
+      try {
+        const item = await workspaceSvc.createFile({}, true);
+        if (item && item.id) {
+          draftFilesSvc.markAsDraft(item.id);
+          store.commit('file/setCurrentId', item.id);
+        }
+      } catch (e) {
+        // cancelled
+      }
+    },
   },
   created() {
     markdownConversionSvc.init(); // Needs to be inited before mount
@@ -219,5 +250,101 @@ $preview-background-dark: #252525;
   width: 300px;
   height: auto;
   border-top-right-radius: $border-radius-base;
+}
+
+.layout__empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(
+    45deg,
+    $preview-background-light,
+    $preview-background-light 14px,
+    color.mix(#000, $preview-background-light, 3%) 14px,
+    color.mix(#000, $preview-background-light, 3%) 28px
+  );
+  color: rgba(0, 0, 0, 0.55);
+  text-align: center;
+  padding: 20px;
+
+  .app--dark & {
+    background: repeating-linear-gradient(
+      45deg,
+      $preview-background-dark,
+      $preview-background-dark 14px,
+      color.mix(#fff, $preview-background-dark, 3%) 14px,
+      color.mix(#fff, $preview-background-dark, 3%) 28px
+    );
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.layout__empty-inner {
+  max-width: 360px;
+  padding: 32px 28px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: $border-radius-base * 2;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(2px);
+
+  .app--dark & {
+    background-color: rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.layout__empty-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 14px auto;
+  color: rgba(0, 0, 0, 0.35);
+
+  .app--dark & {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .icon {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.layout__empty-title {
+  font-size: 22px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: rgba(0, 0, 0, 0.75);
+
+  .app--dark & {
+    color: rgba(255, 255, 255, 0.85);
+  }
+}
+
+.layout__empty-hint {
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0 0 18px 0;
+}
+
+.layout__empty-button {
+  height: 32px;
+  padding: 0 16px;
+  font-size: 13px;
+  border-radius: $border-radius-base;
+  background-color: rgba(0, 0, 0, 0.08);
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.14);
+  }
+
+  .app--dark &:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
 }
 </style>

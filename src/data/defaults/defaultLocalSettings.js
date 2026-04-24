@@ -4,6 +4,8 @@ export default () => ({
   htmlExportTemplate: 'styledHtml',
   pdfExportTemplate: 'styledHtml',
   pandocExportFormat: 'pdf',
+  explorerSort: 'name', // 'name' | 'modified' | 'created'
+  pinnedFolderIds: {}, // { [folderId]: true }
   googleDriveRestrictedAccess: false,
   googleDriveFolderId: '',
   googleDriveWorkspaceFolderId: '',

@@ -6,6 +6,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{files.0.name}}</title>
   <link rel="stylesheet" href="https://stackedit.io/style.css" />
+  {{#if pdf}}
+  <style>
+    .stackedit--pdf .mermaid-wrapper,
+    .stackedit--pdf pre.mermaid,
+    .stackedit--pdf .mermaid {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      page-break-before: avoid;
+      break-before: avoid;
+      text-align: center;
+    }
+    .stackedit--pdf .mermaid-wrapper svg,
+    .stackedit--pdf pre.mermaid svg,
+    .stackedit--pdf .mermaid svg {
+      max-width: 100% !important;
+      max-height: 90vh !important;
+      height: auto !important;
+      width: auto !important;
+    }
+    .stackedit--pdf h1,
+    .stackedit--pdf h2,
+    .stackedit--pdf h3,
+    .stackedit--pdf h4,
+    .stackedit--pdf h5,
+    .stackedit--pdf h6 {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    .stackedit--pdf p:has(+ .mermaid-wrapper),
+    .stackedit--pdf p:has(+ pre.mermaid),
+    .stackedit--pdf p:has(+ .mermaid) {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+  </style>
+  {{/if}}
 </head>
 
 {{#if pdf}}

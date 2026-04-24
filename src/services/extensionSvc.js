@@ -30,8 +30,11 @@ export default {
   },
 
   sectionPreview(elt, options, isEditor) {
-    sectionPreviewListeners.forEach((listener) => {
-      listener(elt, options, isEditor);
-    });
+    // Listeners may be async (mermaid, for example). Return a Promise so
+    // export paths can await the rendered DOM before reading innerHTML.
+    // Callers that don't care (live preview) can just ignore the return.
+    const results = sectionPreviewListeners.map(listener =>
+      listener(elt, options, isEditor));
+    return Promise.all(results);
   },
 };
