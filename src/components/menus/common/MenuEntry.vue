@@ -1,5 +1,5 @@
 <template>
-  <a class="menu-entry button flex flex--row flex--align-center" href="javascript:void(0)">
+  <a class="menu-entry button flex flex--row flex--align-center" :class="{ 'menu-entry--disabled': disabled }" href="javascript:void(0)" :aria-disabled="disabled ? 'true' : null" @click.capture="onClick">
     <div class="menu-entry__icon flex flex--column flex--center">
       <slot name="icon"></slot>
     </div>
@@ -8,6 +8,22 @@
     </div>
   </a>
 </template>
+
+<script>
+export default {
+  props: {
+    disabled: { type: Boolean, default: false },
+  },
+  methods: {
+    onClick(evt) {
+      if (this.disabled) {
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+      }
+    },
+  },
+};
+</script>
 
 <style lang="scss">
 @use 'sass:color';
@@ -42,6 +58,19 @@
 .menu-entry--info {
   padding-top: 3px;
   padding-bottom: 3px;
+}
+
+.menu-entry--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: auto; // keep hover so tooltip helpers still work, but click is blocked in JS
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: transparent !important;
+    color: inherit !important;
+  }
 }
 
 .menu-entry__icon {
