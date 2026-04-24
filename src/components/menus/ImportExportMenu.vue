@@ -39,7 +39,7 @@
     <menu-entry @click.native="exportPdf">
       <icon-download slot="icon"></icon-download>
       <div><div class="menu-entry__label" :class="{'menu-entry__label--warning': !isSponsor}">sponsor</div> Export as PDF</div>
-      <span>Produce a PDF from an HTML template.</span>
+      <span>Produce a PDF from an HTML template. Mermaid diagrams are included and scaled to fit a single page.</span>
     </menu-entry>
     <menu-entry @click.native="exportPandoc">
       <icon-download slot="icon"></icon-download>
