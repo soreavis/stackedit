@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: 2026-04-21_
+_Last updated: 2026-04-24_
 
 This policy covers the community fork of StackEdit maintained at
 [`github.com/soreavis/stackedit`](https://github.com/soreavis/stackedit) and
