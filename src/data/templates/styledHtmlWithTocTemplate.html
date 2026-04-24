@@ -8,13 +8,15 @@
   <link rel="stylesheet" href="https://stackedit.io/style.css" />
   {{#if pdf}}
   <style>
+    /* Keep diagrams intact. Nothing else overridden — stacking "avoid"
+       break-after on every heading and break-before on every mermaid
+       wrapper forced Chromium to leave huge blank slabs when the target
+       page couldn't fit the grouped content. */
     .stackedit--pdf .mermaid-wrapper,
     .stackedit--pdf pre.mermaid,
     .stackedit--pdf .mermaid {
       page-break-inside: avoid;
       break-inside: avoid;
-      page-break-before: avoid;
-      break-before: avoid;
       text-align: center;
     }
     .stackedit--pdf .mermaid-wrapper svg,
@@ -24,21 +26,6 @@
       max-height: 90vh !important;
       height: auto !important;
       width: auto !important;
-    }
-    .stackedit--pdf h1,
-    .stackedit--pdf h2,
-    .stackedit--pdf h3,
-    .stackedit--pdf h4,
-    .stackedit--pdf h5,
-    .stackedit--pdf h6 {
-      page-break-after: avoid;
-      break-after: avoid;
-    }
-    .stackedit--pdf p:has(+ .mermaid-wrapper),
-    .stackedit--pdf p:has(+ pre.mermaid),
-    .stackedit--pdf p:has(+ .mermaid) {
-      page-break-after: avoid;
-      break-after: avoid;
     }
   </style>
   {{/if}}
