@@ -2,6 +2,7 @@ import utils from './utils';
 import store from '../store';
 import welcomeFile from '../data/welcomeFile.md?raw';
 import workspaceSvc from './workspaceSvc';
+import draftFilesSvc from './draftFilesSvc';
 import constants from '../data/constants';
 
 const deleteMarkerMaxAge = 1000;
@@ -377,19 +378,35 @@ const localDbSvc = {
     utils.setInterval(() => localDbSvc.sync(), 1000);
 
     // watch current file changing
+    let prevCurrentId = store.getters['file/current'].id || null;
     store.watch(
       () => store.getters['file/current'].id,
-      async () => {
+      async (newId) => {
+        // If the file we're leaving was a brand-new draft the user never
+        // edited, discard it so the workspace doesn't fill up with empty
+        // "Untitled" stubs. Resolved lazily here because the `draftFilesSvc`
+        // import at top level would be a circular dep risk.
+        if (prevCurrentId && prevCurrentId !== newId) {
+          draftFilesSvc.discardIfUnedited(prevCurrentId);
+        }
+        prevCurrentId = newId || null;
         // See if currentFile is real, ie it has an ID
         const currentFile = store.getters['file/current'];
         // If current file has no ID, get the most recent file
         if (!currentFile.id) {
+          if (store.state.explorer.userClosedFile) {
+            // User deliberately closed — don't auto-recover.
+            return;
+          }
           const recentFile = store.getters['file/lastOpened'];
           // Set it as the current file
           if (recentFile.id) {
             store.commit('file/setCurrentId', recentFile.id);
-          } else {
-            // If still no ID, create a new file
+          } else if (!store.getters['file/items'].length) {
+            // Truly empty workspace (first boot) — bootstrap a welcome file.
+            // If the only remaining items are in Trash, leave currentId
+            // null so the explorer empty-state shows instead of resurrecting
+            // a trashed file and auto-expanding its folder.
             const newFile = await workspaceSvc.createFile({
               name: 'Welcome file',
               text: welcomeFile,
@@ -398,6 +415,10 @@ const localDbSvc = {
             store.commit('file/setCurrentId', newFile.id);
           }
         } else {
+          if (store.state.explorer.userClosedFile) {
+            // Any transition to a real file clears the close flag.
+            store.commit('explorer/setUserClosedFile', false);
+          }
           try {
             // Load contentState from DB
             await localDbSvc.loadContentState(currentFile.id);

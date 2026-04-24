@@ -55,7 +55,14 @@ export default {
     const conversionCtx = markdownConversionSvc.convert(parsingCtx);
     const html = conversionCtx.htmlSectionList.map(htmlSanitizer.sanitizeHtml).join('');
     containerElt.innerHTML = html;
-    extensionSvc.sectionPreview(containerElt, options);
+    // Await async extension rendering (e.g. mermaid) so the exported
+    // innerHTML contains finished SVG instead of the original code fence.
+    await extensionSvc.sectionPreview(containerElt, options);
+
+    // Strip mermaid interactive controls (copy/enlarge buttons) from exports.
+    containerElt.querySelectorAll('.mermaid-wrapper-actions').cl_each((actionsElt) => {
+      actionsElt.parentNode.removeChild(actionsElt);
+    });
 
     // Unwrap tables
     containerElt.querySelectorAll('.table-wrapper').cl_each((wrapperElt) => {
