@@ -15,7 +15,34 @@ function debounceAction(action, wait) {
 }
 
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
-const compare = (node1, node2) => collator.compare(node1.item.name, node2.item.name);
+const byName = (a, b) => collator.compare(a.item.name, b.item.name);
+
+function makeComparator(mode, lastOpened, lastCreated, pinnedFolderIds) {
+  const byActivity = (a, b) => {
+    const getTs = (n) => {
+      if (mode === 'modified') {
+        return (lastOpened[n.item.id] || 0)
+          || ((lastCreated[n.item.id] && lastCreated[n.item.id].created) || 0);
+      }
+      if (mode === 'created') {
+        return (lastCreated[n.item.id] && lastCreated[n.item.id].created) || 0;
+      }
+      return 0;
+    };
+    const diff = getTs(b) - getTs(a);
+    if (diff !== 0) return diff;
+    return byName(a, b);
+  };
+  const base = mode === 'name' ? byName : byActivity;
+  return (a, b) => {
+    if (a.isFolder && b.isFolder) {
+      const pa = pinnedFolderIds[a.item.id] ? 0 : 1;
+      const pb = pinnedFolderIds[b.item.id] ? 0 : 1;
+      if (pa !== pb) return pa - pb;
+    }
+    return base(a, b);
+  };
+}
 
 class Node {
   constructor(item, locations = [], isFolder = false) {
@@ -28,11 +55,11 @@ class Node {
     }
   }
 
-  sortChildren() {
+  sortChildren(comparator) {
     if (this.isFolder) {
-      this.folders.sort(compare);
-      this.files.sort(compare);
-      this.folders.forEach(child => child.sortChildren());
+      this.folders.sort(comparator);
+      this.files.sort(comparator);
+      this.folders.forEach(child => child.sortChildren(comparator));
     }
   }
 }
@@ -111,6 +138,9 @@ export default {
     toggleOpenNode(state, id) {
       Vue.set(state.openNodes, id, !state.openNodes[id]);
     },
+    setOpenNodes(state, openNodes) {
+      state.openNodes = openNodes || {};
+    },
   },
   getters: {
     nodeStructure: (state, getters, rootState, rootGetters) => {
@@ -168,14 +198,61 @@ export default {
         }
         node.parentNode = parentNode;
       });
-      rootNode.sortChildren();
 
-      // Add Trash and Temp nodes
+      // Sort honoring user's mode + pinned folders.
+      const localSettings = rootGetters['data/localSettings'] || {};
+      const sortMode = localSettings.explorerSort || 'name';
+      const pinnedFolderIds = localSettings.pinnedFolderIds || {};
+      const lastOpened = rootGetters['data/lastOpened'] || {};
+      const lastCreated = rootGetters['data/lastCreated'] || {};
+      const comparator = makeComparator(sortMode, lastOpened, lastCreated, pinnedFolderIds);
+      rootNode.sortChildren(comparator);
+
+      // Compute recursive descendant-file counts for every folder.
+      const countFiles = (node) => {
+        if (!node.isFolder) return 1;
+        let total = (node.files || [])
+          .filter(f => f.item.id !== 'fake')
+          .length;
+        (node.folders || []).forEach((f) => { total += countFiles(f); });
+        node.fileCount = total;
+        return total;
+      };
+      countFiles(rootNode);
+
+      // Synthesize a Recent folder at the very top, clones of real file
+      // nodes (same item.id — clicks still open the real file). Ranked by
+      // data/lastOpened timestamp, capped at 10 entries.
+      const recentFolderNode = new Node(emptyFolder(), [], true);
+      recentFolderNode.item.id = 'recent';
+      recentFolderNode.item.name = 'Recent';
+      recentFolderNode.noDrag = true;
+      recentFolderNode.noDrop = true;
+      recentFolderNode.isRecent = true;
+      recentFolderNode.parentNode = rootNode;
+      const recentIds = Object.entries(lastOpened)
+        .sort((a, b) => b[1] - a[1])
+        .map(([id]) => id)
+        .filter(id => nodeMap[id] && !nodeMap[id].isFolder && nodeMap[id].item.parentId !== 'trash')
+        .slice(0, 10);
+      recentFolderNode.files = recentIds.map((id) => {
+        const original = nodeMap[id];
+        const clone = new Node(original.item, original.locations);
+        clone.parentNode = recentFolderNode;
+        clone.noDrag = true;
+        return clone;
+      });
+      recentFolderNode.fileCount = recentFolderNode.files.length;
+
+      // Add Trash, Temp, Recent nodes
       rootNode.folders.unshift(tempFolderNode);
       tempFolderNode.files.forEach((node) => {
         node.noDrop = true;
       });
       rootNode.folders.unshift(trashFolderNode);
+      if (recentFolderNode.files.length) {
+        rootNode.folders.unshift(recentFolderNode);
+      }
 
       // Add a fake file at the end of the root folder to allow drag and drop into it
       rootNode.files.push(fakeFileNode);
