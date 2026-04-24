@@ -10,14 +10,13 @@ const config = {
   flowchart: {
     htmlLabels: true,
     curve: 'linear',
-    // Generous padding so shape labels and subgraph titles breathe. The
-    // earlier bumps (20 / 70 / 16 / 10) still read tight around subgraph
-    // titles, so bump padding 20 → 32 and subGraphTitleMargin 10 → 22.
-    padding: 32,
-    nodeSpacing: 80,
-    rankSpacing: 80,
-    diagramPadding: 24,
-    subGraphTitleMargin: { top: 22, bottom: 22 },
+    // All spacing values left at mermaid defaults. Every knob we tried
+    // (padding, rankSpacing, nodeSpacing, diagramPadding, subGraph-
+    // TitleMargin) moved diagrams off mermaid's well-tested layout
+    // path — either breaking edge-label placement (empty "pills" at
+    // edge midpoints) or crushing subgraph-title breathing room.
+    // Accepting the library's native vertical gaps in exchange for
+    // correct label rendering and predictable subgraph layout.
   },
   sequence: {
     diagramMarginX: 50,

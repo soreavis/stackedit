@@ -1,6 +1,6 @@
 <template>
   <transition name="modal-fade">
-    <div class="modal" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
+    <div class="modal" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.enter="onEnter" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
       <div class="modal__sponsor-banner" v-if="!isSponsor">
         StackEdit is <a class="not-tabbable" target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">open source</a>, please consider
         <a class="not-tabbable" href="javascript:void(0)" @click="sponsor">sponsoring</a> for just $5.
@@ -175,6 +175,20 @@ export default {
     onEscape() {
       this.config.reject();
       editorSvc.clEditor.focus();
+    },
+    onEnter(evt) {
+      // Skip when the user is typing into a multi-line textarea or a
+      // contenteditable region — Enter there should insert a newline.
+      // Select / input / button targets all forward Enter to the resolve
+      // button as the universal "confirm" action.
+      const target = evt.target;
+      if (target && target.tagName === 'TEXTAREA') return;
+      if (target && target.isContentEditable) return;
+      const resolve = this.$el && this.$el.querySelector('.button--resolve');
+      if (resolve && !resolve.disabled) {
+        evt.preventDefault();
+        resolve.click();
+      }
     },
     onTab(evt) {
       const tabbables = getTabbables(this.$el);
