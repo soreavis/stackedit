@@ -12,8 +12,42 @@ module.getters = {
   ...module.getters,
   current: ({ itemsById, currentId }) => itemsById[currentId] || empty(),
   isCurrentTemp: (state, { current }) => current.parentId === 'temp',
-  lastOpened: ({ itemsById }, { items }, rootState, rootGetters) =>
-    itemsById[rootGetters['data/lastOpenedIds'][0]] || items[0] || empty(),
+  lastOpened: ({ itemsById }, { items }, rootState, rootGetters) => {
+    // Pick the most recent file that's (a) not in Trash and (b) reachable
+    // without auto-expanding a currently-collapsed folder. This is the
+    // fallback localDbSvc uses when currentId goes null; picking a file
+    // behind a closed folder would cause the explorer watcher to pop it
+    // open, which is disorienting right after a delete.
+    const openNodes = rootState.explorer ? rootState.explorer.openNodes : {};
+    const foldersById = rootState.folder ? rootState.folder.itemsById : {};
+    const isHidden = (file) => {
+      let pid = file.parentId;
+      while (pid && pid !== 'trash' && pid !== 'temp') {
+        if (!openNodes[pid]) return true;
+        const folder = foldersById[pid];
+        if (!folder) return false;
+        pid = folder.parentId;
+      }
+      return false;
+    };
+    const isUnderTrash = (file) => {
+      let pid = file.parentId;
+      while (pid) {
+        if (pid === 'trash') return true;
+        const folder = foldersById[pid];
+        if (!folder) return false;
+        pid = folder.parentId;
+      }
+      return false;
+    };
+    const acceptable = f => f && !isUnderTrash(f) && !isHidden(f);
+    const ids = rootGetters['data/lastOpenedIds'];
+    for (let i = 0; i < ids.length; i += 1) {
+      const f = itemsById[ids[i]];
+      if (acceptable(f)) return f;
+    }
+    return items.find(acceptable) || empty();
+  },
 };
 
 module.mutations = {

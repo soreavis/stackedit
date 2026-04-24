@@ -27,14 +27,34 @@ import { mapGetters } from 'vuex';
 import editorSvc from '../services/editorSvc';
 import utils from '../services/utils';
 
+// A footer stat: either a regex counter OR a custom computeFn(text) → value.
 class Stat {
-  constructor(name, regex) {
+  constructor(name, regex, computeFn) {
     this.id = utils.uid();
     this.name = name;
-    this.regex = new RegExp(regex, 'gm');
+    this.regex = regex ? new RegExp(regex, 'gm') : null;
+    this.computeFn = computeFn || null;
     this.value = null;
   }
+
+  run(text) {
+    if (this.computeFn) {
+      this.value = this.computeFn(text);
+      return;
+    }
+    this.value = (text.match(this.regex) || []).length;
+  }
 }
+
+// Reading time = words / 220 wpm, rounded up, min 1 if any content.
+function formatReading(text) {
+  const words = (text.match(/\S+/g) || []).length;
+  if (!words) return '0m';
+  return `${Math.max(1, Math.round(words / 220))}m`;
+}
+
+// Crude sentence split — ends with ., !, or ? followed by space/EOL.
+const SENTENCE_RE = '[^.!?\\n]+[.!?]+(?=\\s|$)';
 
 export default {
   data: () => ({
@@ -44,13 +64,21 @@ export default {
     column: 0,
     textStats: [
       new Stat('bytes', '[\\s\\S]'),
+      new Stat('chars', '\\S'),
       new Stat('words', '\\S+'),
       new Stat('lines', '\n'),
+      new Stat('sentences', SENTENCE_RE),
+      new Stat('headings', '^#{1,6}\\s+\\S'),
+      new Stat('code', '^```'),
+      new Stat('links', '\\[[^\\]]+\\]\\([^)]+\\)'),
+      new Stat('read', null, formatReading),
     ],
     htmlStats: [
       new Stat('characters', '\\S'),
       new Stat('words', '\\S+'),
       new Stat('paragraphs', '\\S.*'),
+      new Stat('sentences', SENTENCE_RE),
+      new Stat('read', null, formatReading),
     ],
   }),
   computed: mapGetters('layout', [
@@ -78,9 +106,7 @@ export default {
           this.textSelection = true;
           text = selectedText;
         }
-        this.textStats.forEach((stat) => {
-          stat.value = (text.match(stat.regex) || []).length;
-        });
+        this.textStats.forEach(stat => stat.run(text));
       }, 10);
     },
     computeHtml() {
@@ -95,9 +121,7 @@ export default {
           ({ text } = editorSvc.previewCtx);
         }
         if (text != null) {
-          this.htmlStats.forEach((stat) => {
-            stat.value = (text.match(stat.regex) || []).length;
-          });
+          this.htmlStats.forEach(stat => stat.run(text));
         }
       }, 10);
     },

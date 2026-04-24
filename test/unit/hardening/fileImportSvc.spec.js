@@ -15,6 +15,17 @@ vi.mock('../../../src/services/workspaceSvc.js', () => ({
 vi.mock('../../../src/services/badgeSvc.js', () => ({
   default: { addBadge: (...args) => addBadge(...args) },
 }));
+// HTML drag-drop conversion pulls in the store + sanitizer. Stub those out
+// so the import path doesn't load the full Vuex store (which touches
+// localStorage during boot and can't initialize in happy-dom).
+vi.mock('../../../src/store', () => ({
+  default: {
+    getters: { 'data/computedSettings': { turndown: {} } },
+  },
+}));
+vi.mock('../../../src/libs/htmlSanitizer', () => ({
+  default: { sanitizeHtml: html => html },
+}));
 
 const { default: fileImportSvc } = await import('../../../src/services/fileImportSvc.js');
 

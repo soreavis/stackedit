@@ -21,6 +21,24 @@ export default {
     'No',
     'Yes, revert',
   ),
+  bulkDeletion: simpleModal(
+    (config) => {
+      const parts = [];
+      if (config.toTrash) {
+        parts.push(`move ${config.toTrash} item${config.toTrash === 1 ? '' : 's'} to Trash`);
+      }
+      if (config.permanent) {
+        parts.push(`permanently delete ${config.permanent} item${config.permanent === 1 ? '' : 's'}`);
+      }
+      const action = parts.length ? parts.join(' and ') : 'delete items';
+      const folderNote = config.folders
+        ? ` (including ${config.folders} folder${config.folders === 1 ? '' : 's'} with their contents)`
+        : '';
+      return `<p>You are about to ${action}${folderNote}. Are you sure?</p>`;
+    },
+    'No',
+    'Yes, delete',
+  ),
   folderDeletion: simpleModal(
     config => `<p>You are about to delete the folder <b>${config.item.name}</b>. Its files will be moved to Trash. Are you sure?</p>`,
     'No',

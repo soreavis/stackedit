@@ -45,22 +45,22 @@
       <span>Switch to another workspace.</span>
     </menu-entry>
     <hr>
-    <menu-entry @click.native="setPanel('sync')">
+    <menu-entry @click.native="setPanel('sync')" :disabled="!hasCurrentFile">
       <icon-sync slot="icon"></icon-sync>
       <div><div class="menu-entry__label menu-entry__label--count" v-if="syncLocationCount">{{ syncLocationCount }}</div> Synchronize</div>
       <span>Sync your files in the Cloud.</span>
     </menu-entry>
-    <menu-entry @click.native="setPanel('publish')">
+    <menu-entry @click.native="setPanel('publish')" :disabled="!hasCurrentFile">
       <icon-upload slot="icon"></icon-upload>
       <div><div class="menu-entry__label menu-entry__label--count" v-if="publishLocationCount">{{ publishLocationCount }}</div>Publish</div>
       <span>Export your files to the web.</span>
     </menu-entry>
-    <menu-entry @click.native="setPanel('history')">
+    <menu-entry @click.native="setPanel('history')" :disabled="!hasCurrentFile">
       <icon-history slot="icon"></icon-history>
       <div>History</div>
       <span>Track and restore file revisions.</span>
     </menu-entry>
-    <menu-entry @click.native="fileProperties">
+    <menu-entry @click.native="fileProperties" :disabled="!hasCurrentFile">
       <icon-view-list slot="icon"></icon-view-list>
       <div>File properties</div>
       <span>Add metadata and configure extensions.</span>
@@ -79,7 +79,7 @@
       <icon-content-save slot="icon"></icon-content-save>
       Import/export
     </menu-entry>
-    <menu-entry @click.native="print">
+    <menu-entry @click.native="print" :disabled="!hasCurrentFile">
       <icon-printer slot="icon"></icon-printer>
       Print
     </menu-entry>
@@ -156,6 +156,9 @@ export default {
     },
     publishLocationCount() {
       return Object.keys(store.getters['publishLocation/current']).length;
+    },
+    hasCurrentFile() {
+      return !!store.getters['file/current'].id;
     },
     templateCount() {
       return Object.keys(store.getters['data/allTemplatesById']).length;
