@@ -10,14 +10,16 @@ const config = {
   flowchart: {
     htmlLabels: true,
     curve: 'linear',
-    // Generous padding so shape labels and subgraph titles breathe. The
-    // earlier bumps (20 / 70 / 16 / 10) still read tight around subgraph
-    // titles, so bump padding 20 → 32 and subGraphTitleMargin 10 → 22.
+    // Keep INSIDE-shape padding generous (32) — labels inside nodes and
+    // subgraph titles both looked cramped at mermaid's defaults. But
+    // rankSpacing controls the OUTSIDE gap between stacked nodes, which
+    // was making vertical TB flowcharts feel sparse — pulled that back
+    // in. nodeSpacing too, a touch.
     padding: 32,
-    nodeSpacing: 80,
-    rankSpacing: 80,
-    diagramPadding: 24,
-    subGraphTitleMargin: { top: 22, bottom: 22 },
+    nodeSpacing: 50,
+    rankSpacing: 30,
+    diagramPadding: 16,
+    subGraphTitleMargin: { top: 14, bottom: 14 },
   },
   sequence: {
     diagramMarginX: 50,
