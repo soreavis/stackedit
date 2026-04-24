@@ -687,6 +687,32 @@ function addLightboxButton(wrapperElt, sourceText) {
 
 // -------- Render pipeline --------
 
+// Extra horizontal padding for edge-label pills. Mermaid emits each edge
+// label inside a foreignObject with a clip rect sized to the measured
+// HTML content — so any CSS padding added after render gets clipped
+// (see the earlier aborted attempt in commit 04c5176). Instead we widen
+// the foreignObject itself + the companion labelBkg rect by EDGE_PAD
+// and shift them by half that much to keep the label centered.
+const EDGE_LABEL_PAD = 16;
+
+function padEdgeLabels(svgEl) {
+  if (!svgEl) return;
+  svgEl.querySelectorAll('.edgeLabel foreignObject').forEach((fo) => {
+    const w = parseFloat(fo.getAttribute('width'));
+    const x = parseFloat(fo.getAttribute('x'));
+    if (!Number.isFinite(w) || !Number.isFinite(x)) return;
+    fo.setAttribute('width', `${w + EDGE_LABEL_PAD}`);
+    fo.setAttribute('x', `${x - EDGE_LABEL_PAD / 2}`);
+  });
+  svgEl.querySelectorAll('.edgeLabels rect, .edgeLabel rect').forEach((rect) => {
+    const w = parseFloat(rect.getAttribute('width'));
+    const x = parseFloat(rect.getAttribute('x'));
+    if (!Number.isFinite(w) || !Number.isFinite(x)) return;
+    rect.setAttribute('width', `${w + EDGE_LABEL_PAD}`);
+    rect.setAttribute('x', `${x - EDGE_LABEL_PAD / 2}`);
+  });
+}
+
 const render = async (elt) => {
   try {
     const source = elt.textContent; // Capture before innerHTML wipes it.
@@ -694,6 +720,7 @@ const render = async (elt) => {
     const svgId = `mermaid-svg-${utils.uid()}`;
     const { svg } = await mermaid.render(svgId, source);
     elt.innerHTML = svg;
+    padEdgeLabels(elt.querySelector('svg'));
     addLightboxButton(elt, source);
   } catch (e) {
     console.error(e);
