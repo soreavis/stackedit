@@ -66,6 +66,7 @@ import utils from '../services/utils';
 import pagedownButtons from '../data/pagedownButtons';
 import customToolbarButtons from '../data/customToolbarButtons';
 import store from '../store';
+import { useModalStore } from '../stores/modal';
 import workspaceSvc from '../services/workspaceSvc';
 import badgeSvc from '../services/badgeSvc';
 import { useContextMenuStore } from '../stores/contextMenu';
@@ -295,7 +296,7 @@ export default {
           perform: () => this.titleInputElt && this.titleInputElt.focus(),
         }, {
           name: 'File properties',
-          perform: () => store.dispatch('modal/open', 'fileProperties').catch(() => {}),
+          perform: () => useModalStore().open('fileProperties').catch(() => {}),
         }, {
           name: 'Copy path',
           perform: () => this.copyCurrentFilePath(),

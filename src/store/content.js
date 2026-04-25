@@ -3,6 +3,7 @@ import moduleTemplate from './moduleTemplate';
 import empty from '../data/empties/emptyContent';
 import utils from '../services/utils';
 import cledit from '../services/editor/cledit';
+import { useModalStore } from '../stores/modal';
 import badgeSvc from '../services/badgeSvc';
 
 const diffMatchPatch = new DiffMatchPatch();
@@ -83,7 +84,7 @@ module.actions = {
   }) {
     const { revisionContent } = state;
     if (revisionContent) {
-      await dispatch('modal/open', 'fileRestoration', { root: true });
+      await useModalStore().open('fileRestoration');
       // Close revision
       commit('setRevisionContent');
       const currentContent = utils.deepCopy(getters.current);

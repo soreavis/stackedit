@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import googleHelper from './helpers/googleHelper';
 import Provider from './common/Provider';
@@ -31,7 +32,7 @@ export default new Provider({
       let token = store.getters['data/googleTokensBySub'][state.userId];
       // If not found or not enough permission, popup an OAuth2 window
       if (!token || !token.isDrive) {
-        await store.dispatch('modal/open', { type: 'googleDriveAccount' });
+        await useModalStore().open({ type: 'googleDriveAccount' });
         token = await googleHelper.addDriveAccount(
           !store.getters['data/localSettings'].googleDriveRestrictedAccess,
           state.userId,

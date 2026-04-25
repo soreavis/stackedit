@@ -6,6 +6,7 @@
 // this incremental migration.
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { useModalStore } from '../stores/modal';
 import { useNotificationStore } from '../stores/notification';
 import utils from './utils';
 import diffUtils from './diffUtils';
@@ -915,7 +916,7 @@ export default {
 
     // Enable sponsorship
     if (paymentSuccess) {
-      store.dispatch('modal/open', 'paymentSuccess')
+      useModalStore().open('paymentSuccess')
         .catch(() => { /* Cancel */ });
       const sponsorToken = store.getters['workspace/sponsorToken'];
       // Force check sponsorship after a few seconds

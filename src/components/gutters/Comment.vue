@@ -28,6 +28,7 @@ import UserName from '../UserName';
 import editorSvc from '../../services/editorSvc';
 import htmlSanitizer from '../../libs/htmlSanitizer';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
 
 export default {
@@ -51,7 +52,7 @@ export default {
     ]),
     async removeComment() {
       try {
-        await store.dispatch('modal/open', 'commentDeletion');
+        await useModalStore().open('commentDeletion');
         store.dispatch('discussion/cleanCurrentFile', { filterComment: this.comment });
         badgeSvc.addBadge('removeComment');
       } catch (e) {

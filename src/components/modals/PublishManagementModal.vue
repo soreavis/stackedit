@@ -48,9 +48,10 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import { mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 
@@ -59,7 +60,7 @@ export default {
     ModalInner,
   },
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     ...mapGetters('publishLocation', {

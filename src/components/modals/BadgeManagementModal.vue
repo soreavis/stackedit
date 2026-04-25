@@ -37,6 +37,8 @@
 <script>
 import Vue from 'vue';
 import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
+import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
 import store from '../../store';
 
@@ -48,7 +50,7 @@ export default {
     shown: {},
   }),
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     ...mapGetters('data', [

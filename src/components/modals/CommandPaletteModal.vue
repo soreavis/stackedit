@@ -33,7 +33,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
+import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
 import customToolbarButtons from '../../data/customToolbarButtons';
 import pagedownButtons from '../../data/pagedownButtons';
@@ -106,7 +107,7 @@ export default {
     selectedIdx: 0,
   }),
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     filtered() {
