@@ -55,6 +55,7 @@ import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import store from '../../store';
+import { useQueueStore } from '../../stores/queue';
 import badgeSvc from '../../services/badgeSvc';
 
 let editorClassAppliers = [];
@@ -182,8 +183,7 @@ export default {
         const historyContext = utils.deepCopy(this.historyContext);
         if (historyContext) {
           const provider = providerRegistry.providersById[this.syncLocation.providerId];
-          revisionContentPromise = new Promise((resolve, reject) => store.dispatch(
-            'queue/enqueue',
+          revisionContentPromise = new Promise((resolve, reject) => useQueueStore().enqueue(
             () => provider.getFileRevisionContent({
               ...historyContext,
               revisionId: revision.id,
@@ -258,8 +258,7 @@ export default {
             cachedHistoryContextHash = this.historyContextHash;
             revisionContentPromises = {};
             const provider = providerRegistry.providersById[this.syncLocation.providerId];
-            revisionsPromise = new Promise((resolve, reject) => store.dispatch(
-              'queue/enqueue',
+            revisionsPromise = new Promise((resolve, reject) => useQueueStore().enqueue(
               () => provider
                 .listFileRevisions(historyContext)
                 .then(resolve, reject),
@@ -284,8 +283,7 @@ export default {
     revisions(revisions) {
       const { historyContext } = this;
       if (historyContext) {
-        store.dispatch(
-          'queue/enqueue',
+        useQueueStore().enqueue(
           () => utils.awaitSequence(revisions, async (revision) => {
             // Make sure revisions and historyContext haven't changed
             if (!this.destroyed
