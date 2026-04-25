@@ -89,7 +89,8 @@
 
 <script>
 import yaml from 'js-yaml';
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
+import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
 import Tab from './common/Tab';
 import FormEntry from './common/FormEntry';
@@ -125,7 +126,7 @@ export default {
     ...metadataProperties,
   }),
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     presets: () => Object.keys(presets).sort(),

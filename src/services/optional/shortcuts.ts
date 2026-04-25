@@ -5,6 +5,7 @@
 // properly typed.
 import { tinykeys } from 'tinykeys';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import editorSvc from '../../services/editorSvc';
 import syncSvc from '../../services/syncSvc';
 import { useFindReplaceStore } from '../../stores/findReplace';
@@ -89,7 +90,7 @@ function toTinykeys(chord) {
   }).join('+');
 }
 
-const shortcutsAllowed = () => !store.getters['modal/config']
+const shortcutsAllowed = () => !useModalStore().config
   && store.getters['content/isCurrentEditable'];
 
 const guard = fn => (event) => {
@@ -172,13 +173,13 @@ if (typeof editorSvc.$on === 'function') {
 // available, even when an editor element has focus.
 tinykeys(window, {
   '$mod+KeyK': (e) => {
-    if (store.getters['modal/config']) return;
+    if (useModalStore().config) return;
     e.preventDefault();
-    store.dispatch('modal/open', 'commandPalette').catch(() => {});
+    useModalStore().open('commandPalette').catch(() => {});
   },
   '$mod+Slash': (e) => {
-    if (store.getters['modal/config']) return;
+    if (useModalStore().config) return;
     e.preventDefault();
-    store.dispatch('modal/open', { type: 'commandPalette', initialQuery: '' }).catch(() => {});
+    useModalStore().open({ type: 'commandPalette', initialQuery: '' }).catch(() => {});
   },
 });

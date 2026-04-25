@@ -18,6 +18,7 @@ import editorSvcDiscussions from './editor/editorSvcDiscussions';
 import editorSvcUtils from './editor/editorSvcUtils';
 import utils from './utils';
 import store from '../store';
+import { useModalStore } from '../stores/modal';
 
 const allowDebounce = (action, wait) => {
   let timeoutId;
@@ -375,14 +376,14 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     });
     this.pagedownEditor.run();
     this.pagedownEditor.hooks.set('insertLinkDialog', (callback) => {
-      store.dispatch('modal/open', {
+      useModalStore().open({
         type: 'link',
         callback,
       });
       return true;
     });
     this.pagedownEditor.hooks.set('insertImageDialog', (callback) => {
-      store.dispatch('modal/open', {
+      useModalStore().open({
         type: 'image',
         callback,
       });

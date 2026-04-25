@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import githubHelper from './helpers/githubHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
@@ -75,7 +76,7 @@ export default new Provider({
       token = store.getters['data/githubTokensBySub'][workspace.sub];
     }
     if (!token) {
-      await store.dispatch('modal/open', { type: 'githubAccount' });
+      await useModalStore().open({ type: 'githubAccount' });
       token = await githubHelper.addAccount(store.getters['data/localSettings'].githubRepoFullAccess);
     }
 
