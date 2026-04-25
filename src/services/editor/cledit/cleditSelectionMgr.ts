@@ -1,3 +1,7 @@
+// @ts-nocheck
+// 500+-line legacy module with deep DOM/selection/MutationObserver
+// coordination — full typing requires editor-state interface design
+// out of scope for this incremental migration.
 import cledit from './cleditCore';
 
 function SelectionMgr(editor) {
