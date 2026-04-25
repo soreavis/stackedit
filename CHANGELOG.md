@@ -7,6 +7,8 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 ## [Unreleased]
 
 ### Added
+- **Wave 3 toolbar additions (4 more)** — image-with-dimensions (`![alt](url){width=300}` template — Hugo / kramdown / pandoc syntax), insert-table dropdown (2×2 / 3×3 / 4×3 / 5×4 / 10×4 preset sizes generating header + separator + body), text-statistics (chars/words/lines/sentences/reading-time alert for current selection or whole doc), and a **line-numbers toggle** in the button-bar (new `showLineNumbers` layoutSetting + `toggleLineNumbers` action; renders an absolutely-positioned gutter with a span-per-source-line counter that updates on every `sectionList` event). Reuses `file-image`, `table`, `information`, and `format-list-numbers` icons. Validation: 41/41 Playwright checks pass including new line-number gutter on/off.
+- **Slimmer toolbar buttons** — `.navigation-bar__button` width reduced 34 → 30 px, padding 0 7px → 0 5px (saves ~144 px of toolbar width across the ~37-button row). Necessary to keep the wave-2/3 toolbar from wrapping to a clipped second row on common 1366–1920 px viewports. SVGs render fine at the slimmer footprint.
 - **Eight more daily-use toolbar buttons** — second wave on top of the v5.16.0 toolbar set. Implementations:
   - **Callout / admonition** (dropdown: Note / Tip / Important / Warning / Caution) — inserts GitHub-flavored `> [!TYPE]` blockquote alerts. Selection becomes the body; otherwise a placeholder line is dropped in.
   - **Insert date** (dropdown: Date `YYYY-MM-DD` / Date+time / Time only) — ISO format, locale-neutral, sortable, what static-site generators expect.

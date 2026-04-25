@@ -1,5 +1,8 @@
 <template>
-  <div class="editor">
+  <div class="editor" :class="{'editor--with-line-numbers': layoutSettings.showLineNumbers}">
+    <div v-if="layoutSettings.showLineNumbers" class="editor__line-numbers" :style="{paddingTop: editorTopPadding}" aria-hidden="true">
+      <span v-for="n in lineCount" :key="n">{{ n }}</span>
+    </div>
     <pre class="editor__inner markdown-highlighting" :style="{padding: styles.editorPadding}" :class="{monospaced: computedSettings.editor.monospacedFontOnly}"></pre>
     <div class="gutter" :style="{left: styles.editorGutterLeft + 'px'}">
       <comment-list v-if="styles.editorGutterWidth"></comment-list>
@@ -12,6 +15,7 @@
 import { mapGetters } from 'vuex';
 import CommentList from './gutters/CommentList';
 import EditorNewDiscussionButton from './gutters/EditorNewDiscussionButton';
+import editorSvc from '../services/editorSvc';
 import store from '../store';
 
 export default {
@@ -19,6 +23,9 @@ export default {
     CommentList,
     EditorNewDiscussionButton,
   },
+  data: () => ({
+    lineCount: 1,
+  }),
   computed: {
     ...mapGetters('file', [
       'isCurrentTemp',
@@ -28,9 +35,25 @@ export default {
     ]),
     ...mapGetters('data', [
       'computedSettings',
+      'layoutSettings',
     ]),
+    editorTopPadding() {
+      // Match the editor pre's top padding so the first line number
+      // aligns with the first source line.
+      const pad = this.styles.editorPadding || '';
+      return pad.split(' ')[0] || '0px';
+    },
   },
   mounted() {
+    // Recompute line count when content changes (sectionList event fires
+    // after every parse). Cheap O(n) split on the editor text.
+    const updateLineCount = () => {
+      const text = (editorSvc.clEditor && editorSvc.clEditor.getContent && editorSvc.clEditor.getContent()) || '';
+      this.lineCount = Math.max(1, text.split('\n').length);
+    };
+    editorSvc.$on('sectionList', updateLineCount);
+    updateLineCount();
+
     const editorElt = this.$el.querySelector('.editor__inner');
     const onDiscussionEvt = cb => (evt) => {
       let elt = evt.target;
@@ -88,6 +111,40 @@ export default {
      "Always show scrollbars". */
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+/* Optional left-side line-number gutter, toggled via the button-bar
+   `Toggle line numbers` button. Rendered as absolutely-positioned
+   spans stacked at the same line-height as the editor so each number
+   aligns with one source line. Wrapped (visually-multi-row) source
+   lines still get a single number on the first row — like every code
+   editor. */
+.editor__line-numbers {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44px;
+  padding-right: 8px;
+  text-align: right;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+
+  .app--dark & {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  span {
+    display: block;
+  }
+}
+
+.editor--with-line-numbers .editor__inner {
+  padding-left: 52px !important;
 }
 
 .editor__inner {
