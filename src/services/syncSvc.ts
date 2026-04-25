@@ -19,6 +19,7 @@ import tempFileSvc from './tempFileSvc';
 import workspaceSvc from './workspaceSvc';
 import constants from '../data/constants';
 import badgeSvc from './badgeSvc';
+import { useQueueStore } from '../stores/queue';
 
 const minAutoSyncEvery = 60 * 1000; // 60 sec
 const inactivityThreshold = 3 * 1000; // 3 sec
@@ -207,8 +208,7 @@ const createSyncLocation = (syncLocation) => {
   syncLocation.fileId = fileId;
   // Use deepCopy to freeze the item
   const content = utils.deepCopy(store.getters['content/current']);
-  store.dispatch(
-    'queue/enqueue',
+  useQueueStore().enqueue(
     async () => {
       const provider = providerRegistry.providersById[syncLocation.providerId];
       const token = provider.getToken(syncLocation);
@@ -518,7 +518,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
         }
       };
 
-      await store.dispatch('queue/doWithLocation', {
+      await useQueueStore().doWithLocation({
         location: syncLocation,
         action: async () => {
           try {
@@ -827,7 +827,7 @@ const requestSync = (addTriggerSyncBadge = false) => {
     return;
   }
 
-  store.dispatch('queue/enqueueSyncRequest', async () => {
+  useQueueStore().enqueueSyncRequest(async () => {
     let intervalId;
     const attempt = async () => {
       // Only start syncing when these conditions are met
@@ -953,7 +953,7 @@ export default {
       // Unload contents from memory periodically
       utils.setInterval(() => {
         // Wait for sync and publish to finish
-        if (store.state.queue.isEmpty) {
+        if (useQueueStore().isEmpty) {
           localDbSvc.unloadContents();
         }
       }, 5000);

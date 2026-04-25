@@ -4,7 +4,6 @@ import Vuex from 'vuex';
 import utils from '../services/utils';
 import content from './content';
 import contentState from './contentState';
-import contextMenu from './contextMenu';
 import data from './data';
 import discussion from './discussion';
 import explorer from './explorer';
@@ -13,7 +12,6 @@ import folder from './folder';
 import layout from './layout';
 import modal from './modal';
 import notification from './notification';
-import queue from './queue';
 import syncedContent from './syncedContent';
 import userInfo from './userInfo';
 import workspace from './workspace';
@@ -30,7 +28,6 @@ const store = new Vuex.Store({
   modules: {
     content,
     contentState,
-    contextMenu,
     data,
     discussion,
     explorer,
@@ -40,7 +37,6 @@ const store = new Vuex.Store({
     modal,
     notification,
     publishLocation: locationTemplate(emptyPublishLocation),
-    queue,
     syncedContent,
     syncLocation: locationTemplate(emptySyncLocation),
     userInfo,
