@@ -10,33 +10,33 @@ const CURRENT_ID_KEY = 'stackedit.ui.currentId';
 
 let bound = false;
 
-function readJson(key) {
+function readJson(key: string): unknown {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
 
-function writeJson(key, value) {
+function writeJson(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
+  } catch {
     // Quota / private mode — ignore.
   }
 }
 
-function restoreOpenNodes() {
+function restoreOpenNodes(): void {
   const saved = readJson(OPEN_NODES_KEY);
   if (saved && typeof saved === 'object') {
     store.commit('explorer/setOpenNodes', saved);
   }
 }
 
-function restoreCurrentId() {
+function restoreCurrentId(): void {
   const id = (() => {
-    try { return localStorage.getItem(CURRENT_ID_KEY); } catch (e) { return null; }
+    try { return localStorage.getItem(CURRENT_ID_KEY); } catch { return null; }
   })();
   if (!id) return;
   const file = store.state.file.itemsById[id];
@@ -46,10 +46,15 @@ function restoreCurrentId() {
   }
 }
 
-function bindSubscriptions() {
+interface MutationLike {
+  type: string;
+  payload?: unknown;
+}
+
+function bindSubscriptions(): void {
   if (bound) return;
   bound = true;
-  store.subscribe((mutation) => {
+  store.subscribe((mutation: MutationLike) => {
     if (mutation.type === 'explorer/toggleOpenNode'
       || mutation.type === 'explorer/setOpenNodes'
     ) {
@@ -57,39 +62,22 @@ function bindSubscriptions() {
       return;
     }
     if (mutation.type === 'file/setCurrentId') {
-      const id = mutation.payload;
+      const id = mutation.payload as string | null | undefined;
       try {
         if (id) localStorage.setItem(CURRENT_ID_KEY, id);
         else localStorage.removeItem(CURRENT_ID_KEY);
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
   });
 }
 
-export default {
-  // Call once, as early as possible, before any UI interaction. Safe to
-  // call before file.itemsById is hydrated — open-folder restore is
-  // purely id→boolean so order doesn't matter.
-  restoreEarly() {
-    restoreOpenNodes();
-    bindSubscriptions();
-  },
-  // Call after file.itemsById is hydrated (e.g. end of localDbSvc.init)
-  // so the current-id lookup can verify the file still exists outside
-  // Trash.
-  restoreCurrentFile() {
-    restoreCurrentId();
-    seedRecentSnapshot();
-  },
-};
-
 // Freeze the "Recent" folder ordering at the start of the session so
 // clicking a file (which bumps its lastOpened timestamp) doesn't shuffle
 // the list under the user. Reload reseeds.
-function seedRecentSnapshot() {
-  const lastOpened = store.getters['data/lastOpened'] || {};
+function seedRecentSnapshot(): void {
+  const lastOpened: Record<string, number> = store.getters['data/lastOpened'] || {};
   const snapshot = Object.entries(lastOpened)
     .sort((a, b) => b[1] - a[1])
     .map(([id, ts]) => ({ id, ts }))
@@ -100,3 +88,20 @@ function seedRecentSnapshot() {
     .slice(0, 10);
   store.commit('explorer/setRecentSnapshot', snapshot);
 }
+
+export default {
+  // Call once, as early as possible, before any UI interaction. Safe to
+  // call before file.itemsById is hydrated — open-folder restore is
+  // purely id→boolean so order doesn't matter.
+  restoreEarly(): void {
+    restoreOpenNodes();
+    bindSubscriptions();
+  },
+  // Call after file.itemsById is hydrated (e.g. end of localDbSvc.init)
+  // so the current-id lookup can verify the file still exists outside
+  // Trash.
+  restoreCurrentFile(): void {
+    restoreCurrentId();
+    seedRecentSnapshot();
+  },
+};
