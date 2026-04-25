@@ -396,5 +396,58 @@ textarea {
   .preview__inner-2 {
     padding: 0 50px !important;
   }
+
+  /* Better-print pass: explicitly hide chrome, normalize typography for
+     paper, and add page-break rules so headings + code blocks + tables
+     don't split mid-element. The original print rule above unhid the
+     preview pane; this block tightens the output. */
+  .navigation-bar,
+  .button-bar,
+  .layout__panel--explorer,
+  .layout__panel--side-bar,
+  .layout__panel--status-bar,
+  .layout__panel--editor,
+  .layout__panel--button-bar,
+  .layout__panel--find-replace,
+  .layout__panel--navigation-bar,
+  .gutter {
+    display: none !important;
+  }
+
+  .preview__inner-2 {
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    color: #000 !important;
+  }
+
+  /* Page-break rules for prose. Headings stay with their next paragraph;
+     code blocks / mermaid / images / tables don't split mid-element. */
+  .preview__inner-2 {
+    h1, h2, h3, h4, h5, h6 {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    pre, blockquote, table, .mermaid, .mermaid-wrapper, img {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    p {
+      orphans: 3;
+      widows: 3;
+    }
+  }
+
+  /* Show link URLs after the link text — useful on paper where you can't
+     click. Skip for in-page anchors and image src URLs. */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #555;
+  }
+
+  /* Page margins — defaults vary by browser; lock them for consistency. */
+  @page {
+    margin: 1.5cm;
+  }
   // scss-lint:enable ImportantRule
 }
