@@ -2,9 +2,24 @@ import store from '../store';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
 
+// ExplorerNode is the tree-shaped wrapper that the `explorer/nodeStructure`
+// getter produces. Real shape is rich (folders/files arrays, isRoot/isTrash/
+// isTemp/isNil flags, isFolder, item with id/parentId/name) — type just the
+// fields we touch here.
+interface ExplorerNode {
+  isRoot?: boolean;
+  isTrash?: boolean;
+  isTemp?: boolean;
+  isNil?: boolean;
+  isFolder?: boolean;
+  folders: ExplorerNode[];
+  files: ExplorerNode[];
+  item: { id: string; parentId?: string; name?: string };
+}
+
 // Walk parent chain to see if node lives under a sentinel folder.
-function isUnder(node, sentinelId, nodeMap) {
-  for (let walk = node; walk; walk = nodeMap[walk.item.parentId]) {
+function isUnder(node: ExplorerNode, sentinelId: string, nodeMap: Record<string, ExplorerNode>): boolean {
+  for (let walk: ExplorerNode | undefined = node; walk; walk = nodeMap[walk.item.parentId as string]) {
     if (walk.item.id === sentinelId) return true;
   }
   return false;
@@ -14,19 +29,19 @@ function isUnder(node, sentinelId, nodeMap) {
 // i.e. every folder in its ancestor chain is expanded. Otherwise the
 // file-watcher would walk up and pop a collapsed folder open, which the
 // user finds disorienting when they've just removed something.
-function pickVisibleReplacement() {
+function pickVisibleReplacement(): string | null {
   const { nodeMap } = store.getters['explorer/nodeStructure'];
   const openNodes = store.state.explorer.openNodes;
-  const ids = store.getters['data/lastOpenedIds'];
+  const ids: string[] = store.getters['data/lastOpenedIds'];
   for (let i = 0; i < ids.length; i += 1) {
     const id = ids[i];
     const file = store.state.file.itemsById[id];
     if (!file || file.parentId === 'trash') continue;
     let visible = true;
     for (
-      let parent = nodeMap[file.parentId];
+      let parent: ExplorerNode | undefined = nodeMap[file.parentId];
       parent && !parent.isRoot;
-      parent = nodeMap[parent.item.parentId]
+      parent = nodeMap[parent.item.parentId as string]
     ) {
       if (!openNodes[parent.item.id]) {
         visible = false;
@@ -38,25 +53,25 @@ function pickVisibleReplacement() {
   return null;
 }
 
-async function bulkDelete(selectedNodes) {
+async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
   // Drop sentinel roots and empty nodes — users can't bulk-delete Trash/Temp themselves.
   const nodes = selectedNodes.filter(n => !n.isTrash && !n.isTemp && !n.isNil);
   if (!nodes.length) return;
 
-  const { nodeMap } = store.getters['explorer/nodeStructure'];
+  const { nodeMap }: { nodeMap: Record<string, ExplorerNode> } = store.getters['explorer/nodeStructure'];
 
   // If a folder is selected alongside one of its descendants, drop the
   // descendant — the folder's recursive delete will cover it anyway.
   const ids = new Set(nodes.map(n => n.item.id));
   const effective = nodes.filter((node) => {
-    for (let walk = nodeMap[node.item.parentId]; walk; walk = nodeMap[walk.item.parentId]) {
+    for (let walk = nodeMap[node.item.parentId as string]; walk; walk = nodeMap[walk.item.parentId as string]) {
       if (ids.has(walk.item.id)) return false;
     }
     return true;
   });
 
-  const toTrashNodes = [];
-  const permanentNodes = [];
+  const toTrashNodes: ExplorerNode[] = [];
+  const permanentNodes: ExplorerNode[] = [];
   let folders = 0;
   effective.forEach((node) => {
     if (node.isFolder) folders += 1;
@@ -73,14 +88,14 @@ async function bulkDelete(selectedNodes) {
       permanent: permanentNodes.length,
       folders,
     });
-  } catch (e) {
+  } catch {
     return; // cancelled
   }
 
   const currentFileId = store.getters['file/current'].id;
   let doClose = false;
 
-  const recursivePurge = (node) => {
+  const recursivePurge = (node: ExplorerNode): void => {
     if (node.isFolder) {
       node.folders.forEach(recursivePurge);
       node.files.forEach((fileNode) => {
@@ -94,17 +109,17 @@ async function bulkDelete(selectedNodes) {
     }
   };
 
-  const recursiveToTrash = (node) => {
+  const recursiveToTrash = (node: ExplorerNode): void => {
     if (node.isFolder) {
       node.folders.forEach(recursiveToTrash);
       node.files.forEach((fileNode) => {
         doClose = doClose || fileNode.item.id === currentFileId;
-        workspaceSvc.setOrPatchItem({ id: fileNode.item.id, parentId: 'trash' });
+        (workspaceSvc as any).setOrPatchItem({ id: fileNode.item.id, parentId: 'trash' });
       });
       store.commit('folder/deleteItem', node.item.id);
     } else {
       doClose = doClose || node.item.id === currentFileId;
-      workspaceSvc.setOrPatchItem({ id: node.item.id, parentId: 'trash' });
+      (workspaceSvc as any).setOrPatchItem({ id: node.item.id, parentId: 'trash' });
     }
   };
 
@@ -123,9 +138,9 @@ async function bulkDelete(selectedNodes) {
 }
 
 export default {
-  newItem(isFolder = false) {
-    const selectedNode = store.getters['explorer/selectedNode'];
-    let parentId = store.getters['explorer/selectedNodeFolder'].item.id;
+  newItem(isFolder = false): void {
+    const selectedNode: ExplorerNode = store.getters['explorer/selectedNode'];
+    let parentId: string | null = store.getters['explorer/selectedNodeFolder'].item.id;
     // If the selected folder is collapsed, create at the root instead
     // of burying the new item inside a closed branch.
     if (selectedNode.isFolder
@@ -145,13 +160,13 @@ export default {
       parentId,
     });
   },
-  async deleteItem() {
-    const selectedNodes = store.getters['explorer/selectedNodes'];
+  async deleteItem(): Promise<void> {
+    const selectedNodes: ExplorerNode[] = store.getters['explorer/selectedNodes'];
     if (selectedNodes.length > 1) {
       await bulkDelete(selectedNodes);
       return;
     }
-    const selectedNode = store.getters['explorer/selectedNode'];
+    const selectedNode: ExplorerNode = store.getters['explorer/selectedNode'];
     if (selectedNode.isNil) {
       return;
     }
@@ -159,7 +174,7 @@ export default {
     if (selectedNode.isTrash || selectedNode.item.parentId === 'trash') {
       try {
         await store.dispatch('modal/open', 'trashDeletion');
-      } catch (e) {
+      } catch {
         // Cancel
       }
       return;
@@ -183,13 +198,13 @@ export default {
           item: selectedNode.item,
         });
       }
-    } catch (e) {
+    } catch {
       return; // cancel
     }
 
-    const deleteFile = (id) => {
+    const deleteFile = (id: string): void => {
       if (moveToTrash) {
-        workspaceSvc.setOrPatchItem({
+        (workspaceSvc as any).setOrPatchItem({
           id,
           parentId: 'trash',
         });
@@ -202,7 +217,7 @@ export default {
       const currentFileId = store.getters['file/current'].id;
       let doClose = selectedNode.item.id === currentFileId;
       if (selectedNode.isFolder) {
-        const recursiveDelete = (folderNode) => {
+        const recursiveDelete = (folderNode: ExplorerNode): void => {
           folderNode.folders.forEach(recursiveDelete);
           folderNode.files.forEach((fileNode) => {
             doClose = doClose || fileNode.item.id === currentFileId;
