@@ -2,17 +2,17 @@
   <modal-inner class="modal__inner-1--about-modal" aria-label="About">
     <div class="modal__content">
       <div class="logo-background"></div>
-      <div class="about-fork-badge">Community Fork</div>
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/">Fork on GitHub</a>
+      <div class="about-fork-badge">Independent Successor</div>
+      <p class="about-tagline">Markdown editor with live preview, Mermaid, KaTeX, and cloud sync. Actively maintained continuation of StackEdit.</p>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/">View on GitHub</a>
       <br>
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/issues">Issue tracker</a> — <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/blob/main/CHANGELOG.md">Fork changelog</a>
-      <br>
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">Upstream StackEdit</a> — <a target="_blank" rel="noopener noreferrer" href="https://community.stackedit.io/">Upstream community</a>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/issues">Issue tracker</a> — <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/blob/main/CHANGELOG.md">Changelog</a>
       <hr>
       <small>
         © 2013–2019 Dock5 Software Ltd. (original StackEdit)<br>
-        Fork © 2026 soreavis<br>
-        v{{ version }}
+        © 2026 soreavis<br>
+        v{{ version }}<br>
+        Based on <a target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">benweet/stackedit</a> (dormant since 2023)
       </small>
       <h3>FAQ</h3>
       <div class="faq" v-html="faq"></div>
@@ -72,7 +72,7 @@ export default {
 
 .about-fork-badge {
   display: inline-block;
-  margin: 0 0 1em;
+  margin: 0 0 0.6em;
   padding: 0.15em 0.6em;
   font-size: 0.7em;
   font-weight: 600;
@@ -85,6 +85,18 @@ export default {
   .app--dark & {
     color: rgba(255, 255, 255, 0.75);
     background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.about-tagline {
+  margin: 0 auto 1.2em;
+  max-width: 36em;
+  font-size: 0.85em;
+  line-height: 1.45;
+  color: rgba(0, 0, 0, 0.65);
+
+  .app--dark & {
+    color: rgba(255, 255, 255, 0.7);
   }
 }
 
