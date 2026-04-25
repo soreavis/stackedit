@@ -1,4 +1,4 @@
-# StackEdit (soreavis fork)
+# StackEdit (soreavis)
 
 [![CI](https://github.com/soreavis/stackedit/actions/workflows/ci.yml/badge.svg)](https://github.com/soreavis/stackedit/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-5.15.5--fork.2-blue)
@@ -8,13 +8,13 @@
 ![Vite](https://img.shields.io/badge/vite-7.3-646cff?logo=vite&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-231_passing-brightgreen)
 
-> **Full-featured, open-source Markdown editor** based on [PageDown](https://code.google.com/archive/p/pagedown/), the Markdown library originally written for Stack Overflow and the other Stack Exchange sites. Fork of [`benweet/stackedit`](https://github.com/benweet/stackedit), modernized for Vercel deployment.
-
-**Try it online:** [stackedit.io](https://stackedit.io/) (upstream's live deployment).
+> **Full-featured, open-source Markdown editor** descended from [PageDown](https://code.google.com/archive/p/pagedown/), the Markdown library originally written for Stack Overflow and the other Stack Exchange sites. Modernized for Vercel deployment, hardened, and actively maintained.
 
 > [!NOTE]
-> **This is a fork of [`benweet/stackedit`](https://github.com/benweet/stackedit)** by Benoit Schweblin.
-> Upstream is the canonical project and stays licensed Apache-2.0. This fork adds a Vite + Vercel build, a security hardening pass, and a modern test suite. Please file editor-feature requests upstream first.
+> **Independent successor to [`benweet/stackedit`](https://github.com/benweet/stackedit)** by Benoit Schweblin.
+> The original project's last commit was **2023-05-27** and it is dormant. This codebase started as a fork, preserves Apache-2.0 attribution to Benoit (LICENSE, NOTICE, About modal), and is now developed independently — Vite + Vercel build, security hardening, modern test suite, and a roadmap that is no longer constrained by upstream-sync ergonomics.
+
+**Original project's online deployment:** [stackedit.io](https://stackedit.io/) (still hosted by upstream; this codebase is not deployed there).
 
 > [!WARNING]
 > **StackEdit stores OAuth access tokens** for connected sync/publish providers (Google Drive, GitHub, Dropbox, GitLab, WordPress, Zendesk, CouchDB) in the browser's IndexedDB + localStorage. Anything with JavaScript access to this origin can read them. Review the source before connecting provider accounts, and consider using dedicated OAuth apps with minimal scopes. The authors are not responsible for provider-account compromise resulting from XSS or malicious browser extensions.
@@ -29,9 +29,9 @@
 - Multiple workspaces, file + folder management
 - Collaborative comments on discussions
 
-## What this fork changes vs. upstream
+## What this codebase adds on top of upstream's 5.15.4
 
-The fork is a modernization + hardening pass on top of upstream's 5.15.4 editor; the user-facing editor itself is unchanged in spirit. The full, version-by-version trail lives in [`CHANGELOG.md`](CHANGELOG.md) — the summary below is what's shipped cumulatively across the fork so far.
+A modernization + hardening pass on top of upstream's last shipped version (5.15.4, May 2023). The full, version-by-version trail lives in [`CHANGELOG.md`](CHANGELOG.md) — the summary below is what's shipped cumulatively so far.
 
 ### Build & tooling
 
@@ -77,7 +77,7 @@ Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB*
 - **Replaced** (Nov 2025 pass): `mousetrap@1.6.5` (unmaintained, last release Jan 2020) → **tinykeys 3**; `file-saver` 1 → 2; `bezier-easing` 2 → 3; legacy `markdown-it-imsize` fork → in-repo shim; custom clipboard plugins → native async Clipboard API.
 - **Bumped**: Mermaid 11, KaTeX 0.16, Prism 1.30, happy-dom 20, DOMPurify 3.4, `vite-plugin-pwa` 1.2, Vite 7.3, Vitest 4.1.
 
-### Features added by the fork
+### Features added on top of 5.15.4
 
 - **Import from clipboard** (`Import/Export` menu) — reads both `text/html` and `text/plain` flavors, prefers plain text when it already looks like Markdown (avoids Turndown's defensive escaping of `#`/`*`/`-`/`` ` ``), otherwise runs HTML through sanitize + Turndown. Auto-derives the filename from the first heading.
 - **Clipboard image paste** directly into the editor.
@@ -86,7 +86,7 @@ Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB*
 - **About modal rebranded**: `Community Fork` pill, dual copyright line, fork-first link set, dead upstream-only links pulled.
 - **Privacy Policy**: canonical [`PRIVACY.md`](PRIVACY.md) + static [`/privacy.html`](static/privacy.html) mirror (hand-synced, no build step).
 
-### Fork-specific bug fixes
+### Bug fixes specific to this codebase
 
 - **Scroll-sync regression** (bezier-easing v3 dropped the v2 `.get()` / `.toCSS()` methods). `animationSvc` re-attaches them as shims on the returned function so the animation loop doesn't throw on every frame.
 - **Shortcuts init TDZ** ReferenceError at module load — hoisted the `expansions` const above its `immediate: true` watcher in `shortcuts.js`.
@@ -98,14 +98,14 @@ Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB*
 
 ### Release & versioning
 
-- **Semver prerelease suffix**: `5.15.5-fork.1`, `5.15.5-fork.2`, … Stays distinguishable from any future upstream release. Next upstream bump rebases us to `<upstream>-fork.1`. Tracked in [`CHANGELOG.md`](CHANGELOG.md).
+- **Semver prerelease suffix**: `5.15.5-fork.1`, `5.15.5-fork.2`, … inherited from the fork era. Now that upstream is dormant the suffix can be retired at the next significant release; until then it stays for continuity with shipped artifacts. Tracked in [`CHANGELOG.md`](CHANGELOG.md).
 - **Three-branch model** — see [Branching model](#branching-model) below.
 
 ## Branching model
 
 | Branch | Purpose | Protection |
 |---|---|---|
-| `master` | Stable. Deployed to production. | PR required, 0 approvals, convo resolution required, no force-push, no deletion |
+| `main` | Stable. Deployed to production. | PR required, 0 approvals, convo resolution required, no force-push, no deletion |
 | `develop` | Integration. Features land here first. | PR required, 0 approvals, no force-push, no deletion |
 | `next` | Experimental / preview. Useful for sharing work-in-progress. | No PR required, force-push allowed, no deletion |
 
@@ -113,46 +113,24 @@ Flow for a typical change:
 
 1. Branch off `develop`: `git checkout -b fix/<slug> develop` (or `feat/<slug>`, `chore/<slug>`, `docs/<slug>`, `build/<slug>`).
 2. Open a PR into `develop`.
-3. When `develop` is ready to cut, open a PR from `develop` → `master`. After merge, fast-forward `next` to match `master`.
+3. When `develop` is ready to cut, open a PR from `develop` → `main`. After merge, fast-forward `next` to match `main`.
 
 Commit prefixes follow [Conventional Commits](https://www.conventionalcommits.org/): `feat`, `fix`, `docs`, `chore`, `build`, `refactor`, `test`, `style`.
 
-## Upstream sync
+## Cherry-picking from upstream (optional)
 
-This fork intentionally keeps `master` as the default branch (matching upstream's `benweet/stackedit`) so that pulling upstream changes stays a one-liner and PRs back upstream don't hit a branch-name mismatch.
-
-One-time setup for contributors:
+Upstream `benweet/stackedit` is dormant (last commit 2023-05-27), so we don't run a routine sync. If upstream ever ships a fix worth pulling, the one-shot recipe is:
 
 ```bash
-git remote add upstream git@github.com:benweet/stackedit.git
+git remote add upstream git@github.com:benweet/stackedit.git   # one-time
 git fetch upstream
+git checkout -b chore/upstream-pick-<sha> develop
+git cherry-pick <upstream-sha>
+git push -u origin chore/upstream-pick-<sha>
+gh pr create --base develop
 ```
 
-### Pulling upstream changes into this fork
-
-`master` is protected — direct pushes are blocked. Route upstream commits through a short-lived sync branch and open a PR so CI runs and the Vercel preview deploys before the merge hits production:
-
-```bash
-git fetch upstream
-git checkout -b chore/upstream-sync-$(date +%Y%m%d) develop
-git merge upstream/master         # resolve any conflicts here
-git push -u origin chore/upstream-sync-$(date +%Y%m%d)
-gh pr create --base develop --title "chore: sync upstream master"
-```
-
-Merge into `develop`, then open the usual `develop → master` promotion PR. If upstream ships a new version, bump the fork version in the **same** sync PR: e.g. upstream `5.16.0` → fork `5.16.0-fork.1`. Update `package.json` and open a fresh `[5.16.0-fork.1]` section in `CHANGELOG.md`.
-
-### Sending a change back upstream
-
-1. Make sure the change is upstream-relevant (editor features, editor bug fixes, cross-cutting improvements). Fork-specific infra (Vercel routing, Upstash, Privacy Policy, the `fork.N` suffix scheme) should **not** be PR'd upstream.
-2. Cherry-pick or recreate the change on a branch off `upstream/master`:
-   ```bash
-   git fetch upstream
-   git checkout -b upstream-pr/<slug> upstream/master
-   git cherry-pick <sha>         # or rewrite cleanly
-   ```
-3. Push that branch to your own fork of upstream (if you have one) or to this fork under a clearly-named branch, then open a PR against `benweet/stackedit:master`.
-4. Keep the commit message / PR description free of fork-specific context (branch names, Upstash refs, etc.) — upstream maintainers see this as a drive-by contribution.
+This codebase is no longer source-compatible with upstream's file layout in general — cherry-picks may need manual conflict resolution.
 
 ## Prerequisites
 
@@ -196,7 +174,7 @@ npm run dev                      # http://localhost:8080
    | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Optional — enables distributed rate limiting | Runtime |
 
 3. The `vercel.json` pins `npm install --legacy-peer-deps` as the install command — Vercel's default `npm install` fails on the Vue-2-era peer graph without it.
-4. Vercel auto-deploys on push to `master`.
+4. Vercel auto-deploys on push to `main`.
 
 ## Testing
 

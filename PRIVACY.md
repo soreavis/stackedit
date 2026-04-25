@@ -146,7 +146,7 @@ Privacy questions: open an issue at
 ## Changes
 
 This policy is version-controlled in the repository. Material changes are
-noted in the [CHANGELOG](https://github.com/soreavis/stackedit/blob/master/CHANGELOG.md).
+noted in the [CHANGELOG](https://github.com/soreavis/stackedit/blob/main/CHANGELOG.md).
 
 ---
 
