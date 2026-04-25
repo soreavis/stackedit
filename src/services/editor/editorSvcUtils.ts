@@ -2,6 +2,7 @@ import DiffMatchPatch from 'diff-match-patch';
 import cleditRaw from './cledit';
 import animationSvc from '../animationSvc';
 import store from '../../store';
+import { useContentStateStore } from '../../stores/contentState';
 
 // cledit / editorSvc are still partially typed; cast cledit to `any` so
 // `cledit.Utils.findContainer` resolves without a deep types port.
@@ -51,7 +52,7 @@ export default {
    * Restore the scroll position from the current file content state.
    */
   restoreScrollPosition(this: EditorSvcThis): void {
-    const { scrollPosition }: { scrollPosition?: ScrollPosition } = store.getters['contentState/current'];
+    const { scrollPosition }: { scrollPosition?: ScrollPosition } = (useContentStateStore() as any).current;
     if (scrollPosition && this.previewCtxMeasured) {
       const sectionDesc = this.previewCtxMeasured.sectionDescList[scrollPosition.sectionIdx];
       if (sectionDesc) {

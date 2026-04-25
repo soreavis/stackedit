@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import emptyFile from '../data/empties/emptyFile';
 import emptyFolder from '../data/empties/emptyFolder';
+import { useFolderStore } from '../stores/folder';
 
 const setter = propertyName => (state, value) => {
   state[propertyName] = value;
@@ -171,7 +172,7 @@ export default {
         trash: trashFolderNode,
         temp: tempFolderNode,
       };
-      rootGetters['folder/items'].forEach((item) => {
+      useFolderStore().items.forEach((item) => {
         nodeMap[item.id] = new Node(item, [], true);
       });
       const syncLocationsByFileId = rootGetters['syncLocation/filteredGroupedByFileId'];

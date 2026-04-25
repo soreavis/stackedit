@@ -1,5 +1,6 @@
 import utils from './utils';
 import store from '../store';
+import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
 import welcomeFile from '../data/welcomeFile.md?raw';
 import workspaceSvc from './workspaceSvc';
@@ -305,7 +306,7 @@ const localDbSvc: LocalDbSvc = {
       delete this.hashMap[dbItem.type][dbItem.id];
       if (storeItem) {
         // Remove item from the store
-        store.commit(`${storeItem.type}/deleteItem`, storeItem.id);
+        deleteItemByType(storeItem.type, storeItem.id);
         delete storeItemMap[storeItem.id];
       }
     } else if (this.hashMap[dbItem.type][dbItem.id] !== dbItem.hash) {
@@ -315,7 +316,7 @@ const localDbSvc: LocalDbSvc = {
       if (storeItem || !contentTypes[dbItem.type]) {
         // Put item in the store
         dbItem.tx = undefined;
-        store.commit(`${dbItem.type}/setItem`, dbItem);
+        setItemByType(dbItem.type, dbItem);
         storeItemMap[dbItem.id] = dbItem;
       }
     }
@@ -345,7 +346,7 @@ const localDbSvc: LocalDbSvc = {
             this.hashMap[dbItem.type][dbItem.id] = dbItem.hash;
             // Put item in the store
             dbItem.tx = undefined;
-            store.commit(`${dbItem.type}/setItem`, dbItem);
+            setItemByType(dbItem.type, dbItem);
             resolve(dbItem);
           }
         };
@@ -365,7 +366,7 @@ const localDbSvc: LocalDbSvc = {
         const [fileId] = item.id.split('/');
         if (!lastOpenedFileIdSet.has(fileId)) {
           // Remove item from the store
-          store.commit(`${type}/deleteItem`, item.id);
+          deleteItemByType(type, item.id);
         }
       });
     });
@@ -526,7 +527,7 @@ const localDbSvc: LocalDbSvc = {
 const loader = (type: string) => (fileId: string) => localDbSvc.loadItem(`${fileId}/${type}`)
   // Item does not exist, create it
   .catch(() => {
-    store.commit(`${type}/setItem`, {
+    setItemByType(type, {
       id: `${fileId}/${type}`,
     });
     return undefined;

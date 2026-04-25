@@ -1,4 +1,5 @@
 import store from '../store';
+import { useUserInfoStore } from '../stores/userInfo';
 import utils from './utils';
 
 const refreshUserInfoAfter = 60 * 60 * 1000; // 60 minutes
@@ -45,7 +46,7 @@ const refreshUserInfos = (): void => {
         try {
           infoPromisedByUserId[userId] = true;
           const userInfo = await infoResolver(sub);
-          store.commit('userInfo/setItem', userInfo);
+          useUserInfoStore().setItem(userInfo);
         } finally {
           infoPromisedByUserId[userId] = false;
           lastInfosByUserId[userId] = Date.now();
@@ -71,7 +72,7 @@ export default {
   },
   sanitizeUserId,
   addUserInfo(userInfo: UserInfo): void {
-    store.commit('userInfo/setItem', userInfo);
+    useUserInfoStore().setItem(userInfo);
     lastInfosByUserId[userInfo.id] = Date.now();
   },
   addUserId(userId: string | null | undefined): void {
@@ -83,7 +84,7 @@ export default {
       const [type, sub] = parseUserId(sanitizedUserId);
       const token = store.getters['data/tokensByType'][type]?.[sub];
       if (token) {
-        store.commit('userInfo/setItem', {
+        useUserInfoStore().setItem({
           id: sanitizedUserId,
           name: token.name,
         });

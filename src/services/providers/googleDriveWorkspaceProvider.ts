@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useFolderStore } from '../../stores/folder';
 import { useModalStore } from '../../stores/modal';
 import googleHelper from './helpers/googleHelper';
 import Provider from './common/Provider';
@@ -156,11 +157,11 @@ export default new Provider({
         let syncData = store.getters['data/syncDataById'][driveFolder.id];
         if (!syncData && driveFolder.appProperties.id) {
           // Create folder if not already synced
-          store.commit('folder/setItem', {
+          useFolderStore().setItem({
             id: driveFolder.appProperties.id,
             name: driveFolder.name,
           });
-          const item = store.state.folder.itemsById[driveFolder.appProperties.id];
+          const item = useFolderStore().itemsById[driveFolder.appProperties.id];
           syncData = {
             id: driveFolder.id,
             itemId: item.id,
