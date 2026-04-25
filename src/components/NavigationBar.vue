@@ -68,6 +68,8 @@ import customToolbarButtons from '../data/customToolbarButtons';
 import store from '../store';
 import workspaceSvc from '../services/workspaceSvc';
 import badgeSvc from '../services/badgeSvc';
+import { useContextMenuStore } from '../stores/contextMenu';
+import { useQueueStore } from '../stores/queue';
 
 // According to mousetrap
 const mod = /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'Meta' : 'Ctrl';
@@ -158,7 +160,7 @@ export default {
         store.getters['syncLocation/current'].length;
     },
     showSpinner() {
-      return !store.state.queue.isEmpty;
+      return !useQueueStore().isEmpty;
     },
     titleWidth() {
       // Intentional side effect: write the current title into a hidden
@@ -286,7 +288,7 @@ export default {
     async onTitleContextMenu(evt) {
       if (!this.hasCurrentFile) return;
       evt.preventDefault();
-      const item = await store.dispatch('contextMenu/open', {
+      const item = await useContextMenuStore().open({
         coordinates: { left: evt.clientX, top: evt.clientY },
         items: [{
           name: 'Rename',
@@ -337,7 +339,7 @@ export default {
         name: `H${level}`,
         perform: () => this.applyHeading(level),
       }));
-      const item = await store.dispatch('contextMenu/open', {
+      const item = await useContextMenuStore().open({
         coordinates: { left: rect.left, top: rect.bottom + 4 },
         items,
       });
@@ -398,7 +400,7 @@ export default {
         name: item.name,
         perform: () => item.perform(editorSvc),
       }));
-      const item = await store.dispatch('contextMenu/open', {
+      const item = await useContextMenuStore().open({
         coordinates: { left: rect.left, top: rect.bottom + 4 },
         items,
       });
