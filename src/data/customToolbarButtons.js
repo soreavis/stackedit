@@ -459,14 +459,16 @@ export const imageWithSize = {
   method: 'imageWithSize',
   title: 'Image with dimensions',
   icon: 'file-image',
-  // Inserts `![alt](url){width=300}` — the `{width=Npx}` attribute syntax
-  // is supported by Hugo / Eleventy / kramdown / pandoc and many other
-  // markdown processors. StackEdit's preview will render the image but
-  // ignore the dimensions (markdown-it-imsize isn't bundled).
+  // Emits the bundled markdown-it-imsize syntax `![alt](url =WIDTHxHEIGHT)`
+  // (note the space before `=`). Width-only `=300x` keeps the source
+  // compact and lets the browser derive height from the image's aspect
+  // ratio. The Hugo / kramdown / pandoc `{width=N}` attribute syntax —
+  // which earlier versions of this button emitted — is NOT recognized
+  // by markdown-it-imsize and renders as literal text after the image.
   action: (editorSvc) => {
     const { selected } = getSelection(editorSvc);
     const alt = selected || 'alt text';
-    insertInline(editorSvc, `![${alt}](https://example.com/image.png){width=300}`);
+    insertInline(editorSvc, `![${alt}](https://example.com/image.png =300x)`);
   },
 };
 

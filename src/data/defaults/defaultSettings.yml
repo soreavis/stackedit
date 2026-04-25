@@ -11,8 +11,8 @@ autoSyncEvery: 90000
 editor:
   # Automatic list numbering
   listAutoNumber: true
-  # Display images in the editor
-  inlineImages: true
+  # Display images in the editor (next to the source markdown)
+  inlineImages: false
   # Use monospaced font only
   monospacedFontOnly: false
 
