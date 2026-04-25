@@ -473,7 +473,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     let imgEltsToCache = [];
     if (store.getters['data/computedSettings'].editor.inlineImages) {
       this.clEditor.highlighter.on('sectionHighlighted', (section) => {
-        section.elt.getElementsByClassName('token img').cl_each((imgTokenElt) => {
+        Array.from(section.elt.getElementsByClassName('token img')).forEach((imgTokenElt) => {
           const srcElt = imgTokenElt.querySelector('.token.cl-src');
           if (srcElt) {
             // Create an img element before the .img.token and wrap both elements

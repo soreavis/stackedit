@@ -23,7 +23,7 @@ class Marker {
 
   adjustOffset(diffs: Array<[number, string]>): void {
     let startOffset = 0;
-    diffs.cl_each((diff: [number, string]) => {
+    diffs.forEach((diff: [number, string]) => {
       const diffType = diff[0];
       const diffText = diff[1];
       const diffOffset = diffText.length;

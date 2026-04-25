@@ -27,6 +27,6 @@ extensionSvc.onSectionPreview((elt) => {
     }
     katexElt.highlighted = true;
   };
-  elt.querySelectorAll('.katex--inline').cl_each(highlighter(false));
-  elt.querySelectorAll('.katex--display').cl_each(highlighter(true));
+  elt.querySelectorAll('.katex--inline').forEach(highlighter(false));
+  elt.querySelectorAll('.katex--display').forEach(highlighter(true));
 });
