@@ -33,8 +33,8 @@ function UndoMgr(editor) {
       },
       reversePatches(patches) {
         const reversedPatches = diffMatchPatch.patch_deepCopy(patches).reverse();
-        reversedPatches.cl_each((patch) => {
-          patch.diffs.cl_each((diff) => {
+        reversedPatches.forEach((patch) => {
+          patch.diffs.forEach((diff) => {
             diff[0] = -diff[0];
           });
         });
@@ -89,11 +89,11 @@ function UndoMgr(editor) {
   this.setCurrentMode = (mode) => {
     stateMgr.currentMode = mode;
   };
-  this.setDefaultMode = stateMgr.setDefaultMode.cl_bind(stateMgr);
+  this.setDefaultMode = stateMgr.setDefaultMode.bind(stateMgr);
 
   this.addDiffs = (oldContent, newContent, diffs) => {
     const patches = this.options.patchHandler.makePatches(oldContent, newContent, diffs);
-    patches.cl_each(patch => currentPatches.push(patch));
+    patches.forEach(patch => currentPatches.push(patch));
   };
 
   function saveCurrentPatches() {
@@ -169,7 +169,7 @@ function UndoMgr(editor) {
   };
 
   this.init = (options) => {
-    this.options.cl_extend(options || {});
+    Object.assign(this.options, options || {});
     ({ selectionMgr } = editor);
     if (!currentState) {
       currentState = new State();

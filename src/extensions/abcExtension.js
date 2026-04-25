@@ -17,5 +17,5 @@ extensionSvc.onGetOptions((options, properties) => {
 
 extensionSvc.onSectionPreview((elt) => {
   elt.querySelectorAll('.prism.language-abc')
-    .cl_each(notationElt => render(notationElt));
+    .forEach(notationElt => render(notationElt));
 });

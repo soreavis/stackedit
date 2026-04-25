@@ -17,7 +17,7 @@ function createStyleSheet(document) {
 function Highlighter(editor) {
   cledit.Utils.createEventHooks(this);
 
-  if (!styleElts.cl_some(styleElt => document.head.contains(styleElt))) {
+  if (!styleElts.some(styleElt => document.head.contains(styleElt))) {
     createStyleSheet(document);
   }
 
@@ -33,14 +33,14 @@ function Highlighter(editor) {
   const lfHtml = `<span class="lf">${useBr ? hiddenLfInnerHtml : '\n'}</span>`;
 
   this.fixContent = (modifiedSections, removedSections, noContentFix) => {
-    modifiedSections.cl_each((section) => {
+    modifiedSections.forEach((section) => {
       section.forceHighlighting = true;
       if (!noContentFix) {
         if (useBr) {
-          section.elt.getElementsByClassName('hd-lf')
-            .cl_each(lfElt => lfElt.parentNode.removeChild(lfElt));
-          section.elt.getElementsByTagName('br')
-            .cl_each(brElt => brElt.parentNode.replaceChild(document.createTextNode('\n'), brElt));
+          Array.from(section.elt.getElementsByClassName('hd-lf'))
+            .forEach(lfElt => lfElt.parentNode.removeChild(lfElt));
+          Array.from(section.elt.getElementsByTagName('br'))
+            .forEach(brElt => brElt.parentNode.replaceChild(document.createTextNode('\n'), brElt));
         }
         if (section.elt.textContent.slice(-1) !== '\n') {
           section.elt.appendChild(document.createTextNode('\n'));
@@ -74,7 +74,7 @@ function Highlighter(editor) {
     const newSectionList = (editor.options.sectionParser
       ? editor.options.sectionParser(content)
       : [content])
-      .cl_map(sectionText => new Section(sectionText));
+      .map(sectionText => new Section(sectionText));
 
     let modifiedSections = [];
     let sectionsToRemove = [];
@@ -88,7 +88,7 @@ function Highlighter(editor) {
     } else {
       // Find modified section starting from top
       let leftIndex = sectionList.length;
-      sectionList.cl_some((section, index) => {
+      sectionList.some((section, index) => {
         const newSection = newSectionList[index];
         if (index >= newSectionList.length ||
           section.forceHighlighting ||
@@ -107,7 +107,7 @@ function Highlighter(editor) {
 
       // Find modified section starting from bottom
       let rightIndex = -sectionList.length;
-      sectionList.slice().reverse().cl_some((section, index) => {
+      sectionList.slice().reverse().some((section, index) => {
         const newSection = newSectionList[newSectionList.length - index - 1];
         if (index >= newSectionList.length ||
           section.forceHighlighting ||
@@ -147,7 +147,7 @@ function Highlighter(editor) {
     };
 
     const newSectionEltList = document.createDocumentFragment();
-    modifiedSections.cl_each((section) => {
+    modifiedSections.forEach((section) => {
       section.forceHighlighting = false;
       highlight(section);
       newSectionEltList.appendChild(section.elt);
@@ -161,7 +161,7 @@ function Highlighter(editor) {
       }
 
       // Remove outdated sections
-      sectionsToRemove.cl_each((section) => {
+      sectionsToRemove.forEach((section) => {
         // section may be already removed
         if (section.elt.parentNode === contentElt) {
           contentElt.removeChild(section.elt);

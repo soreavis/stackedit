@@ -102,7 +102,7 @@ function addCopyButton(preElt, codeElt) {
 }
 
 extensionSvc.onSectionPreview((elt) => {
-  elt.querySelectorAll('pre > code.prism').cl_each((codeElt) => {
+  elt.querySelectorAll('pre > code.prism').forEach((codeElt) => {
     if (codeElt.classList.contains('language-mermaid')) return;
     addCopyButton(codeElt.parentNode, codeElt);
   });

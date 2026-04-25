@@ -83,7 +83,7 @@ export default {
   },
   methods: {
     updatePositions() {
-      document.querySelectorAll('[tour-step-anchor]').cl_each((anchorElt) => {
+      document.querySelectorAll('[tour-step-anchor]').forEach((anchorElt) => {
         const anchorRect = anchorElt.getBoundingClientRect();
         const anchorSteps = (anchorElt.getAttribute('tour-step-anchor') || '').split(',');
         anchorSteps.forEach((step) => {
