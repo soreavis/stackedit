@@ -12,6 +12,10 @@ export default defineConfig({
       '@': path.resolve(here, 'src'),
       vue: 'vue/dist/vue.runtime.esm.js',
     },
+    // Match the production extensions list so `.vue` imports without
+    // explicit extension resolve in tests too (e.g. src/icons/index.js
+    // does `import Provider from './Provider';`).
+    extensions: ['.mjs', '.js', '.ts', '.vue', '.json'],
   },
   define: {
     VERSION: JSON.stringify('0.0.0-test'),

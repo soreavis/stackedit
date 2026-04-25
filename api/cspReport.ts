@@ -4,7 +4,7 @@ export const config = { runtime: 'edge' };
 
 const MAX_REPORT_BYTES = 16 * 1024;
 
-export default async function handler(req) {
+export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
     return new Response(null, { status: 405 });
   }

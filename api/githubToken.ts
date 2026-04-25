@@ -1,6 +1,7 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { clientIp, rateLimit, sameOrigin } from './_utils.js';
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!sameOrigin(req)) {
     return res.status(403).send('forbidden');
   }
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(413).send('payload_too_large');
   }
 
-  const { clientId, code, codeVerifier } = req.query;
+  const { clientId, code, codeVerifier } = req.query as Record<string, string | undefined>;
   if (!clientId || !code) {
     return res.status(400).send('missing_params');
   }
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
     return res.status(400).send('invalid_client');
   }
 
-  const body = {
+  const body: Record<string, string> = {
     client_id: clientId,
     client_secret: process.env.GITHUB_CLIENT_SECRET || '',
     code,
@@ -39,7 +40,7 @@ export default async function handler(req, res) {
       body: new URLSearchParams(body).toString(),
     });
 
-    const data = await response.json();
+    const data = await response.json() as { access_token?: string };
     if (data.access_token) {
       return res.status(200).send(data.access_token);
     }
