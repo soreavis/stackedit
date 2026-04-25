@@ -120,8 +120,12 @@ textarea {
   border-radius: $border-radius-base;
   text-decoration: none;
 
+  /* `:focus-visible` rather than `:focus` — generic `:focus` left every
+     button stuck-highlighted after a mouse click (folder toggle, modal
+     buttons, toolbar buttons) until focus moved elsewhere. Keyboard
+     tab nav still triggers `:focus-visible` and shows the affordance. */
   &:active,
-  &:focus,
+  &:focus-visible,
   &:hover,
   .hidden-file:focus + & {
     color: #333;
@@ -135,7 +139,7 @@ textarea {
     color: #ccc;
 
     &:active,
-    &:focus,
+    &:focus-visible,
     &:hover {
       color: #ccc;
       background-color: rgba(255, 255, 255, 0.067);

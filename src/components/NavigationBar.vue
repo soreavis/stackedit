@@ -40,10 +40,16 @@
       <button class="navigation-bar__button button" @click="undo" v-title="'Undo'" :disabled="!canUndo"><icon-undo></icon-undo></button>
       <button class="navigation-bar__button button" @click="redo" v-title="'Redo'" :disabled="!canRedo"><icon-redo></icon-redo></button>
       <div v-for="button in pagedownButtons" :key="button.method">
-        <button class="navigation-bar__button button" v-if="button.method" @click="pagedownClick(button.method)" v-title="button.titleWithShortcut">
+        <button class="navigation-bar__button button" v-if="button.method" @click="pagedownClick(button.method, $event)" v-title="button.titleWithShortcut">
           <component :is="button.iconClass"></component>
         </button>
         <div class="navigation-bar__spacer" v-else></div>
+      </div>
+      <div class="navigation-bar__spacer"></div>
+      <div v-for="button in customButtons" :key="button.method">
+        <button class="navigation-bar__button button" :class="{'navigation-bar__button--separated': button.separated}" @click="customClick(button, $event)" v-title="button.title">
+          <component :is="button.iconClass"></component>
+        </button>
       </div>
     </div>
   </nav>
@@ -58,6 +64,7 @@ import animationSvc from '../services/animationSvc';
 import tempFileSvc from '../services/tempFileSvc';
 import utils from '../services/utils';
 import pagedownButtons from '../data/pagedownButtons';
+import customToolbarButtons from '../data/customToolbarButtons';
 import store from '../store';
 import workspaceSvc from '../services/workspaceSvc';
 import badgeSvc from '../services/badgeSvc';
@@ -137,6 +144,12 @@ export default {
       return pagedownButtons.map(button => ({
         ...button,
         titleWithShortcut: `${button.title}${getShortcut(button.method)}`,
+        iconClass: `icon-${button.icon}`,
+      }));
+    },
+    customButtons() {
+      return customToolbarButtons.map(button => ({
+        ...button,
         iconClass: `icon-${button.icon}`,
       }));
     },
@@ -303,11 +316,96 @@ export default {
         }
       } catch (e) { /* ignore */ }
     },
-    pagedownClick(name) {
-      if (store.getters['content/isCurrentEditable']) {
-        const text = editorSvc.clEditor.getContent();
-        editorSvc.pagedownEditor.uiManager.doClick(name);
-        if (text !== editorSvc.clEditor.getContent()) {
+    pagedownClick(name, evt) {
+      if (!store.getters['content/isCurrentEditable']) return;
+      // Heading button opens a level picker (H1-H6) instead of cycling
+      // through pagedown's 3 levels. More direct and exposes H4-H6 which
+      // upstream's button never reached.
+      if (name === 'heading') {
+        return this.openHeadingMenu(evt);
+      }
+      const text = editorSvc.clEditor.getContent();
+      editorSvc.pagedownEditor.uiManager.doClick(name);
+      if (text !== editorSvc.clEditor.getContent()) {
+        badgeSvc.addBadge('formatButtons');
+      }
+      return undefined;
+    },
+    async openHeadingMenu(evt) {
+      const rect = evt.currentTarget.getBoundingClientRect();
+      const items = [1, 2, 3, 4, 5, 6].map(level => ({
+        name: `H${level}`,
+        perform: () => this.applyHeading(level),
+      }));
+      const item = await store.dispatch('contextMenu/open', {
+        coordinates: { left: rect.left, top: rect.bottom + 4 },
+        items,
+      });
+      if (item) item.perform();
+    },
+    applyHeading(level) {
+      const sel = editorSvc.clEditor.selectionMgr;
+      const content = editorSvc.clEditor.getContent();
+      const cursor = Math.min(sel.selectionStart, sel.selectionEnd);
+      // Find the current line's bounds.
+      const lineStart = content.lastIndexOf('\n', cursor - 1) + 1;
+      let lineEnd = content.indexOf('\n', cursor);
+      if (lineEnd === -1) lineEnd = content.length;
+      const lineText = content.slice(lineStart, lineEnd);
+      // Strip an existing heading prefix so re-applying replaces rather
+      // than nests (`### foo` + apply H1 → `# foo`, not `# ### foo`).
+      const stripped = lineText.replace(/^#{1,6}\s+/, '');
+      const newLine = `${'#'.repeat(level)} ${stripped}`;
+      editorSvc.clEditor.replace(lineStart, lineEnd, newLine);
+      // Cursor lands at end of the prefix so typing extends the heading.
+      const caret = lineStart + level + 1;
+      sel.setSelectionStartEnd(caret, caret);
+      badgeSvc.addBadge('formatButtons');
+    },
+    customClick(button, evt) {
+      // Custom toolbar buttons (math, mermaid, inline code, etc.) bypass
+      // pagedown's UIManager and operate on cledit directly. Action
+      // functions live in src/data/customToolbarButtons.js. Buttons with
+      // `dropdown: true` open a contextMenu popover anchored under the
+      // button instead of running an action directly.
+      if (!store.getters['content/isCurrentEditable']) return;
+      if (button.dropdown) {
+        return this.openCustomDropdown(button, evt);
+      }
+      const before = editorSvc.clEditor.getContent();
+      try {
+        const result = button.action(editorSvc);
+        // Some actions (linkFromClipboard) are async — treat the
+        // promise's resolution as the boundary for the badge check.
+        if (result && typeof result.then === 'function') {
+          return result.then(() => {
+            if (before !== editorSvc.clEditor.getContent()) {
+              badgeSvc.addBadge('formatButtons');
+            }
+          });
+        }
+      } catch (e) {
+        console.error(`[toolbar:${button.method}]`, e);
+      }
+      if (before !== editorSvc.clEditor.getContent()) {
+        badgeSvc.addBadge('formatButtons');
+      }
+      return undefined;
+    },
+    async openCustomDropdown(button, evt) {
+      const rect = evt.currentTarget.getBoundingClientRect();
+      const items = button.items.map(item => ({
+        name: item.name,
+        perform: () => item.perform(editorSvc),
+      }));
+      const item = await store.dispatch('contextMenu/open', {
+        coordinates: { left: rect.left, top: rect.bottom + 4 },
+        items,
+      });
+      if (item) {
+        const before = editorSvc.clEditor.getContent();
+        item.perform();
+        if (before !== editorSvc.clEditor.getContent()) {
           badgeSvc.addBadge('formatButtons');
         }
       }
@@ -418,6 +516,28 @@ export default {
   margin-bottom: 20px;
 }
 
+/* Visual separator before the tidy / magic-wand button — rendered as a
+   pseudo-element on the button itself rather than a sibling divider div.
+   The earlier sibling-div approach pushed an extra ~13 px into the float
+   context, which on tight viewports tipped the wand to a wrapped second
+   row that the nav bar's `overflow: hidden` then clipped (= "vanished
+   on click"). Keeping it inline costs only the 8 px left margin and
+   adds no element to the float layout. */
+.navigation-bar__button--separated {
+  position: relative;
+  margin-left: 8px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 9px;
+    width: 1px;
+    height: 18px;
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+}
+
 .navigation-bar__button {
   width: 34px;
   padding: 0 7px;
@@ -489,8 +609,14 @@ export default {
 
 .navigation-bar__title--input,
 .navigation-bar__button {
+  /* No bg on `:focus` or `:focus-visible` — earlier we tried both and
+     Chromium's `:focus-visible` heuristic still triggers for the
+     post-click retained-focus state on some flows (folder toggle,
+     toolbar buttons), leaving the button stuck-highlighted until the
+     user clicked elsewhere. Keyboard navigation still gets a clear
+     blue outline from `app.scss`'s `:focus-visible { outline: ... }`
+     rule, so tab-nav users aren't left without an affordance. */
   &:active,
-  &:focus,
   &:hover {
     color: $navbar-hover-color;
     background-color: $navbar-hover-background;
