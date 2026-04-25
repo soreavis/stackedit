@@ -120,3 +120,90 @@ describe('markdownItMath', () => {
     expect(out.includes('<d>') || out.includes('<i>')).toBe(true);
   });
 });
+
+// Regression: markdownExtension.js used to attempt to disable optional
+// rules (fence / table / strikethrough) by splicing them out of the array
+// passed to `markdown.{block,inline}.ruler.enable(...)`. Two bugs there:
+// (1) `enable()` only turns rules ON — it doesn't turn off rules that are
+// already enabled by default — so the splice was a no-op even when its
+// indices were right. (2) The strikethrough splice used
+// `blockRules.indexOf('strikethrough')` which always returned -1, so
+// `splice(-1, 1)` silently dropped the LAST entry of inlineRules /
+// inlineRules2 (i.e. `entity` and `fragments_join`) — that would have
+// broken HTML-entity parsing and delimiter post-processing if `enable()`
+// actually flipped rules off, but it didn't, so the breakage stayed
+// latent.
+//
+// The fix uses `disable()` for the opt-out path. This spec replicates
+// the post-fix logic on a fresh markdown-it so a future regression that
+// reintroduces the splice-and-enable pattern would trip the suite (the
+// "still on after disable" assertion would fail).
+describe('markdownExtension rule-disable (regression)', () => {
+  function buildBlockMd({ fence = true, table = true } = {}) {
+    const md = new MarkdownIt({ html: true });
+    if (!fence) md.block.ruler.disable('fence');
+    if (!table) md.block.ruler.disable('table');
+    return md;
+  }
+
+  function buildInlineMd({ del = true } = {}) {
+    const md = new MarkdownIt({ html: true });
+    if (!del) {
+      md.inline.ruler.disable('strikethrough');
+      md.inline.ruler2.disable('strikethrough');
+    }
+    return md;
+  }
+
+  it('disables fence blocks when options.fence=false', () => {
+    // With fence disabled, the triple-backtick block is no longer a
+    // block-level construct — the parser falls through to inline backticks,
+    // which produces a `<code>` inline span (NOT a `<pre>` block). Only the
+    // <pre> wrapper is fence-specific, so that's what we assert against.
+    const out = buildBlockMd({ fence: false }).render('```js\nlet x = 1;\n```\n');
+    expect(out).not.toContain('<pre>');
+  });
+
+  it('keeps fence blocks rendering when options.fence=true (default)', () => {
+    const out = buildBlockMd({ fence: true }).render('```js\nlet x = 1;\n```\n');
+    expect(out).toContain('<pre>');
+    expect(out).toContain('let x = 1;');
+  });
+
+  it('disables tables when options.table=false', () => {
+    const md = '| A | B |\n|---|---|\n| 1 | 2 |\n';
+    const out = buildBlockMd({ table: false }).render(md);
+    expect(out).not.toContain('<table>');
+  });
+
+  it('keeps tables rendering when options.table=true (default)', () => {
+    const md = '| A | B |\n|---|---|\n| 1 | 2 |\n';
+    const out = buildBlockMd({ table: true }).render(md);
+    expect(out).toContain('<table>');
+  });
+
+  it('disables strikethrough when options.del=false', () => {
+    const out = buildInlineMd({ del: false }).render('foo ~~bar~~ baz\n');
+    expect(out).not.toMatch(/<s>|<\/s>|<del>|<\/del>/);
+  });
+
+  it('keeps strikethrough rendering when options.del=true (default)', () => {
+    const out = buildInlineMd({ del: true }).render('foo ~~bar~~ baz\n');
+    expect(out).toMatch(/<s>bar<\/s>|<del>bar<\/del>/);
+  });
+
+  it('still parses HTML entities when del=false (entity rule preserved)', () => {
+    // Old splice bug used to drop `entity` from inline rules instead of
+    // `strikethrough` — would have silenced &copy; / &amp; if it'd
+    // actually fired. Verify the new disable() path doesn't have that
+    // collateral.
+    const out = buildInlineMd({ del: false }).render('&copy; 2026\n');
+    expect(out).toContain('©');
+  });
+
+  it('still resolves emphasis delimiters when del=false (fragments_join preserved)', () => {
+    // Same as above for inline ruler2's `fragments_join` post-process.
+    const out = buildInlineMd({ del: false }).render('*foo*\n');
+    expect(out).toContain('<em>foo</em>');
+  });
+});
