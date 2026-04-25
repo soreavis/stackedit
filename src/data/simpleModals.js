@@ -6,21 +6,6 @@ const simpleModal = (contentHtml, rejectText, resolveText) => ({
 
 /* eslint sort-keys: "error" */
 export default {
-  commentDeletion: simpleModal(
-    '<p>You are about to delete a comment. Are you sure?</p>',
-    'No',
-    'Yes, delete',
-  ),
-  discussionDeletion: simpleModal(
-    '<p>You are about to delete a discussion. Are you sure?</p>',
-    'No',
-    'Yes, delete',
-  ),
-  fileRestoration: simpleModal(
-    '<p>You are about to revert some changes. Are you sure?</p>',
-    'No',
-    'Yes, revert',
-  ),
   bulkDeletion: simpleModal(
     (config) => {
       const parts = [];
@@ -38,6 +23,21 @@ export default {
     },
     'No',
     'Yes, delete',
+  ),
+  commentDeletion: simpleModal(
+    '<p>You are about to delete a comment. Are you sure?</p>',
+    'No',
+    'Yes, delete',
+  ),
+  discussionDeletion: simpleModal(
+    '<p>You are about to delete a discussion. Are you sure?</p>',
+    'No',
+    'Yes, delete',
+  ),
+  fileRestoration: simpleModal(
+    '<p>You are about to revert some changes. Are you sure?</p>',
+    'No',
+    'Yes, revert',
   ),
   folderDeletion: simpleModal(
     config => `<p>You are about to delete the folder <b>${config.item.name}</b>. Its files will be moved to Trash. Are you sure?</p>`,

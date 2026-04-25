@@ -1,8 +1,8 @@
 <template>
   <div class="stat-panel panel no-overflow">
     <div class="stat-panel__block stat-panel__block--left" v-if="styles.showEditor">
-      <span class="stat-panel__block-name">
-        Markdown
+      <span class="stat-panel__block-name" v-title="'Markdown source'">
+        <icon-language-markdown></icon-language-markdown>
         <span v-if="textSelection">selection</span>
       </span>
       <span v-for="stat in textStats" :key="stat.id">
@@ -11,8 +11,8 @@
       <span class="stat-panel__value">Ln {{ line }}, Col {{ column }}</span>
     </div>
     <div class="stat-panel__block stat-panel__block--right">
-      <span class="stat-panel__block-name">
-        HTML
+      <span class="stat-panel__block-name" v-title="'Rendered HTML'">
+        <icon-language-html5></icon-language-html5>
         <span v-if="htmlSelection">selection</span>
       </span>
       <span v-for="stat in htmlStats" :key="stat.id">
@@ -153,5 +153,16 @@ export default {
 .stat-panel__value {
   font-weight: 600;
   margin-left: 5px;
+}
+
+/* The Markdown / HTML side-labels are now icon-only. Status-bar height is
+   20 px; a 14 px square fits with a hair of breathing room and aligns
+   to the numeric stats' baseline via vertical-align: -2px. */
+.stat-panel__block-name .icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: -2px;
+  opacity: 0.85;
 }
 </style>

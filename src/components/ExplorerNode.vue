@@ -9,13 +9,22 @@
         <div class="explorer-node__info-row" v-for="row in nerdInfoRows" :key="row.k"><span class="explorer-node__info-k">{{ row.k }}</span><span class="explorer-node__info-v">{{ row.v }}</span></div>
       </div>
     </div>
-    <div class="explorer-node__children" v-if="node.isFolder && isOpen">
-      <explorer-node v-for="node in node.folders" :key="node.item.id" :node="node" :depth="depth + 1"></explorer-node>
-      <div v-if="newChild" class="explorer-node__new-child" :class="{'explorer-node__new-child--folder': newChild.isFolder}" :style="{paddingLeft: childLeftPadding}">
-        <input type="text" class="text-input" v-focus @blur="submitNewChild()" @keydown.stop @keydown.enter="submitNewChild()" @keydown.esc.stop="submitNewChild(true)" v-model.trim="newChildName">
+    <transition
+      name="explorer-folder"
+      @before-enter="onBeforeEnter"
+      @enter="onEnter"
+      @after-enter="onAfterEnter"
+      @before-leave="onBeforeLeave"
+      @leave="onLeave"
+    >
+      <div class="explorer-node__children" v-if="node.isFolder && isOpen">
+        <explorer-node v-for="node in node.folders" :key="node.item.id" :node="node" :depth="depth + 1"></explorer-node>
+        <div v-if="newChild" class="explorer-node__new-child" :class="{'explorer-node__new-child--folder': newChild.isFolder}" :style="{paddingLeft: childLeftPadding}">
+          <input type="text" class="text-input" v-focus @blur="submitNewChild()" @keydown.stop @keydown.enter="submitNewChild()" @keydown.esc.stop="submitNewChild(true)" v-model.trim="newChildName">
+        </div>
+        <explorer-node v-for="node in node.files" :key="node.item.id" :node="node" :depth="depth + 1"></explorer-node>
       </div>
-      <explorer-node v-for="node in node.files" :key="node.item.id" :node="node" :depth="depth + 1"></explorer-node>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -489,6 +498,43 @@ export default {
       else pinned[id] = true;
       store.dispatch('data/patchLocalSettings', { pinnedFolderIds: pinned });
     },
+    // Folder expand/collapse easing. Vue's <transition> needs JS hooks to
+    // animate variable-height content: read the natural height after the
+    // element is mounted, drive `style.height` from 0 → that value (or
+    // back), then unset so nested children can grow freely. Reduced-motion
+    // users get an instant toggle (the CSS rule strips the transition).
+    onBeforeEnter(el) {
+      el.style.height = '0';
+      el.style.overflow = 'hidden';
+    },
+    onEnter(el, done) {
+      const h = el.scrollHeight;
+      // Force reflow so the browser commits the 0 → h transition.
+      void el.offsetHeight;
+      el.style.height = `${h}px`;
+      const onEnd = () => {
+        el.removeEventListener('transitionend', onEnd);
+        done();
+      };
+      el.addEventListener('transitionend', onEnd);
+    },
+    onAfterEnter(el) {
+      el.style.height = '';
+      el.style.overflow = '';
+    },
+    onBeforeLeave(el) {
+      el.style.height = `${el.scrollHeight}px`;
+      el.style.overflow = 'hidden';
+    },
+    onLeave(el, done) {
+      void el.offsetHeight;
+      el.style.height = '0';
+      const onEnd = () => {
+        el.removeEventListener('transitionend', onEnd);
+        done();
+      };
+      el.addEventListener('transitionend', onEnd);
+    },
   },
 };
 </script>
@@ -689,6 +735,22 @@ $new-child-height: 25px;
     font-size: $item-font-size;
     padding: 2px;
     height: $new-child-height;
+  }
+}
+
+/* Folder expand/collapse easing — JS hooks in the component drive the
+   height value 0 ↔ scrollHeight, the CSS just supplies the curve. The
+   transition lives only on the explorer-folder transition states so it
+   doesn't bleed into other height changes (rename, search filter, etc.). */
+.explorer-folder-enter-active,
+.explorer-folder-leave-active {
+  transition: height 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explorer-folder-enter-active,
+  .explorer-folder-leave-active {
+    transition: none;
   }
 }
 </style>

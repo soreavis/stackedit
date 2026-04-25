@@ -1,6 +1,6 @@
 export default () => ({
   welcomeFileHashes: {},
-  filePropertiesTab: '',
+  filePropertiesTab: 'yaml',
   htmlExportTemplate: 'styledHtml',
   pdfExportTemplate: 'styledHtml',
   pandocExportFormat: 'pdf',
