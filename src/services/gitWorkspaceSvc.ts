@@ -1,21 +1,46 @@
 import store from '../store';
 import utils from '../services/utils';
 
-const endsWith = (str, suffix) => str.slice(-suffix.length) === suffix;
+interface TreeEntry {
+  type: string;
+  path: string;
+  sha: string;
+}
+
+interface SyncDataLike {
+  hash?: number;
+  sha?: string;
+  [key: string]: unknown;
+}
+
+interface ItemLike {
+  id: string;
+  type: string;
+  hash?: number;
+  [key: string]: unknown;
+}
+
+interface Change {
+  syncDataId: string;
+  item?: ItemLike;
+  syncData?: SyncDataLike;
+}
+
+const endsWith = (str: string, suffix: string): boolean => str.slice(-suffix.length) === suffix;
 
 export default {
-  shaByPath: Object.create(null),
-  makeChanges(tree) {
-    const workspacePath = store.getters['workspace/currentWorkspace'].path || '';
+  shaByPath: Object.create(null) as Record<string, string>,
+  makeChanges(tree: TreeEntry[]): Change[] {
+    const workspacePath: string = store.getters['workspace/currentWorkspace'].path || '';
 
     // Store all blobs sha
     this.shaByPath = Object.create(null);
     // Store interesting paths
-    const treeFolderMap = Object.create(null);
-    const treeFileMap = Object.create(null);
-    const treeDataMap = Object.create(null);
-    const treeSyncLocationMap = Object.create(null);
-    const treePublishLocationMap = Object.create(null);
+    const treeFolderMap: Record<string, string> = Object.create(null);
+    const treeFileMap: Record<string, string> = Object.create(null);
+    const treeDataMap: Record<string, boolean> = Object.create(null);
+    const treeSyncLocationMap: Record<string, boolean> = Object.create(null);
+    const treePublishLocationMap: Record<string, boolean> = Object.create(null);
 
     tree.filter(({ type, path }) => type === 'blob' && path.indexOf(workspacePath) === 0)
       .forEach((blobEntry) => {
@@ -45,11 +70,11 @@ export default {
       });
 
     // Collect changes
-    const changes = [];
-    const idsByPath = {};
-    const syncDataByPath = store.getters['data/syncDataById'];
-    const { itemIdsByGitPath } = store.getters;
-    const getIdFromPath = (path, isFile) => {
+    const changes: Change[] = [];
+    const idsByPath: Record<string, string> = {};
+    const syncDataByPath: Record<string, SyncDataLike> = store.getters['data/syncDataById'];
+    const { itemIdsByGitPath }: { itemIdsByGitPath: Record<string, string> } = store.getters;
+    const getIdFromPath = (path: string, isFile = false): string => {
       let itemId = idsByPath[path];
       if (!itemId) {
         const existingItemId = itemIdsByGitPath[path];
@@ -79,7 +104,7 @@ export default {
       if (path === '.stackedit-trash/') {
         idsByPath[path] = 'trash';
       } else {
-        const item = utils.addItemHash({
+        const item: ItemLike = utils.addItemHash({
           id: getIdFromPath(path),
           type: 'folder',
           name: path.slice(parentPath.length, -1),
@@ -108,7 +133,7 @@ export default {
       const contentId = idsByPath[contentPath];
 
       // File creations/updates
-      const item = utils.addItemHash({
+      const item: ItemLike = utils.addItemHash({
         id: fileId,
         type: 'file',
         name: path.slice(parentPath.length, -'.md'.length),
@@ -152,7 +177,7 @@ export default {
     });
 
     // Data creations/updates
-    const syncDataByItemId = store.getters['data/syncDataByItemId'];
+    const syncDataByItemId: Record<string, SyncDataLike> = store.getters['data/syncDataByItemId'];
     Object.keys(treeDataMap).forEach((path) => {
       // Only template data are stored
       const [, id] = path.match(/^\.stackedit-data\/(templates)\.json$/) || [];
@@ -200,7 +225,7 @@ export default {
             const id = itemIdsByGitPath[path] || utils.uid();
             idsByPath[path] = id;
 
-            const item = utils.addItemHash({
+            const item: ItemLike = utils.addItemHash({
               ...JSON.parse(utils.decodeBase64(data)),
               id,
               type,
