@@ -76,10 +76,10 @@ export default {
     };
 
     const classToggler = toggle => (discussionId) => {
-      previewElt.getElementsByClassName(`discussion-preview-highlighting--${discussionId}`)
-        .cl_each(elt => elt.classList.toggle('discussion-preview-highlighting--hover', toggle));
-      document.getElementsByClassName(`comment--discussion-${discussionId}`)
-        .cl_each(elt => elt.classList.toggle('comment--hover', toggle));
+      Array.from(previewElt.getElementsByClassName(`discussion-preview-highlighting--${discussionId}`))
+        .forEach(elt => elt.classList.toggle('discussion-preview-highlighting--hover', toggle));
+      Array.from(document.getElementsByClassName(`comment--discussion-${discussionId}`))
+        .forEach(elt => elt.classList.toggle('comment--hover', toggle));
     };
 
     previewElt.addEventListener('mouseover', onDiscussionEvt(classToggler(true)));
@@ -93,11 +93,11 @@ export default {
       (discussionId, oldDiscussionId) => {
         if (oldDiscussionId) {
           previewElt.querySelectorAll(`.discussion-preview-highlighting--${oldDiscussionId}`)
-            .cl_each(elt => elt.classList.remove('discussion-preview-highlighting--selected'));
+            .forEach(elt => elt.classList.remove('discussion-preview-highlighting--selected'));
         }
         if (discussionId) {
           previewElt.querySelectorAll(`.discussion-preview-highlighting--${discussionId}`)
-            .cl_each(elt => elt.classList.add('discussion-preview-highlighting--selected'));
+            .forEach(elt => elt.classList.add('discussion-preview-highlighting--selected'));
         }
       },
     );

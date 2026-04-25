@@ -4,7 +4,6 @@
 // content/discussion shapes — out of scope for this incremental
 // migration.
 import yaml from 'js-yaml';
-import '../libs/clunderscore';
 import presets from '../data/presets';
 import constants from '../data/constants';
 
@@ -134,7 +133,10 @@ export default {
   },
   uid() {
     crypto.getRandomValues(array);
-    return array.cl_map(value => alphabet[value % radix]).join('');
+    // Note: Uint32Array.map returns a Uint32Array, which would coerce
+    // the string callback result back to 0. Array.from produces a
+    // regular string[].
+    return Array.from(array, value => alphabet[value % radix]).join('');
   },
   hash(str) {
     // https://stackoverflow.com/a/7616484/1333165

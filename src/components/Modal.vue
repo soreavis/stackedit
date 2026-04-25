@@ -72,9 +72,9 @@ import ZendeskPublishModal from './modals/providers/ZendeskPublishModal';
 import CouchdbWorkspaceModal from './modals/providers/CouchdbWorkspaceModal';
 import CouchdbCredentialsModal from './modals/providers/CouchdbCredentialsModal';
 
-const getTabbables = container => container.querySelectorAll('a[href], button, .textfield, input[type=checkbox]')
+const getTabbables = container => Array.from(container.querySelectorAll('a[href], button, .textfield, input[type=checkbox]'))
   // Filter enabled and visible element
-  .cl_filter(el => !el.disabled && el.offsetParent !== null && !el.classList.contains('not-tabbable'));
+  .filter(el => !el.disabled && el.offsetParent !== null && !el.classList.contains('not-tabbable'));
 
 export default {
   components: {

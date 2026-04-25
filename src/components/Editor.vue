@@ -67,10 +67,10 @@ export default {
     };
 
     const classToggler = toggle => (discussionId) => {
-      editorElt.getElementsByClassName(`discussion-editor-highlighting--${discussionId}`)
-        .cl_each(elt => elt.classList.toggle('discussion-editor-highlighting--hover', toggle));
-      document.getElementsByClassName(`comment--discussion-${discussionId}`)
-        .cl_each(elt => elt.classList.toggle('comment--hover', toggle));
+      Array.from(editorElt.getElementsByClassName(`discussion-editor-highlighting--${discussionId}`))
+        .forEach(elt => elt.classList.toggle('discussion-editor-highlighting--hover', toggle));
+      Array.from(document.getElementsByClassName(`comment--discussion-${discussionId}`))
+        .forEach(elt => elt.classList.toggle('comment--hover', toggle));
     };
 
     editorElt.addEventListener('mouseover', onDiscussionEvt(classToggler(true)));
@@ -84,11 +84,11 @@ export default {
       (discussionId, oldDiscussionId) => {
         if (oldDiscussionId) {
           editorElt.querySelectorAll(`.discussion-editor-highlighting--${oldDiscussionId}`)
-            .cl_each(elt => elt.classList.remove('discussion-editor-highlighting--selected'));
+            .forEach(elt => elt.classList.remove('discussion-editor-highlighting--selected'));
         }
         if (discussionId) {
           editorElt.querySelectorAll(`.discussion-editor-highlighting--${discussionId}`)
-            .cl_each(elt => elt.classList.add('discussion-editor-highlighting--selected'));
+            .forEach(elt => elt.classList.add('discussion-editor-highlighting--selected'));
         }
       },
     );
