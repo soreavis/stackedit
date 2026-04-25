@@ -28,7 +28,9 @@
 </template>
 
 <script>
-import { mapState, mapGetters, mapMutations, mapActions } from 'vuex';
+import { mapState, mapGetters, mapMutations } from 'vuex';
+import { mapActions as mapPiniaActions } from 'pinia';
+import { useNotificationStore } from '../../stores/notification';
 import editorSvc from '../../services/editorSvc';
 import animationSvc from '../../services/animationSvc';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
@@ -70,7 +72,7 @@ export default {
     ...mapMutations('discussion', [
       'setCurrentDiscussionId',
     ]),
-    ...mapActions('notification', [
+    ...mapPiniaActions(useNotificationStore, [
       'info',
     ]),
     goToDiscussion(discussionId = this.currentDiscussionId) {

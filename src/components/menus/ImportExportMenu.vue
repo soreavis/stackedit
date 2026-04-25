@@ -56,6 +56,7 @@ import htmlSanitizer from '../../libs/htmlSanitizer';
 import MenuEntry from './common/MenuEntry';
 import Provider from '../../services/providers/common/Provider';
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import workspaceSvc from '../../services/workspaceSvc';
 import exportSvc from '../../services/exportSvc';
 import badgeSvc from '../../services/badgeSvc';
@@ -87,7 +88,7 @@ const readFile = file => new Promise((resolve) => {
     reader.onload = (e) => {
       const content = e.target.result;
       if (content.match(/\uFFFD/)) {
-        store.dispatch('notification/error', 'File is not readable.');
+        useNotificationStore().error('File is not readable.');
       } else {
         resolve(content);
       }
@@ -162,12 +163,12 @@ export default {
         } else if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
           markdown = await navigator.clipboard.readText();
         } else {
-          store.dispatch('notification/error', 'Clipboard access is not supported in this browser.');
+          useNotificationStore().error('Clipboard access is not supported in this browser.');
           return;
         }
 
         if (!markdown || !markdown.trim()) {
-          store.dispatch('notification/info', 'Clipboard is empty.');
+          useNotificationStore().info('Clipboard is empty.');
           return;
         }
 
@@ -181,9 +182,9 @@ export default {
         badgeSvc.addBadge('importClipboard');
       } catch (err) {
         if (err && err.name === 'NotAllowedError') {
-          store.dispatch('notification/error', 'Clipboard permission denied. Allow clipboard access and try again.');
+          useNotificationStore().error('Clipboard permission denied. Allow clipboard access and try again.');
         } else {
-          store.dispatch('notification/error', 'Could not read clipboard.');
+          useNotificationStore().error('Could not read clipboard.');
         }
       }
     },

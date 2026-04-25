@@ -47,9 +47,11 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters } from 'vuex';
+import { mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 
 export default {
@@ -68,7 +70,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('notification', [
+    ...mapPiniaActions(useNotificationStore, [
       'info',
     ]),
     remove(location) {
