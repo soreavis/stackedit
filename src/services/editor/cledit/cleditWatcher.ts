@@ -1,8 +1,16 @@
 import cledit from './cleditCore';
 
-function Watcher(editor, listener) {
+interface CleditEditor {
+  $contentElt: HTMLElement;
+  [key: string]: unknown;
+}
+
+// MutationObserver wrapper around the editor's content element. The
+// `noWatch` helper temporarily disconnects the observer for programmatic
+// edits the watcher shouldn't echo back to its listener.
+function Watcher(this: any, editor: CleditEditor, listener: MutationCallback) {
   this.isWatching = false;
-  let contentObserver;
+  let contentObserver: MutationObserver | undefined;
   this.startWatching = () => {
     this.stopWatching();
     this.isWatching = true;
@@ -20,7 +28,7 @@ function Watcher(editor, listener) {
     }
     this.isWatching = false;
   };
-  this.noWatch = (cb) => {
+  this.noWatch = (cb: () => void) => {
     if (this.isWatching === true) {
       this.stopWatching();
       cb();
@@ -31,4 +39,4 @@ function Watcher(editor, listener) {
   };
 }
 
-cledit.Watcher = Watcher;
+(cledit as any).Watcher = Watcher;

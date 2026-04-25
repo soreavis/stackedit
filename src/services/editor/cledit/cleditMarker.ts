@@ -6,17 +6,24 @@ const DIFF_EQUAL = 0;
 
 let idCounter = 0;
 
+// A Marker tracks a content offset across edits. The cledit content-change
+// pipeline feeds in diff-match-patch diffs and the marker shifts so it
+// keeps pointing at the same logical position.
 class Marker {
-  constructor(offset, trailing) {
+  id: number;
+  offset: number;
+  trailing: boolean;
+
+  constructor(offset: number, trailing = false) {
     this.id = idCounter;
     idCounter += 1;
     this.offset = offset;
     this.trailing = trailing;
   }
 
-  adjustOffset(diffs) {
+  adjustOffset(diffs: Array<[number, string]>): void {
     let startOffset = 0;
-    diffs.cl_each((diff) => {
+    diffs.cl_each((diff: [number, string]) => {
       const diffType = diff[0];
       const diffText = diff[1];
       const diffOffset = diffText.length;
@@ -45,5 +52,4 @@ class Marker {
   }
 }
 
-
-cledit.Marker = Marker;
+(cledit as any).Marker = Marker;
