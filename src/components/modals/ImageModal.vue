@@ -27,6 +27,7 @@ import modalTemplate from './common/modalTemplate';
 import MenuEntry from '../menus/common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 
 export default modalTemplate({
   components: {
@@ -73,7 +74,7 @@ export default modalTemplate({
         // supports =sNNN resizing; doc.url is a drive.google.com view link
         // that is not directly embeddable in markdown.
         const imgUrl = res[0].thumbnailUrl || res[0].url;
-        store.dispatch('modal/open', {
+        useModalStore().open({
           type: 'googlePhoto',
           url: imgUrl,
           callback,

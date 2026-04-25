@@ -36,7 +36,8 @@
 
 <script>
 import yaml from 'js-yaml';
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
+import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
 import Tab from './common/Tab';
 import CodeEditor from '../CodeEditor';
@@ -61,7 +62,7 @@ export default {
     error: null,
   }),
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     strippedCustomSettings() {

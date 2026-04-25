@@ -32,6 +32,7 @@ import editorSvc from '../../services/editorSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import modalTemplate from './common/modalTemplate';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
@@ -68,7 +69,7 @@ export default modalTemplate({
           badgeSvc.addBadge('exportPandoc');
         } catch (err) {
           if (err.status === 401) {
-            store.dispatch('modal/open', 'sponsorOnly');
+            useModalStore().open('sponsorOnly');
           } else {
             console.error(err);  
             useNotificationStore().error(err);

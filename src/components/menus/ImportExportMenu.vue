@@ -56,6 +56,7 @@ import htmlSanitizer from '../../libs/htmlSanitizer';
 import MenuEntry from './common/MenuEntry';
 import Provider from '../../services/providers/common/Provider';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import workspaceSvc from '../../services/workspaceSvc';
 import exportSvc from '../../services/exportSvc';
@@ -197,17 +198,17 @@ export default {
     },
     async exportHtml() {
       try {
-        await store.dispatch('modal/open', 'htmlExport');
+        await useModalStore().open('htmlExport');
       } catch (e) { /* Cancel */ }
     },
     async exportPdf() {
       try {
-        await store.dispatch('modal/open', 'pdfExport');
+        await useModalStore().open('pdfExport');
       } catch (e) { /* Cancel */ }
     },
     async exportPandoc() {
       try {
-        await store.dispatch('modal/open', 'pandocExport');
+        await useModalStore().open('pandocExport');
       } catch (e) { /* Cancel */ }
     },
   },
