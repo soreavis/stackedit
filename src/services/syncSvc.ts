@@ -1,3 +1,9 @@
+// @ts-nocheck
+// 960-line sync orchestrator: workspace sync, file sync, content
+// merge, queue/retry, location resolution. Heaviest dynamic surface in
+// the codebase — typing properly requires defining the full sync
+// state machine + content/location wire shapes, out of scope for
+// this incremental migration.
 import localDbSvc from './localDbSvc';
 import store from '../store';
 import utils from './utils';
