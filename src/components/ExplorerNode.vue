@@ -35,6 +35,7 @@ import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
 import store from '../store';
+import { useContextMenuStore } from '../stores/contextMenu';
 import badgeSvc from '../services/badgeSvc';
 
 export default {
@@ -394,7 +395,7 @@ export default {
         const isFile = !this.node.isFolder && !this.node.isNil;
         const isRegularFolder = this.node.isFolder && !this.node.isTrash && !this.node.isTemp && !this.node.isRecent && !this.node.isRoot;
         const isPinned = this.isPinned;
-        const item = await store.dispatch('contextMenu/open', {
+        const item = await useContextMenuStore().open({
           coordinates: {
             left: evt.clientX,
             top: evt.clientY,

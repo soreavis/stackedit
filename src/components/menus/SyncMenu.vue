@@ -109,6 +109,7 @@ import gitlabProvider from '../../services/providers/gitlabProvider';
 import syncSvc from '../../services/syncSvc';
 import store from '../../store';
 import badgeSvc from '../../services/badgeSvc';
+import { useQueueStore } from '../../stores/queue';
 
 const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
   .filter(token => filter(token))
@@ -197,8 +198,7 @@ export default {
     },
     async openDropbox(token) {
       const paths = await dropboxHelper.openChooser(token);
-      store.dispatch(
-        'queue/enqueue',
+      useQueueStore().enqueue(
         async () => {
           await dropboxProvider.openFiles(token, paths);
           badgeSvc.addBadge('openFromDropbox');
@@ -213,8 +213,7 @@ export default {
     },
     async openGoogleDrive(token) {
       const files = await googleHelper.openPicker(token, 'doc');
-      store.dispatch(
-        'queue/enqueue',
+      useQueueStore().enqueue(
         async () => {
           await googleDriveProvider.openFiles(token, files);
           badgeSvc.addBadge('openFromGoogleDrive');
@@ -233,8 +232,7 @@ export default {
           type: 'githubOpen',
           token,
         });
-        store.dispatch(
-          'queue/enqueue',
+        useQueueStore().enqueue(
           async () => {
             await githubProvider.openFile(token, syncLocation);
             badgeSvc.addBadge('openFromGithub');
@@ -260,8 +258,7 @@ export default {
           type: 'gitlabOpen',
           token,
         });
-        store.dispatch(
-          'queue/enqueue',
+        useQueueStore().enqueue(
           async () => {
             await gitlabProvider.openFile(token, syncLocation);
             badgeSvc.addBadge('openFromGitlab');
