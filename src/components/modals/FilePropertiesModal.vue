@@ -144,8 +144,11 @@ export default {
     const content = store.getters['content/current'];
     this.contentId = content.id;
     this.setYamlProperties(content.properties);
-    if (this.tab !== 'yaml') {
+    if (this.tab === 'simple') {
       this.setSimpleTab();
+    } else if (this.tab !== 'yaml') {
+      // Legacy '' default (pre-yaml-default users) — land on YAML.
+      this.tab = 'yaml';
     }
   },
   methods: {

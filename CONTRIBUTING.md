@@ -27,7 +27,7 @@ Dev server: http://localhost:8080
 ## Running tests
 
 ```bash
-npm run unit                  # 202 tests under test/unit/hardening/
+npm run unit                  # 231 tests under test/unit/hardening/
 npm run unit-with-coverage    # HTML coverage in ./coverage/
 ```
 
@@ -43,7 +43,7 @@ The upstream ESLint config is broken (config extends an ancestor that doesn't re
 2. Create a branch: `feature/…`, `fix/…`, `security/…`, `docs/…`.
 3. Make your changes. Keep them narrowly scoped.
 4. Run `npm run build` and `npm run unit` — both must pass.
-5. Open a PR against `master`.
+5. Open a PR against `develop`. Promotion to `master` happens via a separate `develop → master` PR when a release is cut.
 6. CI will run on your PR. Fix anything red before requesting review.
 
 ## Commit style

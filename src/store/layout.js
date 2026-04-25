@@ -27,6 +27,7 @@ const constants = {
   explorerWidth: 320,
   gutterWidth: 250,
   sideBarWidth: 280,
+  sideBarTocWidth: 392, // +40% of sideBarWidth — TOC panel needs the extra room
   navigationBarHeight: 44,
   buttonBarWidth: 26,
   statusBarHeight: 20,
@@ -60,8 +61,11 @@ function computeStyles(state, getters, layoutSettings = getters['data/layoutSett
   ) {
     styles.layoutOverflow = true;
   }
+  styles.sideBarWidth = layoutSettings.sideBarPanel === 'toc'
+    ? constants.sideBarTocWidth
+    : constants.sideBarWidth;
   if (styles.showSideBar) {
-    styles.innerWidth -= constants.sideBarWidth;
+    styles.innerWidth -= styles.sideBarWidth;
   }
   if (styles.showExplorer) {
     styles.innerWidth -= constants.explorerWidth;

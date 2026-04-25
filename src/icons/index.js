@@ -54,6 +54,10 @@ import ContentCopy from './ContentCopy';
 import Key from './Key';
 import DotsHorizontal from './DotsHorizontal';
 import Seal from './Seal';
+import ChevronUp from './ChevronUp';
+import ChevronDown from './ChevronDown';
+import LanguageMarkdown from './LanguageMarkdown';
+import LanguageHtml5 from './LanguageHtml5';
 
 Vue.component('iconProvider', Provider);
 Vue.component('iconFormatBold', FormatBold);
@@ -110,3 +114,7 @@ Vue.component('iconContentCopy', ContentCopy);
 Vue.component('iconKey', Key);
 Vue.component('iconDotsHorizontal', DotsHorizontal);
 Vue.component('iconSeal', Seal);
+Vue.component('iconChevronUp', ChevronUp);
+Vue.component('iconChevronDown', ChevronDown);
+Vue.component('iconLanguageMarkdown', LanguageMarkdown);
+Vue.component('iconLanguageHtml5', LanguageHtml5);

@@ -14,14 +14,14 @@
         <button class="side-title__button side-title__button--rename button" v-show="!isMultiSelect" :disabled="!canRename" @click="editItem()" v-title="'Rename'">
           <icon-pen></icon-pen>
         </button>
-        <button class="side-title__button side-title__button--tree-glyph button" @click="expandAll" v-title="'Expand all folders'">
-          <span class="side-title__tree-glyph">⊞</span>
+        <button class="side-title__button button" @click="expandAll" v-title="'Expand all folders'">
+          <icon-chevron-down></icon-chevron-down>
         </button>
-        <button class="side-title__button side-title__button--tree-glyph button" @click="collapseAll" v-title="'Collapse all folders'">
-          <span class="side-title__tree-glyph">⊟</span>
+        <button class="side-title__button button" @click="collapseAll" v-title="'Collapse all folders'">
+          <icon-chevron-up></icon-chevron-up>
         </button>
         <button class="side-title__button button" @click="cycleSort" v-title="`Sort: ${sortLabel} (click to cycle)`">
-          <span class="side-title__sort-glyph">{{ sortGlyph }}</span>
+          <span class="side-title__sort-glyph" :class="`side-title__sort-glyph--${sortMode}`">{{ sortGlyph }}</span>
         </button>
       </div>
       <button class="side-title__button side-title__button--close button" @click="toggleExplorer(false)" v-title="'Close explorer'">
@@ -414,13 +414,33 @@ export default {
   flex-shrink: 0;
 }
 
-.side-title__tree-glyph,
 .side-title__sort-glyph {
   font-size: 20px;
   font-weight: 600;
   font-family: inherit;
   line-height: 1;
   display: inline-block;
+}
+
+/* The `◷` clock glyph (modified / recently-opened sort mode) is rendered
+   smaller than the other sort glyphs at the same em size — its drawn shape
+   fills only ~50% of the box. `transform: scale` is layout-neutral (the
+   element keeps its 20 px line box so vertical alignment with the other
+   sort glyphs stays put), unlike a font-size bump which grows the line
+   box and pushes the glyph below the button's optical center. */
+.side-title__sort-glyph--modified {
+  transform: scale(1.3);
+  transform-origin: center center;
+}
+
+/* `A↓` (name sort) and `✱` (created sort) both sit 1 px above the
+   optical baseline of the chevrons / close icon in most fonts; nudge
+   them down to match. `--modified` doesn't need this because the
+   `transform: scale` keeps it on the original line baseline. */
+.side-title__sort-glyph--name,
+.side-title__sort-glyph--created {
+  position: relative;
+  top: 1px;
 }
 
 .explorer__search-input {

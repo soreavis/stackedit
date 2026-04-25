@@ -93,7 +93,7 @@ Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB*
 
 ### Tests
 
-- **224 specs** across 18 files under `test/unit/hardening/` covering: sanitizer XSS vectors, rate limiter, API handlers, GitHub OAuth PKCE, template worker sandbox, `vercel.json` contract, markdown-it plugins, drag-and-drop markdown import, mermaid lightbox pan/zoom/copy.
+- **231 specs** across 18 files under `test/unit/hardening/` covering: sanitizer XSS vectors, rate limiter, API handlers, GitHub OAuth PKCE, template worker sandbox, `vercel.json` contract, markdown-it plugins, drag-and-drop markdown import, mermaid lightbox pan/zoom/copy.
 - Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (KaTeX, Mermaid, YAML front-matter, API curl recipes, sanitizer vectors).
 
 ### Release & versioning
