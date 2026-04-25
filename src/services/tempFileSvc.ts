@@ -5,6 +5,7 @@
 import cleditRaw from './editor/cledit';
 import editorSvcRaw from './editorSvc';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import utils from './utils';
 import workspaceSvc from './workspaceSvc';
 
@@ -62,7 +63,7 @@ const svc: TempFileSvc = {
 
     // Sanitize file creations
     const lastCreated: Record<string, { created: number }> = {};
-    const fileItemsById = store.state.file.itemsById;
+    const fileItemsById: Record<string, any> = useFileStore().itemsById;
     const lastCreatedSource: Record<string, { created: number }> = store.getters['data/lastCreated'] || {};
     Object.entries(lastCreatedSource).forEach(([id, value]) => {
       if (fileItemsById[id] && fileItemsById[id].parentId === 'temp') {
@@ -86,10 +87,10 @@ const svc: TempFileSvc = {
 
     // Store file creations and open the file
     store.dispatch('data/setLastCreated', lastCreated);
-    store.commit('file/setCurrentId', file.id);
+    useFileStore().setCurrentId(file.id);
 
     const onChange = cledit.Utils.debounce(() => {
-      const currentFile = store.getters['file/current'];
+      const currentFile = useFileStore().current;
       if (currentFile.id !== file.id) {
         // Close editor if file has changed for some reason
         svc.close();
@@ -114,7 +115,7 @@ const svc: TempFileSvc = {
 
     // Watch preview refresh and file name changes
     editorSvc.$on('previewCtx', onChange);
-    store.watch(() => store.getters['file/current'].name, onChange);
+    store.watch(() => useFileStore().current.name, onChange);
   },
 };
 

@@ -35,6 +35,7 @@ import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { useContextMenuStore } from '../stores/contextMenu';
 import badgeSvc from '../services/badgeSvc';
 
@@ -217,8 +218,8 @@ export default {
             if (node.isTrash || node.isTemp || node.isRoot) {
               store.commit('explorer/toggleOpenNode', id);
             }
-          } else if (store.state.file.currentId !== id) {
-            store.commit('file/setCurrentId', id);
+          } else if (useFileStore().currentId !== id) {
+            useFileStore().setCurrentId(id);
             badgeSvc.addBadge('switchFile');
           }
         }, 10);
@@ -444,7 +445,7 @@ export default {
     },
     async duplicateFile() {
       try {
-        const original = store.state.file.itemsById[this.node.item.id];
+        const original = useFileStore().itemsById[this.node.item.id];
         if (!original) return;
         const content = await (await import('../services/localDbSvc')).default
           .loadItem(`${original.id}/content`);
@@ -454,7 +455,7 @@ export default {
           text: (content && content.text) || '',
           properties: (content && content.properties) || '',
         }, true);
-        store.commit('file/setCurrentId', copy.id);
+        useFileStore().setCurrentId(copy.id);
       } catch (e) {
         console.error(e);
       }
@@ -477,7 +478,7 @@ export default {
       document.body.removeChild(ta);
     },
     revealInEditor() {
-      store.commit('file/setCurrentId', this.node.item.id);
+      useFileStore().setCurrentId(this.node.item.id);
     },
     onInfoEnter(evt) {
       const r = evt.currentTarget.getBoundingClientRect();

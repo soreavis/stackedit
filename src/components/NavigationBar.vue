@@ -66,6 +66,7 @@ import utils from '../services/utils';
 import pagedownButtons from '../data/pagedownButtons';
 import customToolbarButtons from '../data/customToolbarButtons';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { useModalStore } from '../stores/modal';
 import workspaceSvc from '../services/workspaceSvc';
 import badgeSvc from '../services/badgeSvc';
@@ -195,17 +196,17 @@ export default {
       return result;
     },
     editCancelTrigger() {
-      const current = store.getters['file/current'];
+      const current = useFileStore().current;
       return utils.serializeObject([
         current.id,
         current.name,
       ]);
     },
     hasCurrentFile() {
-      return !!store.getters['file/current'].id;
+      return !!useFileStore().current.id;
     },
     metaParts() {
-      const current = store.getters['file/current'];
+      const current = useFileStore().current;
       if (!current || !current.id) return null;
       const content = store.getters['content/current'];
       const text = (content && content.text) || '';
@@ -284,7 +285,7 @@ export default {
     },
     closeCurrentFile() {
       store.commit('explorer/setUserClosedFile', true);
-      store.commit('file/setCurrentId', null);
+      useFileStore().setCurrentId(null);
     },
     async onTitleContextMenu(evt) {
       if (!this.hasCurrentFile) return;
@@ -310,9 +311,9 @@ export default {
       if (item) item.perform();
     },
     async copyCurrentFilePath() {
-      const id = store.getters['file/current'].id;
+      const id = useFileStore().current.id;
       if (!id) return;
-      const path = store.getters.pathsByItemId[id] || store.getters['file/current'].name || '';
+      const path = store.getters.pathsByItemId[id] || useFileStore().current.name || '';
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(path);
@@ -419,11 +420,11 @@ export default {
         this.titleInputElt.setSelectionRange(0, this.titleInputElt.value.length);
       } else {
         const title = this.title.trim();
-        this.title = store.getters['file/current'].name;
+        this.title = useFileStore().current.name;
         if (title && this.title !== title) {
           try {
             await workspaceSvc.storeItem({
-              ...store.getters['file/current'],
+              ...useFileStore().current,
               name: title,
             });
             badgeSvc.addBadge('editCurrentFileName');

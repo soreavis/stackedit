@@ -129,6 +129,7 @@ import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import userSvc from '../../services/userSvc';
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 
 export default {
@@ -159,7 +160,7 @@ export default {
       return Object.keys(store.getters['publishLocation/current']).length;
     },
     hasCurrentFile() {
-      return !!store.getters['file/current'].id;
+      return !!useFileStore().current.id;
     },
     templateCount() {
       return Object.keys(store.getters['data/allTemplatesById']).length;

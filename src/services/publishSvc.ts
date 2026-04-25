@@ -1,5 +1,6 @@
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
 import utils from './utils';
@@ -56,7 +57,7 @@ const publish = async (publishLocation: PublishLocation): Promise<PublishLocatio
   const template = store.getters['data/allTemplatesById'][publishLocation.templateId];
   const html = await exportSvc.applyTemplate(fileId as string, template);
   const content = await (localDbSvc as any).loadItem(`${fileId}/content`);
-  const file = store.state.file.itemsById[fileId as string];
+  const file = (useFileStore().itemsById as Record<string, any>)[fileId as string];
   // utils.computeProperties is JS, inferred narrowly. Cast to `any` so the
   // free-form metadata fields (title, author, tags, etc.) read through.
   const properties: any = utils.computeProperties(content.properties);
@@ -106,7 +107,7 @@ const publishFile = async (fileId: string): Promise<void> => {
         },
       });
     });
-    const file = store.state.file.itemsById[fileId];
+    const file = (useFileStore().itemsById as Record<string, any>)[fileId];
     useNotificationStore().info(`"${file.name}" was published to ${counter} location(s).`);
   } finally {
     await (localDbSvc as any).unloadContents();
@@ -129,7 +130,7 @@ const requestPublish = (): void => {
           // Cancel publish
           throw new Error('Publish not possible.');
         }
-        await publishFile(store.getters['file/current'].id);
+        await publishFile(useFileStore().current.id);
         badgeSvc.addBadge('triggerPublish');
       }
     };
@@ -139,7 +140,7 @@ const requestPublish = (): void => {
 };
 
 const createPublishLocation = (publishLocation: PublishLocation, featureId?: string): void => {
-  const currentFile = store.getters['file/current'];
+  const currentFile = useFileStore().current;
   publishLocation.fileId = currentFile.id;
   useQueueStore().enqueue(
     async () => {
