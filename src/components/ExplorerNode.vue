@@ -510,8 +510,7 @@ export default {
     onEnter(el, done) {
       const h = el.scrollHeight;
       // Force reflow so the browser commits the 0 → h transition.
-      // eslint-disable-next-line no-unused-expressions
-      el.offsetHeight;
+      void el.offsetHeight;
       el.style.height = `${h}px`;
       const onEnd = () => {
         el.removeEventListener('transitionend', onEnd);
@@ -528,8 +527,7 @@ export default {
       el.style.overflow = 'hidden';
     },
     onLeave(el, done) {
-      // eslint-disable-next-line no-unused-expressions
-      el.offsetHeight;
+      void el.offsetHeight;
       el.style.height = '0';
       const onEnd = () => {
         el.removeEventListener('transitionend', onEnd);
