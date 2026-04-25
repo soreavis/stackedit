@@ -87,9 +87,9 @@ export default {
         name: fileNameMap[externalId],
         parentId: folderIdMap[parentIdMap[externalId]],
         text: textMap[externalId],
-        properties: propertiesMap[externalId],
-        discussions: discussionsMap[externalId],
-        comments: commentsMap[externalId],
+        properties: propertiesMap[externalId] as string | undefined,
+        discussions: discussionsMap[externalId] as Record<string, unknown> | undefined,
+        comments: commentsMap[externalId] as Record<string, unknown> | undefined,
       }, true),
     );
   },
