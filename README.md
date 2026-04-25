@@ -6,7 +6,7 @@
 ![Node](https://img.shields.io/badge/node-22.x-green?logo=nodedotjs&logoColor=white)
 ![Vue 2](https://img.shields.io/badge/vue-2.7-42b883?logo=vuedotjs&logoColor=white)
 ![Vite](https://img.shields.io/badge/vite-7.3-646cff?logo=vite&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-255_passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-361_passing-brightgreen)
 
 > **Full-featured, open-source Markdown editor** descended from [PageDown](https://code.google.com/archive/p/pagedown/), the Markdown library originally written for Stack Overflow and the other Stack Exchange sites. Modernized for Vercel deployment, hardened, and actively maintained.
 
@@ -93,7 +93,7 @@ Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB*
 
 ### Tests
 
-- **255 specs** across 20 files under `test/unit/`. Hardening specs (`test/unit/hardening/`) cover: sanitizer XSS vectors, rate limiter, API handlers, GitHub OAuth PKCE, template worker sandbox, `vercel.json` contract, markdown-it plugins (including the rule-disable regression for `options.{fence,table,del}`), drag-and-drop markdown import, mermaid lightbox pan/zoom/copy. Component specs (`test/unit/components/`) cover: `defaultLocalSettings` invariants and the icon registry.
+- **361 specs** across 23 files under `test/unit/`. Hardening specs (`test/unit/hardening/`) cover: sanitizer XSS vectors, rate limiter, API handlers, GitHub OAuth PKCE, template worker sandbox, `vercel.json` contract, markdown-it plugins (including the rule-disable regression for `options.{fence,table,del}`), drag-and-drop markdown import, mermaid lightbox pan/zoom/copy. Component specs (`test/unit/components/`) cover: `defaultLocalSettings` invariants, the icon registry, the `simpleModals` registry shape, the `customToolbarButtons` + `pagedownButtons` shape, and the modal Vuex module's open/reject/stack/hideUntil flows.
 - Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (KaTeX, Mermaid, YAML front-matter, API curl recipes, sanitizer vectors).
 
 ### Release & versioning
@@ -182,7 +182,7 @@ npm run dev                      # http://localhost:8080
 npm run unit
 ```
 
-255 tests across 20 files under `test/unit/` (hardening + component specs). Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (sanitizer XSS vectors, KaTeX, Mermaid, YAML front-matter).
+361 tests across 23 files under `test/unit/` (hardening + component specs). Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (sanitizer XSS vectors, KaTeX, Mermaid, YAML front-matter).
 
 ## Project structure
 
