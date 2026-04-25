@@ -45,6 +45,7 @@ A modernization + hardening pass on top of upstream's last shipped version (5.15
 | Sass | node-sass (deprecated) + `@import` | **Dart Sass** with `@use` / `math.div` / `color.adjust` |
 | CSS baseline | `normalize-scss` | `modern-normalize` |
 | PWA | workbox via webpack plugin | `vite-plugin-pwa` 1.x |
+| Source language | JavaScript | **JavaScript + TypeScript** (all `api/` + `src/services/` ported to TS) |
 
 Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB**). Mermaid is lazy-loaded; the template worker is a separate chunk; Vue aliased to the runtime-only build so the `parseHTML` ReDoS parser is dead-code-eliminated from the shipped bundle.
 
@@ -83,7 +84,7 @@ Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB*
 - **Clipboard image paste** directly into the editor.
 - **Google Drive image picker** replacing the dead Google Photos picker.
 - **Open Graph + Twitter-card meta tags** for link previews.
-- **About modal rebranded**: `Community Fork` pill, dual copyright line, fork-first link set, dead upstream-only links pulled.
+- **About modal rebranded for independence**: `Independent Successor` pill, one-line tagline, dual copyright line (Dock5 + soreavis), `View on GitHub` / `Changelog` link set, dead upstream-only links pulled.
 - **Privacy Policy**: canonical [`PRIVACY.md`](PRIVACY.md) + static [`/privacy.html`](static/privacy.html) mirror (hand-synced, no build step).
 
 ### Bug fixes specific to this codebase
@@ -194,13 +195,14 @@ src/
   extensions/       # markdown-it plugins (KaTeX, Mermaid, emoji, …)
   icons/            # SVG icon components
   libs/             # htmlSanitizer (DOMPurify), pagedown, clunderscore
-  services/         # Vuex-adjacent services (editor, sync, network, templateWorker)
+  services/         # Vuex-adjacent services (editor, sync, network, templateWorker) — all TypeScript
   store/            # Vuex modules
   styles/           # SCSS
 static/             # Landing page, favicon, robots, 404, privacy.html, fonts
 test/
   fixtures/         # Paste-ready markdown smoke tests
   unit/hardening/   # Vitest specs for security + API surface
+  unit/components/  # Vitest specs for component / store / data registries
 vercel.json         # Install + headers + rewrites + Edge/Node function config
 CHANGELOG.md        # Keep-a-Changelog, `x.y.z-fork.N` versioning
 PRIVACY.md          # Canonical privacy policy (mirrored to static/privacy.html)
