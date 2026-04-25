@@ -18,7 +18,7 @@
     "unit-with-coverage": "NODE_NO_WARNINGS=1 vitest run --coverage",
     "test": "NODE_NO_WARNINGS=1 vitest run",
     "preversion": "npm run test",
-    "postversion": "git push origin master --tags && npm publish",
+    "postversion": "git push origin main --tags && npm publish",
     "patch": "npm version patch -m \"Tag v%s\"",
     "minor": "npm version minor -m \"Tag v%s\"",
     "major": "npm version major -m \"Tag v%s\""

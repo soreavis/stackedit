@@ -10,10 +10,10 @@ For vulnerabilities in upstream StackEdit code (editor, sync providers, markdown
 
 | Version | Supported |
 |---|---|
-| `master` (HEAD) | Yes |
-| `5.15.x` upstream | See upstream repository |
+| `main` (HEAD) | Yes |
+| `5.15.x` upstream (`benweet/stackedit`) | See upstream repository (dormant since 2023-05-27) |
 
-This fork does not currently publish numbered releases. Security patches land on `master` and are auto-deployed.
+This project does not currently publish numbered releases. Security patches land on `main` and are auto-deployed.
 
 ## Reporting a vulnerability
 

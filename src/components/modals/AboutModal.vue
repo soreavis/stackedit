@@ -5,7 +5,7 @@
       <div class="about-fork-badge">Community Fork</div>
       <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/">Fork on GitHub</a>
       <br>
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/issues">Issue tracker</a> — <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/blob/master/CHANGELOG.md">Fork changelog</a>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/issues">Issue tracker</a> — <a target="_blank" rel="noopener noreferrer" href="https://github.com/soreavis/stackedit/blob/main/CHANGELOG.md">Fork changelog</a>
       <br>
       <a target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">Upstream StackEdit</a> — <a target="_blank" rel="noopener noreferrer" href="https://community.stackedit.io/">Upstream community</a>
       <hr>
