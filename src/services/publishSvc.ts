@@ -7,47 +7,57 @@ import providerRegistry from './providers/common/providerRegistry';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
 
-const hasCurrentFilePublishLocations = () => !!store.getters['publishLocation/current'].length;
+interface PublishLocation {
+  fileId?: string;
+  templateId: string;
+  providerId: string;
+  [key: string]: unknown;
+}
 
-const loader = type => fileId => localDbSvc.loadItem(`${fileId}/${type}`)
+const hasCurrentFilePublishLocations = (): boolean =>
+  !!(store.getters['publishLocation/current'] as unknown[]).length;
+
+const loader = (type: string) => (fileId: string) => (localDbSvc as any).loadItem(`${fileId}/${type}`)
   // Item does not exist, create it
   .catch(() => store.commit(`${type}/setItem`, {
     id: `${fileId}/${type}`,
   }));
 const loadContent = loader('content');
 
-const ensureArray = (value) => {
+const ensureArray = (value: unknown): string[] => {
   if (!value) {
     return [];
   }
   if (!Array.isArray(value)) {
     return `${value}`.trim().split(/\s*,\s*/);
   }
-  return value;
+  return value as string[];
 };
 
-const ensureString = (value, defaultValue) => {
+const ensureString = (value: unknown, defaultValue?: string): string | undefined => {
   if (!value) {
     return defaultValue;
   }
   return `${value}`;
 };
 
-const ensureDate = (value, defaultValue) => {
+const ensureDate = (value: unknown, defaultValue: Date): Date => {
   if (!value) {
     return defaultValue;
   }
   return new Date(`${value}`);
 };
 
-const publish = async (publishLocation) => {
+const publish = async (publishLocation: PublishLocation): Promise<PublishLocation> => {
   const { fileId } = publishLocation;
   const template = store.getters['data/allTemplatesById'][publishLocation.templateId];
-  const html = await exportSvc.applyTemplate(fileId, template);
-  const content = await localDbSvc.loadItem(`${fileId}/content`);
-  const file = store.state.file.itemsById[fileId];
-  const properties = utils.computeProperties(content.properties);
-  const provider = providerRegistry.providersById[publishLocation.providerId];
+  const html = await exportSvc.applyTemplate(fileId as string, template);
+  const content = await (localDbSvc as any).loadItem(`${fileId}/content`);
+  const file = store.state.file.itemsById[fileId as string];
+  // utils.computeProperties is JS, inferred narrowly. Cast to `any` so the
+  // free-form metadata fields (title, author, tags, etc.) read through.
+  const properties: any = utils.computeProperties(content.properties);
+  const provider = (providerRegistry as any).providersById[publishLocation.providerId];
   const token = provider.getToken(publishLocation);
   const metadata = {
     title: ensureString(properties.title, file.name),
@@ -62,14 +72,14 @@ const publish = async (publishLocation) => {
   return provider.publish(token, html, metadata, publishLocation);
 };
 
-const publishFile = async (fileId) => {
+const publishFile = async (fileId: string): Promise<void> => {
   let counter = 0;
   await loadContent(fileId);
-  const publishLocations = [
-    ...store.getters['publishLocation/filteredGroupedByFileId'][fileId] || [],
+  const publishLocations: PublishLocation[] = [
+    ...(store.getters['publishLocation/filteredGroupedByFileId'][fileId] as PublishLocation[]) || [],
   ];
   try {
-    await utils.awaitSequence(publishLocations, async (publishLocation) => {
+    await utils.awaitSequence(publishLocations, async (publishLocation: PublishLocation) => {
       await store.dispatch('queue/doWithLocation', {
         location: publishLocation,
         action: async () => {
@@ -80,14 +90,14 @@ const publishFile = async (fileId) => {
               utils.serializeObject(publishLocationToStore)
             ) {
               store.commit('publishLocation/patchItem', publishLocationToStore);
-              workspaceSvc.ensureUniqueLocations();
+              (workspaceSvc as any).ensureUniqueLocations();
             }
             counter += 1;
           } catch (err) {
             if (store.state.offline) {
               throw err;
             }
-            console.error(err);  
+            console.error(err);
             store.dispatch('notification/error', err);
           }
         },
@@ -96,21 +106,21 @@ const publishFile = async (fileId) => {
     const file = store.state.file.itemsById[fileId];
     store.dispatch('notification/info', `"${file.name}" was published to ${counter} location(s).`);
   } finally {
-    await localDbSvc.unloadContents();
+    await (localDbSvc as any).unloadContents();
   }
 };
 
-const requestPublish = () => {
+const requestPublish = (): void => {
   // No publish in light mode
   if (store.state.light) {
     return;
   }
 
   store.dispatch('queue/enqueuePublishRequest', async () => {
-    let intervalId;
+    let intervalId: ReturnType<typeof setInterval>;
     const attempt = async () => {
       // Only start publishing when these conditions are met
-      if (networkSvc.isUserActive()) {
+      if ((networkSvc as any).isUserActive()) {
         clearInterval(intervalId);
         if (!hasCurrentFilePublishLocations()) {
           // Cancel publish
@@ -125,14 +135,14 @@ const requestPublish = () => {
   });
 };
 
-const createPublishLocation = (publishLocation, featureId) => {
+const createPublishLocation = (publishLocation: PublishLocation, featureId?: string): void => {
   const currentFile = store.getters['file/current'];
   publishLocation.fileId = currentFile.id;
   store.dispatch(
     'queue/enqueue',
     async () => {
       const publishLocationToStore = await publish(publishLocation);
-      workspaceSvc.addPublishLocation(publishLocationToStore);
+      (workspaceSvc as any).addPublishLocation(publishLocationToStore);
       store.dispatch('notification/info', `A new publication location was added to "${currentFile.name}".`);
       if (featureId) {
         badgeSvc.addBadge(featureId);
