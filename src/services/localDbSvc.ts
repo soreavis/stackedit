@@ -5,17 +5,36 @@ import workspaceSvc from './workspaceSvc';
 import draftFilesSvc from './draftFilesSvc';
 import constants from '../data/constants';
 
+interface DbItem {
+  id: string;
+  type: string;
+  hash?: number;
+  tx?: number;
+  [key: string]: unknown;
+}
+
+type StoreItemMap = Record<string, DbItem>;
+
+interface TxCb {
+  onTx: (tx: IDBTransaction) => void;
+  onError: () => void;
+}
+
 const deleteMarkerMaxAge = 1000;
 const dbVersion = 1;
 const dbStoreName = 'objects';
-const { silent } = utils.queryParams;
+const { silent } = utils.queryParams as { silent?: boolean };
 const resetApp = localStorage.getItem('resetStackEdit');
 if (resetApp) {
   localStorage.removeItem('resetStackEdit');
 }
 
 class Connection {
-  constructor(workspaceId = store.getters['workspace/currentWorkspace'].id) {
+  dbName: string;
+  db?: IDBDatabase;
+  getTxCbs: TxCb[] | null;
+
+  constructor(workspaceId: string = store.getters['workspace/currentWorkspace'].id) {
     this.getTxCbs = [];
 
     // Make the DB name
@@ -28,16 +47,16 @@ class Connection {
       throw new Error("Can't connect to IndexedDB.");
     };
 
-    request.onsuccess = (event) => {
-      this.db = event.target.result;
+    request.onsuccess = (event: Event) => {
+      this.db = (event.target as IDBOpenDBRequest).result;
       this.db.onversionchange = () => window.location.reload();
 
-      this.getTxCbs.forEach(({ onTx, onError }) => this.createTx(onTx, onError));
+      this.getTxCbs?.forEach(({ onTx, onError }) => this.createTx(onTx, onError));
       this.getTxCbs = null;
     };
 
-    request.onupgradeneeded = (event) => {
-      const eventDb = event.target.result;
+    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+      const eventDb = (event.target as IDBOpenDBRequest).result;
       const oldVersion = event.oldVersion || 0;
 
       // We don't use 'break' in this switch statement,
@@ -62,10 +81,10 @@ class Connection {
   /**
    * Create a transaction asynchronously.
    */
-  createTx(onTx, onError) {
+  createTx(onTx: (tx: IDBTransaction) => void, onError: () => void): unknown {
     // If DB is not ready, keep callbacks for later
     if (!this.db) {
-      return this.getTxCbs.push({ onTx, onError });
+      return this.getTxCbs?.push({ onTx, onError });
     }
 
     // Open transaction in read/write will prevent conflict with other tabs
@@ -76,41 +95,66 @@ class Connection {
   }
 }
 
-const contentTypes = {
+const contentTypes: Record<string, true> = {
   content: true,
   contentState: true,
   syncedContent: true,
 };
 
-const hashMap = {};
-constants.types.forEach((type) => {
+const hashMap: Record<string, Record<string, number>> = {};
+(constants as any).types.forEach((type: string) => {
   hashMap[type] = Object.create(null);
 });
-const lsHashMap = Object.create(null);
+const lsHashMap: Record<string, number> = Object.create(null);
 
-const localDbSvc = {
+interface LocalDbSvc {
+  lastTx: number;
+  hashMap: Record<string, Record<string, number>>;
+  connection: Connection | null;
+  loadSyncedContent: (fileId: string) => Promise<DbItem | undefined>;
+  loadContentState: (fileId: string) => Promise<DbItem | undefined>;
+  syncLocalStorage(): void;
+  sync(): Promise<void>;
+  readAll(tx: IDBTransaction, cb: (storeItemMap: StoreItemMap) => void): void;
+  writeAll(storeItemMap: StoreItemMap, tx: IDBTransaction): void;
+  readDbItem(dbItem: DbItem, storeItemMap: StoreItemMap): void;
+  loadItem(id: string): Promise<DbItem>;
+  unloadContents(): Promise<void>;
+  init(): Promise<void>;
+  getWorkspaceItems(
+    workspaceId: string,
+    onItem: (item: DbItem) => void,
+    onFinish?: () => void,
+  ): () => void;
+}
+
+const localDbSvc: LocalDbSvc = {
   lastTx: 0,
   hashMap,
   connection: null,
 
+  // Loaders are attached after the object literal so they can reference `this`.
+  loadSyncedContent: undefined as unknown as (fileId: string) => Promise<DbItem | undefined>,
+  loadContentState: undefined as unknown as (fileId: string) => Promise<DbItem | undefined>,
+
   /**
    * Sync data items stored in the localStorage.
    */
-  syncLocalStorage() {
-    constants.localStorageDataIds.forEach((id) => {
+  syncLocalStorage(): void {
+    (constants as any).localStorageDataIds.forEach((id: string) => {
       const key = `data/${id}`;
 
       // Skip reloading the layoutSettings
       if (id !== 'layoutSettings' || !lsHashMap[id]) {
         try {
           // Try to parse the item from the localStorage
-          const storedItem = JSON.parse(localStorage.getItem(key));
-          if (storedItem.hash && lsHashMap[id] !== storedItem.hash) {
+          const storedItem = JSON.parse(localStorage.getItem(key) || 'null');
+          if (storedItem && storedItem.hash && lsHashMap[id] !== storedItem.hash) {
             // Item has changed, replace it in the store
             store.commit('data/setItem', storedItem);
             lsHashMap[id] = storedItem.hash;
           }
-        } catch (e) {
+        } catch {
           // Ignore parsing issue
         }
       }
@@ -129,10 +173,10 @@ const localDbSvc = {
    * localDb will be finished. Effectively, open a transaction, then read and apply all changes
    * from the DB since the previous transaction, then write all the changes from the store.
    */
-  async sync() {
-    return new Promise((resolve, reject) => {
+  async sync(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       // Create the DB transaction
-      this.connection.createTx((tx) => {
+      this.connection?.createTx((tx) => {
         const { lastTx } = this;
 
         // Look for DB changes and apply them to the store
@@ -156,19 +200,19 @@ const localDbSvc = {
   /**
    * Read and apply all changes from the DB since previous transaction.
    */
-  readAll(tx, cb) {
+  readAll(tx: IDBTransaction, cb: (storeItemMap: StoreItemMap) => void): void {
     let { lastTx } = this;
     const dbStore = tx.objectStore(dbStoreName);
     const index = dbStore.index('tx');
     const range = IDBKeyRange.lowerBound(this.lastTx, true);
-    const changes = [];
-    index.openCursor(range).onsuccess = (event) => {
-      const cursor = event.target.result;
+    const changes: DbItem[] = [];
+    index.openCursor(range).onsuccess = (event: Event) => {
+      const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
       if (cursor) {
-        const item = cursor.value;
-        if (item.tx > lastTx) {
-          lastTx = item.tx;
-          if (this.lastTx && item.tx - this.lastTx > deleteMarkerMaxAge) {
+        const item = cursor.value as DbItem;
+        if ((item.tx as number) > lastTx) {
+          lastTx = item.tx as number;
+          if (this.lastTx && (item.tx as number) - this.lastTx > deleteMarkerMaxAge) {
             // We may have missed some delete markers
             window.location.reload();
             return;
@@ -181,11 +225,11 @@ const localDbSvc = {
       }
 
       // Read the collected changes
-      const storeItemMap = { ...store.getters.allItemsById };
+      const storeItemMap: StoreItemMap = { ...store.getters.allItemsById };
       changes.forEach((item) => {
         this.readDbItem(item, storeItemMap);
         // If item is an old delete marker, remove it from the DB
-        if (!item.hash && lastTx - item.tx > deleteMarkerMaxAge) {
+        if (!item.hash && lastTx - (item.tx as number) > deleteMarkerMaxAge) {
           dbStore.delete(item.id);
         }
       });
@@ -198,7 +242,7 @@ const localDbSvc = {
   /**
    * Write all changes from the store since previous transaction.
    */
-  writeAll(storeItemMap, tx) {
+  writeAll(storeItemMap: StoreItemMap, tx: IDBTransaction): void {
     if (silent) {
       // Skip writing to DB in silent mode
       return;
@@ -209,7 +253,9 @@ const localDbSvc = {
     // Remove deleted store items
     Object.keys(this.hashMap).forEach((type) => {
       // Remove this type only if file is deleted
-      let checker = cb => id => !storeItemMap[id] && cb(id);
+      let checker: (cb: (id: string) => void) => (id: string) => void = cb => id => {
+        if (!storeItemMap[id]) cb(id);
+      };
       if (contentTypes[type]) {
         // For content types, remove item only if file is deleted
         checker = cb => (id) => {
@@ -237,12 +283,12 @@ const localDbSvc = {
     Object.entries(storeItemMap).forEach(([, storeItem]) => {
       // Store object has changed
       if (this.hashMap[storeItem.type][storeItem.id] !== storeItem.hash) {
-        const item = {
+        const item: DbItem = {
           ...storeItem,
           tx: incrementedTx,
         };
         dbStore.put(item);
-        this.hashMap[item.type][item.id] = item.hash;
+        this.hashMap[item.type][item.id] = item.hash as number;
         this.lastTx = incrementedTx;
       }
     });
@@ -251,7 +297,7 @@ const localDbSvc = {
   /**
    * Read and apply one DB change.
    */
-  readDbItem(dbItem, storeItemMap) {
+  readDbItem(dbItem: DbItem, storeItemMap: StoreItemMap): void {
     const storeItem = storeItemMap[dbItem.id];
     if (!dbItem.hash) {
       // DB item is a delete marker
@@ -277,21 +323,21 @@ const localDbSvc = {
   /**
    * Retrieve an item from the DB and put it in the store.
    */
-  async loadItem(id) {
+  async loadItem(id: string): Promise<DbItem> {
     // Check if item is in the store
-    const itemInStore = store.getters.allItemsById[id];
+    const itemInStore: DbItem | undefined = store.getters.allItemsById[id];
     if (itemInStore) {
       // Use deepCopy to freeze item
       return Promise.resolve(itemInStore);
     }
-    return new Promise((resolve, reject) => {
+    return new Promise<DbItem>((resolve, reject) => {
       // Get the item from DB
       const onError = () => reject(new Error('Data not available.'));
-      this.connection.createTx((tx) => {
+      this.connection?.createTx((tx) => {
         const dbStore = tx.objectStore(dbStoreName);
         const request = dbStore.get(id);
         request.onsuccess = () => {
-          const dbItem = request.result;
+          const dbItem = request.result as DbItem | undefined;
           if (!dbItem || !dbItem.hash) {
             onError();
           } else {
@@ -309,12 +355,12 @@ const localDbSvc = {
   /**
    * Unload from the store contents that haven't been opened recently
    */
-  async unloadContents() {
+  async unloadContents(): Promise<void> {
     await this.sync();
     // Keep only last opened files in memory
-    const lastOpenedFileIdSet = new Set(store.getters['data/lastOpenedIds']);
+    const lastOpenedFileIdSet = new Set<string>(store.getters['data/lastOpenedIds']);
     Object.keys(contentTypes).forEach((type) => {
-      store.getters[`${type}/items`].forEach((item) => {
+      (store.getters[`${type}/items`] as DbItem[]).forEach((item) => {
         const [fileId] = item.id.split('/');
         if (!lastOpenedFileIdSet.has(fileId)) {
           // Remove item from the store
@@ -327,12 +373,12 @@ const localDbSvc = {
   /**
    * Create the connection and start syncing.
    */
-  async init() {
+  async init(): Promise<void> {
     // Reset the app if the reset flag was passed
     if (resetApp) {
       await Promise.all(Object.keys(store.getters['workspace/workspacesById'])
-        .map(workspaceId => workspaceSvc.removeWorkspace(workspaceId)));
-      constants.localStorageDataIds.forEach((id) => {
+        .map((workspaceId: string) => workspaceSvc.removeWorkspace(workspaceId)));
+      (constants as any).localStorageDataIds.forEach((id: string) => {
         // Clean data stored in localStorage
         localStorage.removeItem(`data/${id}`);
       });
@@ -365,11 +411,11 @@ const localDbSvc = {
     }
 
     // If app was last opened 7 days ago and synchronization is off
-    if (!store.getters['workspace/syncToken'] &&
-      (store.state.workspace.lastFocus + constants.cleanTrashAfter < Date.now())
+    if (!store.getters['workspace/syncToken']
+      && (store.state.workspace.lastFocus + (constants as any).cleanTrashAfter < Date.now())
     ) {
       // Clean files
-      store.getters['file/items']
+      (store.getters['file/items'] as Array<{ id: string; parentId: string }>)
         .filter(file => file.parentId === 'trash') // If file is in the trash
         .forEach(file => workspaceSvc.deleteFile(file.id));
     }
@@ -378,10 +424,10 @@ const localDbSvc = {
     utils.setInterval(() => localDbSvc.sync(), 1000);
 
     // watch current file changing
-    let prevCurrentId = store.getters['file/current'].id || null;
+    let prevCurrentId: string | null = store.getters['file/current'].id || null;
     store.watch(
       () => store.getters['file/current'].id,
-      async (newId) => {
+      async (newId: string | null | undefined) => {
         // If the file we're leaving was a brand-new draft the user never
         // edited, discard it so the workspace doesn't fill up with empty
         // "Untitled" stubs. Resolved lazily here because the `draftFilesSvc`
@@ -402,7 +448,7 @@ const localDbSvc = {
           // Set it as the current file
           if (recentFile.id) {
             store.commit('file/setCurrentId', recentFile.id);
-          } else if (!store.getters['file/items'].length) {
+          } else if (!(store.getters['file/items'] as unknown[]).length) {
             // Truly empty workspace (first boot) — bootstrap a welcome file.
             // If the only remaining items are in Trash, leave currentId
             // null so the explorer empty-state shows instead of resurrecting
@@ -441,7 +487,7 @@ const localDbSvc = {
               store.getters['discussion/nextDiscussionId'],
             );
           } catch (err) {
-            console.error(err);  
+            console.error(err);
             store.dispatch('notification/error', err);
           }
         }
@@ -450,33 +496,40 @@ const localDbSvc = {
     );
   },
 
-  getWorkspaceItems(workspaceId, onItem, onFinish = () => {}) {
+  getWorkspaceItems(
+    workspaceId: string,
+    onItem: (item: DbItem) => void,
+    onFinish: () => void = () => {},
+  ): () => void {
     const connection = new Connection(workspaceId);
     connection.createTx((tx) => {
       const dbStore = tx.objectStore(dbStoreName);
       const index = dbStore.index('tx');
-      index.openCursor().onsuccess = (event) => {
-        const cursor = event.target.result;
+      index.openCursor().onsuccess = (event: Event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
         if (cursor) {
-          onItem(cursor.value);
+          onItem(cursor.value as DbItem);
           cursor.continue();
         } else {
-          connection.db.close();
+          connection.db?.close();
           onFinish();
         }
       };
-    });
+    }, () => {});
 
     // Return a cancel function
-    return () => connection.db.close();
+    return () => connection.db?.close();
   },
 };
 
-const loader = type => fileId => localDbSvc.loadItem(`${fileId}/${type}`)
+const loader = (type: string) => (fileId: string) => localDbSvc.loadItem(`${fileId}/${type}`)
   // Item does not exist, create it
-  .catch(() => store.commit(`${type}/setItem`, {
-    id: `${fileId}/${type}`,
-  }));
+  .catch(() => {
+    store.commit(`${type}/setItem`, {
+      id: `${fileId}/${type}`,
+    });
+    return undefined;
+  });
 localDbSvc.loadSyncedContent = loader('syncedContent');
 localDbSvc.loadContentState = loader('contentState');
 
