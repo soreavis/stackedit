@@ -41,6 +41,7 @@ import WorkspaceManagementModal from './modals/WorkspaceManagementModal';
 import AccountManagementModal from './modals/AccountManagementModal';
 import BadgeManagementModal from './modals/BadgeManagementModal';
 import SponsorModal from './modals/SponsorModal';
+import CommandPaletteModal from './modals/CommandPaletteModal';
 
 // Providers
 import GooglePhotoModal from './modals/providers/GooglePhotoModal';
@@ -93,6 +94,7 @@ export default {
     AccountManagementModal,
     BadgeManagementModal,
     SponsorModal,
+    CommandPaletteModal,
     // Providers
     GooglePhotoModal,
     GoogleDriveAccountModal,
