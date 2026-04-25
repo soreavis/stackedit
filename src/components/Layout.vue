@@ -50,7 +50,7 @@
           <status-bar></status-bar>
         </div>
       </div>
-      <div class="layout__panel layout__panel--side-bar" v-show="styles.showSideBar" :style="{width: styles.layoutOverflow ? '100%' : constants.sideBarWidth + 'px'}">
+      <div class="layout__panel layout__panel--side-bar" v-show="styles.showSideBar" :style="{width: styles.layoutOverflow ? '100%' : styles.sideBarWidth + 'px'}">
         <side-bar></side-bar>
       </div>
     </div>
@@ -187,6 +187,15 @@ export default {
   height: 100%;
   flex: none;
   overflow: hidden;
+  /* Smooth width changes (side-bar panel switch grows the TOC pane from
+     280 → 392; editor / preview widths slide in lockstep to keep the
+     flex row aligned). Scoped to width only — height/position changes
+     stay instant. */
+  transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 .layout__panel--navigation-bar {

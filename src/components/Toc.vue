@@ -101,10 +101,33 @@ export default {
 
   * {
     font-weight: inherit;
-    pointer-events: none;
   }
 
   .cl-toc-section {
+    /* Hover target lives on each heading. Vertical spacing moved from
+       margin to padding so the "dead zone" between rows is part of the
+       element and participates in :hover. Indentation likewise moved
+       from margin-left to padding-left so the hover bg extends flush
+       to the content-box left edge instead of starting at the indent. */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin: 0;
+      padding-top: 0.4rem;
+      padding-bottom: 0.4rem;
+      padding-right: 0;
+      border-radius: 3px;
+      transition: color 120ms ease, background-color 120ms ease;
+
+      &:hover {
+        color: rgba(0, 0, 0, 0.95);
+        background-color: rgba(0, 0, 0, 0.06);
+      }
+    }
+
     h1,
     h2 {
       &::after {
@@ -112,34 +135,12 @@ export default {
       }
     }
 
-    h1 {
-      margin: 1rem 0;
-    }
-
-    h2 {
-      margin: 0.5rem 0;
-      margin-left: 8px;
-    }
-
-    h3 {
-      margin: 0.33rem 0;
-      margin-left: 16px;
-    }
-
-    h4 {
-      margin: 0.22rem 0;
-      margin-left: 24px;
-    }
-
-    h5 {
-      margin: 0.11rem 0;
-      margin-left: 32px;
-    }
-
-    h6 {
-      margin: 0;
-      margin-left: 40px;
-    }
+    h1 { padding-left: 0; }
+    h2 { padding-left: 8px; }
+    h3 { padding-left: 16px; }
+    h4 { padding-left: 24px; }
+    h5 { padding-left: 32px; }
+    h6 { padding-left: 40px; }
   }
 }
 

@@ -6,6 +6,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{files.0.name}}</title>
   <link rel="stylesheet" href="https://stackedit.io/style.css" />
+  <style>
+    .stackedit .mermaid-wrapper,
+    .stackedit pre.mermaid,
+    .stackedit .mermaid {
+      text-align: center;
+    }
+    .stackedit .mermaid-wrapper > svg,
+    .stackedit pre.mermaid > svg,
+    .stackedit .mermaid > svg {
+      display: inline-block;
+      max-width: 100%;
+    }
+    /* TOC active: widen content column +40% (750 → 1050px) so the main
+       panel breathes when the 250px left sidebar is docked. Only kicks in
+       at the breakpoint where the sidebar is actually displayed. */
+    @media (min-width: 1060px) {
+      .stackedit .stackedit__right .stackedit__html {
+        max-width: 1050px;
+      }
+    }
+    /* Scrollspy: the heading the reader is currently on gets .toc-active
+       applied to its matching TOC link (see inline script below). */
+    .stackedit__toc a {
+      transition: color 120ms ease, background-color 120ms ease, font-weight 120ms ease;
+    }
+    .stackedit__toc a.toc-active {
+      color: #0366d6;
+      font-weight: 600;
+      background-color: rgba(3, 102, 214, 0.08);
+      border-radius: 3px;
+    }
+    html { scroll-behavior: smooth; }
+  </style>
   {{#if pdf}}
   <style>
     /* Keep diagrams intact. Nothing else overridden — stacking "avoid"
@@ -17,7 +50,6 @@
     .stackedit--pdf .mermaid {
       page-break-inside: avoid;
       break-inside: avoid;
-      text-align: center;
     }
     .stackedit--pdf .mermaid-wrapper svg,
     .stackedit--pdf pre.mermaid svg,
@@ -46,6 +78,84 @@
       {{{files.0.content.html}}}
     </div>
   </div>
+  {{#unless pdf}}
+  <script>
+    (function () {
+      function init() {
+        var tocLinks = {};
+        var linkEls = document.querySelectorAll('.stackedit__toc a[href^="#"]');
+        for (var i = 0; i < linkEls.length; i++) {
+          var id = decodeURIComponent(linkEls[i].getAttribute('href').slice(1));
+          tocLinks[id] = linkEls[i];
+        }
+        // Only track headings that have a corresponding TOC link. The
+        // tocToHtml helper is depth-limited in the template (e.g. 2 =
+        // only h1/h2 rendered), but the document itself may contain
+        // deeper headings. If we tracked every heading, scrolling into
+        // a sub-heading without a TOC entry would clear the previous
+        // highlight and leave the pane blank until the next top-level
+        // heading crossed the cutoff.
+        var allHeadings = document.querySelectorAll(
+          '.stackedit__html h1[id], .stackedit__html h2[id], .stackedit__html h3[id], .stackedit__html h4[id], .stackedit__html h5[id], .stackedit__html h6[id]'
+        );
+        var headings = [];
+        for (var j = 0; j < allHeadings.length; j++) {
+          if (tocLinks[allHeadings[j].id]) headings.push(allHeadings[j]);
+        }
+        if (!headings.length) return;
+
+        var tocPane = document.querySelector('.stackedit__left');
+        var active = null;
+        function setActive(h) {
+          if (h === active) return;
+          if (active && tocLinks[active.id]) {
+            tocLinks[active.id].classList.remove('toc-active');
+          }
+          var link = tocLinks[h.id];
+          if (link) {
+            link.classList.add('toc-active');
+            if (tocPane) {
+              var linkRect = link.getBoundingClientRect();
+              var paneRect = tocPane.getBoundingClientRect();
+              if (linkRect.top < paneRect.top || linkRect.bottom > paneRect.bottom) {
+                tocPane.scrollTop += linkRect.top - paneRect.top - paneRect.height / 2 + linkRect.height / 2;
+              }
+            }
+          }
+          active = h;
+        }
+
+        function update() {
+          var cutoff = (window.pageYOffset || document.documentElement.scrollTop) + 120;
+          var current = headings[0];
+          for (var i = 0; i < headings.length; i++) {
+            var top = headings[i].getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop);
+            if (top <= cutoff) current = headings[i];
+            else break;
+          }
+          setActive(current);
+        }
+
+        var ticking = false;
+        window.addEventListener('scroll', function () {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(function () {
+            ticking = false;
+            update();
+          });
+        }, { passive: true });
+        window.addEventListener('resize', update);
+        update();
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    }());
+  </script>
+  {{/unless}}
 </body>
 
 </html>
