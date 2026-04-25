@@ -6,6 +6,9 @@
 // this incremental migration.
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
+import { useFolderStore } from '../stores/folder';
+import { useSyncedContentStore } from '../stores/syncedContent';
 import { useModalStore } from '../stores/modal';
 import { useNotificationStore } from '../stores/notification';
 import utils from './utils';
@@ -168,7 +171,7 @@ const applyChanges = (changes) => {
       }
       if (existingItem) {
         // Remove object from the store
-        store.commit(`${existingItem.type}/deleteItem`, existingItem.id);
+        deleteItemByType(existingItem.type, existingItem.id);
         delete allItemsById[existingItem.id];
       }
     // If item was modified
@@ -187,7 +190,7 @@ const applyChanges = (changes) => {
         // And item is not content nor data, which will be merged later
         && change.item.type !== 'content' && change.item.type !== 'data'
       ) {
-        store.commit(`${change.item.type}/setItem`, change.item);
+        setItemByType(change.item.type, change.item);
         allItemsById[change.item.id] = change.item;
       }
     }
@@ -219,14 +222,14 @@ const createSyncLocation = (syncLocation) => {
         history: [content.hash],
       }, syncLocation);
       await localDbSvc.loadSyncedContent(fileId);
-      const newSyncedContent = utils.deepCopy(upgradeSyncedContent(store.state.syncedContent.itemsById[`${fileId}/syncedContent`]));
+      const newSyncedContent = utils.deepCopy(upgradeSyncedContent(useSyncedContentStore().itemsById[`${fileId}/syncedContent`]));
       const newSyncHistoryItem = [];
       newSyncedContent.syncHistory[syncLocation.id] = newSyncHistoryItem;
       newSyncHistoryItem[LAST_SEEN] = content.hash;
       newSyncHistoryItem[LAST_SENT] = content.hash;
       newSyncedContent.historyData[content.hash] = content;
 
-      store.commit('syncedContent/patchItem', newSyncedContent);
+      useSyncedContentStore().patchItem(newSyncedContent);
       workspaceSvc.addSyncLocation(updatedSyncLocation);
       useNotificationStore().info(`A new synchronized location was added to "${currentFile.name}".`);
     },
@@ -318,7 +321,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
     // Item may not exist if content has not been downloaded yet
   }
 
-  const getSyncedContent = () => upgradeSyncedContent(store.state.syncedContent.itemsById[`${fileId}/syncedContent`]);
+  const getSyncedContent = () => upgradeSyncedContent(useSyncedContentStore().itemsById[`${fileId}/syncedContent`]);
   const getSyncHistoryItem = syncLocationId => getSyncedContent().syncHistory[syncLocationId];
 
   try {
@@ -487,7 +490,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
         // Clean synced content from unused revisions
         cleanSyncedContent(newSyncedContent);
         // Store synced content
-        store.commit('syncedContent/patchItem', newSyncedContent);
+        useSyncedContentStore().patchItem(newSyncedContent);
 
         if (skipUpload) {
           // Server content and merged content are equal, skip content upload
@@ -662,7 +665,7 @@ const syncWorkspace = async (skipContents = false) => {
     await utils.awaitSome(() => ifNotTooLate(async () => {
       const storeItemMap = {
         ...store.state.file.itemsById,
-        ...store.state.folder.itemsById,
+        ...useFolderStore().itemsById,
         ...store.state.syncLocation.itemsById,
         ...store.state.publishLocation.itemsById,
         // Deal with contents and data later

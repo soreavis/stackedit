@@ -74,6 +74,7 @@ import fileImportSvc from '../services/fileImportSvc';
 import workspaceSvc from '../services/workspaceSvc';
 import badgeSvc from '../services/badgeSvc';
 import store from '../store';
+import { useFolderStore } from '../stores/folder';
 
 export default {
   components: {
@@ -145,7 +146,7 @@ export default {
     deleteItem: () => explorerSvc.deleteItem(),
     expandAll() {
       const open = {};
-      store.getters['folder/items'].forEach((f) => { open[f.id] = true; });
+      useFolderStore().items.forEach((f) => { open[f.id] = true; });
       open.trash = true;
       open.temp = true;
       open.recent = true;

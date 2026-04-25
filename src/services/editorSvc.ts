@@ -18,6 +18,7 @@ import editorSvcDiscussions from './editor/editorSvcDiscussions';
 import editorSvcUtils from './editor/editorSvcUtils';
 import utils from './utils';
 import store from '../store';
+import { useContentStateStore } from '../stores/contentState';
 import { useModalStore } from '../stores/modal';
 
 const allowDebounce = (action, wait) => {
@@ -289,8 +290,8 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
    */
   saveContentState: allowDebounce(() => {
     const scrollPosition = editorSvc.getScrollPosition() ||
-      store.getters['contentState/current'].scrollPosition;
-    store.dispatch('contentState/patchCurrent', {
+      useContentStateStore().current.scrollPosition;
+    useContentStateStore().patchCurrent({
       selectionStart: editorSvc.clEditor.selectionMgr.selectionStart,
       selectionEnd: editorSvc.clEditor.selectionMgr.selectionEnd,
       scrollPosition,

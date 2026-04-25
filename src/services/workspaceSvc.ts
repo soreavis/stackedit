@@ -1,4 +1,8 @@
 import store from '../store';
+import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
+import { useFolderStore } from '../stores/folder';
+import { useSyncedContentStore } from '../stores/syncedContent';
+import { useContentStateStore } from '../stores/contentState';
 import { useModalStore } from '../stores/modal';
 import utils from './utils';
 import constants from '../data/constants';
@@ -163,7 +167,7 @@ export default {
     }
 
     // Save item in the store
-    store.commit(`${item.type}/setItem`, item);
+    setItemByType(item.type, item);
 
     // Remove circular reference
     this.removeCircularReference(item);
@@ -186,9 +190,9 @@ export default {
     // Delete the content
     store.commit('content/deleteItem', `${fileId}/content`);
     // Delete the syncedContent
-    store.commit('syncedContent/deleteItem', `${fileId}/syncedContent`);
+    useSyncedContentStore().deleteItem(`${fileId}/syncedContent`);
     // Delete the contentState
-    store.commit('contentState/deleteItem', `${fileId}/contentState`);
+    useContentStateStore().deleteItem(`${fileId}/contentState`);
     // Delete sync locations
     ((store.getters['syncLocation/groupedByFileId'][fileId] || []) as Item[])
       .forEach(item => store.commit('syncLocation/deleteItem', item.id));
@@ -202,7 +206,7 @@ export default {
    */
   sanitizeWorkspace(idsToKeep?: Record<string, boolean>): void {
     // Detect and remove circular references for all folders.
-    (store.getters['folder/items'] as Item[]).forEach(folder => this.removeCircularReference(folder));
+    (useFolderStore().items as Item[]).forEach(folder => this.removeCircularReference(folder));
 
     this.ensureUniquePaths(idsToKeep);
     this.ensureUniqueLocations(idsToKeep);
@@ -212,14 +216,14 @@ export default {
    * Detect and remove circular reference for an item.
    */
   removeCircularReference(item: Item): void {
-    const foldersById: Record<string, Item> = store.state.folder.itemsById;
+    const foldersById: Record<string, Item> = useFolderStore().itemsById;
     for (
       let parentFolder = foldersById[item.parentId as string];
       parentFolder;
       parentFolder = foldersById[parentFolder.parentId as string]
     ) {
       if (parentFolder.id === item.id) {
-        store.commit('folder/patchItem', {
+        useFolderStore().patchItem({
           id: item.id,
           parentId: null,
         });
@@ -267,7 +271,7 @@ export default {
         pathWithSuffix += '/';
       }
       if (!itemsByPath[pathWithSuffix]) {
-        store.commit(`${item.type}/patchItem`, {
+        patchItemByType(item.type, {
           id: item.id,
           name: `${item.name}.${suffix}`,
         });
@@ -313,7 +317,7 @@ export default {
         if (!idsToKeep[item.id]
           && (store.getters[`${type}/groupedByFileIdAndHash`][item.fileId as string][item.hash as number] as Item[]).length > 1
         ) {
-          store.commit(`${item.type}/deleteItem`, item.id);
+          deleteItemByType(item.type, item.id);
         }
       });
     });
