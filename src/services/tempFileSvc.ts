@@ -1,29 +1,48 @@
-import cledit from './editor/cledit';
+// cledit and editorSvc are large legacy JS modules whose inferred types
+// from `allowJs` only capture a partial surface. Re-cast to `any` at the
+// import boundary so call sites don't get bogus errors. Tightening these
+// is a follow-up that needs the cledit + editorSvc files ported too.
+import cleditRaw from './editor/cledit';
+import editorSvcRaw from './editorSvc';
 import store from '../store';
 import utils from './utils';
-import editorSvc from './editorSvc';
 import workspaceSvc from './workspaceSvc';
+
+const cledit = cleditRaw as any;
+const editorSvc = editorSvcRaw as any;
 
 const {
   origin,
   fileName,
   contentText,
   contentProperties,
-} = utils.queryParams;
-const isLight = origin && window.parent;
+} = utils.queryParams as {
+  origin?: string;
+  fileName?: string;
+  contentText?: string;
+  contentProperties?: unknown;
+};
+const isLight = !!(origin && window.parent);
 
-export default {
+interface TempFileSvc {
+  closed: boolean;
+  setReady(): void;
+  close(): void;
+  init(): Promise<void>;
+}
+
+const svc: TempFileSvc = {
+  closed: false,
   setReady() {
     if (isLight) {
       // Wait for the editor to init
-      setTimeout(() => window.parent.postMessage({ type: 'ready' }, origin), 1);
+      setTimeout(() => window.parent.postMessage({ type: 'ready' }, origin as string), 1);
     }
   },
-  closed: false,
   close() {
     if (isLight) {
       if (!this.closed) {
-        window.parent.postMessage({ type: 'close' }, origin);
+        window.parent.postMessage({ type: 'close' }, origin as string);
       }
       this.closed = true;
     }
@@ -42,9 +61,10 @@ export default {
     }, true);
 
     // Sanitize file creations
-    const lastCreated = {};
+    const lastCreated: Record<string, { created: number }> = {};
     const fileItemsById = store.state.file.itemsById;
-    Object.entries(store.getters['data/lastCreated']).forEach(([id, value]) => {
+    const lastCreatedSource: Record<string, { created: number }> = store.getters['data/lastCreated'] || {};
+    Object.entries(lastCreatedSource).forEach(([id, value]) => {
       if (fileItemsById[id] && fileItemsById[id].parentId === 'temp') {
         lastCreated[id] = value;
       }
@@ -72,8 +92,8 @@ export default {
       const currentFile = store.getters['file/current'];
       if (currentFile.id !== file.id) {
         // Close editor if file has changed for some reason
-        this.close();
-      } else if (!this.closed && editorSvc.previewCtx.html != null) {
+        svc.close();
+      } else if (!svc.closed && editorSvc.previewCtx.html != null) {
         const content = store.getters['content/current'];
         const properties = utils.computeProperties(content.properties);
         window.parent.postMessage({
@@ -88,7 +108,7 @@ export default {
               html: editorSvc.previewCtx.html,
             },
           },
-        }, origin);
+        }, origin as string);
       }
     }, 25);
 
@@ -97,3 +117,5 @@ export default {
     store.watch(() => store.getters['file/current'].name, onChange);
   },
 };
+
+export default svc;
