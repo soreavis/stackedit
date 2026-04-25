@@ -1,5 +1,6 @@
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
 import utils from './utils';
 import networkSvc from './networkSvc';
@@ -21,7 +22,7 @@ const hasCurrentFilePublishLocations = (): boolean =>
 
 const loader = (type: string) => (fileId: string) => (localDbSvc as any).loadItem(`${fileId}/${type}`)
   // Item does not exist, create it
-  .catch(() => store.commit(`${type}/setItem`, {
+  .catch(() => setItemByType(type, {
     id: `${fileId}/${type}`,
   }));
 const loadContent = loader('content');

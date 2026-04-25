@@ -1,4 +1,5 @@
 import store from '../store';
+import { useFolderStore } from '../stores/folder';
 import { useModalStore } from '../stores/modal';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
@@ -103,7 +104,7 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
         doClose = doClose || fileNode.item.id === currentFileId;
         workspaceSvc.deleteFile(fileNode.item.id);
       });
-      store.commit('folder/deleteItem', node.item.id);
+      useFolderStore().deleteItem(node.item.id);
     } else {
       doClose = doClose || node.item.id === currentFileId;
       workspaceSvc.deleteFile(node.item.id);
@@ -117,7 +118,7 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
         doClose = doClose || fileNode.item.id === currentFileId;
         (workspaceSvc as any).setOrPatchItem({ id: fileNode.item.id, parentId: 'trash' });
       });
-      store.commit('folder/deleteItem', node.item.id);
+      useFolderStore().deleteItem(node.item.id);
     } else {
       doClose = doClose || node.item.id === currentFileId;
       (workspaceSvc as any).setOrPatchItem({ id: node.item.id, parentId: 'trash' });
@@ -224,7 +225,7 @@ export default {
             doClose = doClose || fileNode.item.id === currentFileId;
             deleteFile(fileNode.item.id);
           });
-          store.commit('folder/deleteItem', folderNode.item.id);
+          useFolderStore().deleteItem(folderNode.item.id);
         };
         recursiveDelete(selectedNode);
         badgeSvc.addBadge('removeFolder');

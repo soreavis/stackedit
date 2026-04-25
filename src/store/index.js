@@ -3,16 +3,15 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import utils from '../services/utils';
 import content from './content';
-import contentState from './contentState';
 import data from './data';
 import discussion from './discussion';
 import explorer from './explorer';
 import file from './file';
-import folder from './folder';
 import layout from './layout';
-import syncedContent from './syncedContent';
 import { useNotificationStore } from '../stores/notification';
-import userInfo from './userInfo';
+import { useFolderStore } from '../stores/folder';
+import { useSyncedContentStore } from '../stores/syncedContent';
+import { useContentStateStore } from '../stores/contentState';
 import workspace from './workspace';
 import locationTemplate from './locationTemplate';
 import emptyPublishLocation from '../data/empties/emptyPublishLocation';
@@ -26,17 +25,13 @@ const debug = NODE_ENV !== 'production';
 const store = new Vuex.Store({
   modules: {
     content,
-    contentState,
     data,
     discussion,
     explorer,
     file,
-    folder,
     layout,
     publishLocation: locationTemplate(emptyPublishLocation),
-    syncedContent,
     syncLocation: locationTemplate(emptySyncLocation),
-    userInfo,
     workspace,
   },
   state: {
@@ -61,8 +56,22 @@ const store = new Vuex.Store({
   },
   getters: {
     allItemsById: (state) => {
+      // During the Pinia transition, item types live in mixed stores.
+      // folder / syncedContent / contentState moved to Pinia; the rest
+      // remain in Vuex state for now.
       const result = {};
-      constants.types.forEach(type => Object.assign(result, state[type].itemsById));
+      const piniaStores = {
+        folder: useFolderStore,
+        syncedContent: useSyncedContentStore,
+        contentState: useContentStateStore,
+      };
+      constants.types.forEach((type) => {
+        if (piniaStores[type]) {
+          Object.assign(result, piniaStores[type]().itemsById);
+        } else if (state[type]) {
+          Object.assign(result, state[type].itemsById);
+        }
+      });
       return result;
     },
     pathsByItemId: (state, getters) => {
