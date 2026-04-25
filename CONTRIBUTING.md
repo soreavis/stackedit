@@ -30,7 +30,7 @@ Manual browser smoke tests live in `test/fixtures/` — paste them into a doc on
 
 ## Linting
 
-The upstream ESLint config is broken (config extends an ancestor that doesn't resolve). Lint is not run in CI. If you fix the config, please open a PR separately — keep it narrow.
+ESLint 9 flat config in `eslint.config.mjs` (replaced upstream's broken legacy config). `npm run lint` runs on every PR in CI and **fails on any error**; warnings don't block merge but are tracked. Run `npm run lint -- --fix` locally to auto-fix the cosmetic ones before pushing.
 
 ## Submitting changes
 

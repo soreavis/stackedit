@@ -594,8 +594,12 @@ export default {
   border-top-right-radius: $border-radius-base;
   color: $link-color;
 
+  /* `:focus-visible` (not `:focus`) so programmatic / mouse-driven focus
+     on an inactive tab doesn't paint the grey hover background — that
+     made Simple-properties look active after modal open even though YAML
+     was the selected tab. Keyboard nav still gets the affordance. */
   &:hover,
-  &:focus {
+  &:focus-visible {
     background-color: rgba(0, 0, 0, 0.05);
   }
 }

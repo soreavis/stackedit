@@ -7,7 +7,7 @@
           <input v-if="isEditing" id="template" type="text" class="textfield" v-focus @blur="submitEdit()" @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingName">
           <select v-else id="template" v-model="selectedId" class="textfield">
             <option v-for="(template, id) in templates" :key="id" :value="id">
-              {{ template.name }}
+              {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
             </option>
           </select>
         </div>
