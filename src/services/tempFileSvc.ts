@@ -56,7 +56,7 @@ const svc: TempFileSvc = {
     const file = await workspaceSvc.createFile({
       name: fileName || utils.getHostname(origin),
       text: contentText || '\n',
-      properties: contentProperties,
+      properties: contentProperties as string | undefined,
       parentId: 'temp',
     }, true);
 
