@@ -414,7 +414,7 @@ function SelectionMgr(editor) {
     let offsetStart = 0;
     let offsetEnd = 0;
     let nextOffset = 0;
-    editor.getContent().split(/\s/).cl_some((word) => {
+    editor.getContent().split(/\s/).some((word) => {
       if (word) {
         offsetStart = nextOffset;
         offsetEnd = nextOffset + word.length;

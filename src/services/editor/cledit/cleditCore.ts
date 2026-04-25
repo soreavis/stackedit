@@ -164,10 +164,10 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
         }
       }
 
-      mutations.cl_each((mutation) => {
+      mutations.forEach((mutation) => {
         markModifiedSection(mutation.target);
-        mutation.addedNodes.cl_each(markModifiedSection);
-        mutation.removedNodes.cl_each(markModifiedSection);
+        mutation.addedNodes.forEach(markModifiedSection);
+        mutation.removedNodes.forEach(markModifiedSection);
       });
       highlighter.fixContent(modifiedSections, removedSections, noContentFix);
       noContentFix = false;
@@ -180,7 +180,7 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
 
     const newTextContent = getTextContent();
     const diffs = diffMatchPatch.diff_main(lastTextContent, newTextContent);
-    editor.$markers.cl_each((marker) => {
+    Object.values(editor.$markers).forEach((marker: any) => {
       marker.adjustOffset(diffs);
     });
 
@@ -264,7 +264,7 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
   // Provokes selection changes and does not fire mouseup event on Chrome/OSX
   contentElt.addEventListener(
     'contextmenu',
-    selectionMgr.saveSelectionState.cl_bind(selectionMgr, true, false),
+    selectionMgr.saveSelectionState.bind(selectionMgr, true, false),
   );
 
   contentElt.addEventListener('keydown', keydownHandler((evt) => {
@@ -281,7 +281,7 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
       selection: textContent.slice(min, max),
       isBackwardSelection: selectionMgr.selectionStart > selectionMgr.selectionEnd,
     };
-    editor.$keystrokes.cl_some((keystroke) => {
+    editor.$keystrokes.some((keystroke) => {
       if (!keystroke.handler(evt, state, editor)) {
         return false;
       }
@@ -488,7 +488,7 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
   editor.removeMarker = removeMarker;
 
   editor.init = (opts = {}) => {
-    const options = ({
+    const options = Object.assign({
       getCursorFocusRatio() {
         return 0.1;
       },
@@ -496,7 +496,7 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
         return section.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\u00a0/g, ' ');
       },
       sectionDelimiter: '',
-    }).cl_extend(opts);
+    }, opts);
     editor.options = options;
 
     if (options.content !== undefined) {

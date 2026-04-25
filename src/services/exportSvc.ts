@@ -77,12 +77,12 @@ export default {
     await extensionSvc.sectionPreview(containerElt, options, false);
 
     // Strip mermaid interactive controls (copy/enlarge buttons) from exports.
-    (containerElt.querySelectorAll('.mermaid-wrapper-actions') as any).cl_each((actionsElt: HTMLElement) => {
+    (containerElt.querySelectorAll('.mermaid-wrapper-actions') as any).forEach((actionsElt: HTMLElement) => {
       actionsElt.parentNode?.removeChild(actionsElt);
     });
 
     // Unwrap tables
-    (containerElt.querySelectorAll('.table-wrapper') as any).cl_each((wrapperElt: HTMLElement) => {
+    (containerElt.querySelectorAll('.table-wrapper') as any).forEach((wrapperElt: HTMLElement) => {
       while (wrapperElt.firstChild) {
         wrapperElt.parentNode!.insertBefore(wrapperElt.firstChild, wrapperElt.nextSibling);
       }
@@ -90,13 +90,15 @@ export default {
     });
 
     // Make TOC
-    const headings: Heading[] = (containerElt.querySelectorAll('h1,h2,h3,h4,h5,h6') as any)
-      .cl_map((headingElt: HTMLElement) => ({
+    const headings: Heading[] = Array.from(
+      containerElt.querySelectorAll('h1,h2,h3,h4,h5,h6'),
+      (headingElt: Element) => ({
         title: headingElt.textContent || '',
         anchor: headingElt.id,
         level: parseInt(headingElt.tagName.slice(1), 10),
         children: [],
-      }));
+      }),
+    );
     const toc = groupHeadings(headings);
     const view = {
       pdf,
