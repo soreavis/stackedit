@@ -1,6 +1,6 @@
 export const config = { runtime: 'edge' };
 
-export default function handler() {
+export default function handler(): Response {
   const body = {
     status: 'ok',
     version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7)

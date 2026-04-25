@@ -30,6 +30,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck (api/)
+        run: npm run typecheck
+
       - name: Build
         run: npm run build
         env:
