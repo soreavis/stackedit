@@ -2,7 +2,7 @@ import { clientIp, rateLimit } from './_utils.js';
 
 export const config = { runtime: 'edge' };
 
-export default async function handler(req) {
+export default async function handler(req: Request): Promise<Response> {
   if (!(await rateLimit(`userInfo:${clientIp(req)}`, 120))) {
     return new Response(JSON.stringify({ error: 'rate_limited' }), {
       status: 429,

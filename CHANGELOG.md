@@ -6,6 +6,9 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+### Added
+- **TypeScript on the `api/` layer** — all 9 Vercel API routes (`_utils`, `conf`, `cspReport`, `googleDriveAction`, `health`, `userInfo`, `githubToken`, `pdfExport`, `pandocExport`) ported from `.js` to `.ts`. Edge-runtime handlers typed with the standard Web `Request` / `Response` types; Node-runtime handlers (`githubToken`, `pdfExport`, `pandocExport`) typed with `@vercel/node`'s `VercelRequest` / `VercelResponse`. New `tsconfig.json` (root) scoped to `api/**/*.ts` with strict mode + `moduleResolution: bundler`. New `npm run typecheck` script + CI step (`tsc --noEmit`). The 4 existing `_utils` hardening specs still pass unchanged. Vite handles `.ts` in tests natively (esbuild). Vercel auto-detects `.ts` in `api/` and compiles at deploy time. SPA stays JS — this is scoped to the security-critical surface only.
+
 ### Changed
 - **Provider modals default to `main` instead of `master`** — all 8 GitHub / GitLab open / publish / save / workspace modals now suggest `main` as the implicit branch when the user leaves the field empty. Hint text updated to "If not supplied, the `main` branch will be used (use `master` for older repos)." `githubWorkspaceProvider.js` + `gitlabWorkspaceProvider.js` workspace bootstrap also defaults to `main`. Aligns with GitHub / GitLab's modern default for new repos. Users with legacy `master`-default repos can still type `master` explicitly.
 - **CONTRIBUTING.md lint section refreshed** — the line claiming "Lint is not run in CI" was stale (CI does run `npm run lint` and fails on errors, as we relearned via PR #37). Replaced with a description of the actual ESLint 9 flat-config setup and how warnings vs errors are treated.
