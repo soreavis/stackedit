@@ -29,3 +29,5 @@ declare module 'js-yaml';
 declare module 'tinykeys';
 declare module 'abcjs';
 declare module 'mermaid';
+declare module 'prismjs';
+declare module 'markdown-it';
