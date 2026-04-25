@@ -1,7 +1,18 @@
 <template>
   <div class="toc">
+    <div class="toc__controls">
+      <span class="toc__controls-label">Show</span>
+      <button
+        v-for="lvl in [1, 2, 3, 4, 5, 6]"
+        :key="lvl"
+        class="toc__controls-btn"
+        :class="{ 'toc__controls-btn--active': lvl <= foldLevel }"
+        :title="`Show up to H${lvl}`"
+        @click="foldLevel = lvl"
+      >H{{ lvl }}</button>
+    </div>
     <div class="toc__mask" :style="{top: (maskY - 5) + 'px'}"></div>
-    <div class="toc__inner"></div>
+    <div class="toc__inner" :class="`toc__inner--fold-${foldLevel}`"></div>
   </div>
 </template>
 
@@ -12,6 +23,9 @@ import editorSvc from '../services/editorSvc';
 export default {
   data: () => ({
     maskY: 0,
+    // Outline fold level: show headings up to and including H<foldLevel>.
+    // 6 = show everything (default), 1 = only top-level headings.
+    foldLevel: 6,
   }),
   computed: {
     ...mapGetters('layout', [
@@ -142,6 +156,65 @@ export default {
     h5 { padding-left: 32px; }
     h6 { padding-left: 40px; }
   }
+
+  /* Outline fold: hide headings deeper than the chosen level. Layered
+     selectors so each fold level cascades correctly (level 3 = hide h4-h6,
+     level 4 = hide h5-h6, etc.). */
+  &--fold-1 .cl-toc-section h2,
+  &--fold-1 .cl-toc-section h3,
+  &--fold-1 .cl-toc-section h4,
+  &--fold-1 .cl-toc-section h5,
+  &--fold-1 .cl-toc-section h6,
+  &--fold-2 .cl-toc-section h3,
+  &--fold-2 .cl-toc-section h4,
+  &--fold-2 .cl-toc-section h5,
+  &--fold-2 .cl-toc-section h6,
+  &--fold-3 .cl-toc-section h4,
+  &--fold-3 .cl-toc-section h5,
+  &--fold-3 .cl-toc-section h6,
+  &--fold-4 .cl-toc-section h5,
+  &--fold-4 .cl-toc-section h6,
+  &--fold-5 .cl-toc-section h6 {
+    display: none;
+  }
+}
+
+.toc__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  user-select: none;
+}
+
+.toc__controls-label {
+  margin-right: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.toc__controls-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: none;
+
+  &--active {
+    background: rgba(52, 155, 232, 0.12);
+    color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(52, 155, 232, 0.3);
+  }
+
+  &:hover { background: rgba(0, 0, 0, 0.05); }
 }
 
 .toc__mask {

@@ -413,6 +413,16 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
             lastMergedContent = syncedContent.historyData[syncHistoryItem[LAST_MERGED]];
           }
           mergedContent = diffUtils.mergeContent(serverContent, clientContent, lastMergedContent);
+          // Surface a real 3-way conflict to the user. Auto-merge always
+          // produces a result, but when both server AND client edits diverge
+          // from the last-merged baseline, the user should know their edits
+          // were recombined non-trivially. Prior behavior was silent.
+          const serverChanged = lastMergedContent && lastMergedContent.text !== serverContent.text;
+          const clientChanged = lastMergedContent && lastMergedContent.text !== clientContent.text;
+          if (serverChanged && clientChanged && serverContent.text !== clientContent.text) {
+            const fileName = (store.state.file.itemsById[fileId] || {}).name || 'a file';
+            store.dispatch('notification/info', `Sync auto-merged concurrent edits in "${fileName}". Use File → History to compare versions.`);
+          }
         }
         if (!mergedContent) {
           return;

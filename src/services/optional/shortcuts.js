@@ -157,3 +157,22 @@ function applyExpansion() {
 if (typeof editorSvc.$on === 'function') {
   editorSvc.$on('contentChanged', () => setTimeout(applyExpansion, 1));
 }
+
+// Always-on global shortcuts:
+//   - Cmd/Ctrl+K  opens the command palette (search-any-action)
+//   - Cmd/Ctrl+/  opens the slash-commands palette (insert-only filter)
+// Both bypass the user-configurable yaml shortcut binding above because
+// they're meta actions (find any other command) — always bound, always
+// available, even when an editor element has focus.
+tinykeys(window, {
+  '$mod+KeyK': (e) => {
+    if (store.getters['modal/config']) return;
+    e.preventDefault();
+    store.dispatch('modal/open', 'commandPalette').catch(() => {});
+  },
+  '$mod+Slash': (e) => {
+    if (store.getters['modal/config']) return;
+    e.preventDefault();
+    store.dispatch('modal/open', { type: 'commandPalette', initialQuery: '' }).catch(() => {});
+  },
+});
