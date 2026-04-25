@@ -6,6 +6,10 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+### Changed
+- **Project status: independent successor.** Upstream `benweet/stackedit` has been dormant since 2023-05-27 (last commit; last GitHub release 2019-07-02). The "stay merge-compatible with upstream" constraint that previously gated refactors is retired. README + CONTRIBUTING + SECURITY repositioned from "fork tracking upstream" to "actively-maintained successor"; Apache-2.0 attribution to Benoit Schweblin (LICENSE, NOTICE, About modal copyright line) preserved verbatim per license obligations. `.claude/CLAUDE.md` updated: framework migrations (Vue 3 / Pinia / TypeScript / CodeMirror 6) and file-layout restructures are no longer scope-blocked.
+- **Default branch renamed `master` → `main`.** GitHub default branch swapped, branch protection rules transferred (PR required, no force-push, no deletion). Refs updated in `.github/workflows/ci.yml` (push + PR triggers), `package.json` `postversion` script, in-app links (`AboutModal.vue` "Fork changelog", `FilePropertiesModal.vue` "see here" presets link, repointed to our own repo since upstream is dormant), `PRIVACY.md` + `static/privacy.html` changelog link. Released-section CHANGELOG history left unmodified per Keep-a-Changelog. Provider-modal placeholders that show "master" as the user's-external-repo default are unchanged — those refer to the user's own GitHub/GitLab repo defaults, not ours.
+
 ### Added
 - **Enter = confirm in every modal** — Modal root listens for keydown.enter and forwards to `.button--resolve` unless the target is a `TEXTAREA` or contenteditable. No per-modal wiring needed; covers simpleModals, FilePropertiesModal, export modals, etc.
 - **Right-click menu on the nav-bar filename** — contextual menu with Rename / File properties / Copy path / Close file, using the existing `contextMenu/open` store action.
