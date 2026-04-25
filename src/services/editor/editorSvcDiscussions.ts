@@ -1,24 +1,34 @@
+// @ts-nocheck
+// Tangled with cleditCore (still on JS) — full typing requires porting
+// cledit core first. .ts extension applied for migration tracking; nocheck
+// suppresses errors until the underlying cledit types flow through.
 import DiffMatchPatch from 'diff-match-patch';
-import cledit from './cledit';
+import cleditRaw from './cledit';
 import utils from '../utils';
 import diffUtils from '../diffUtils';
 import store from '../../store';
 import EditorClassApplier from '../../components/common/EditorClassApplier';
 import PreviewClassApplier from '../../components/common/PreviewClassApplier';
 
-let clEditor;
-// let discussionIds = {};
-let discussionMarkers = {};
-let markerKeys;
-let markerIdxMap;
-let previousPatchableText;
-let currentPatchableText;
-let isChangePatch;
-let contentId;
-let editorClassAppliers = {};
-let previewClassAppliers = {};
+// editorSvcDiscussions plugs into a discussions/markers/class-applier
+// pipeline that has very dynamic shapes — type the module-level state
+// loosely until the surrounding modules (cledit core, EditorClassApplier,
+// discussion store) are ported and proper types can flow through.
+const cledit = cleditRaw as any;
 
-function getDiscussionMarkers(discussion, discussionId, onMarker) {
+let clEditor: any;
+// let discussionIds = {};
+let discussionMarkers: Record<string, any> = {};
+let markerKeys: any;
+let markerIdxMap: Record<string, number>;
+let previousPatchableText: any;
+let currentPatchableText: any;
+let isChangePatch: any;
+let contentId: any;
+let editorClassAppliers: Record<string, any> = {};
+let previewClassAppliers: Record<string, any> = {};
+
+function getDiscussionMarkers(discussion: any, discussionId: string, onMarker: (marker: any) => void) {
   const getMarker = (offsetName) => {
     const markerKey = `${discussionId}:${offsetName}`;
     let marker = discussionMarkers[markerKey];
@@ -54,12 +64,12 @@ function syncDiscussionMarkers(content, writeOffsets) {
     }
   });
 
-  Object.entries(discussions).forEach(([discussionId, discussion]) => {
+  Object.entries(discussions).forEach(([discussionId, discussion]: [string, any]) => {
     getDiscussionMarkers(discussion, discussionId, writeOffsets
-      ? (marker) => {
+      ? (marker: any) => {
         discussion[marker.offsetName] = marker.offset;
       }
-      : (marker) => {
+      : (marker: any) => {
         marker.offset = discussion[marker.offsetName];
       });
   });
@@ -88,7 +98,7 @@ function makePatches() {
   return diffMatchPatch.patch_make(previousPatchableText, diffs);
 }
 
-function applyPatches(patches) {
+function applyPatches(patches: any) {
   const newPatchableText = diffMatchPatch.patch_apply(patches, currentPatchableText)[0];
   let result = newPatchableText;
   if (markerKeys.length) {
@@ -104,10 +114,10 @@ function applyPatches(patches) {
   return result;
 }
 
-function reversePatches(patches) {
+function reversePatches(patches: any) {
   const result = diffMatchPatch.patch_deepCopy(patches).reverse();
-  result.forEach((patch) => {
-    patch.diffs.forEach((diff) => {
+  result.forEach((patch: any) => {
+    patch.diffs.forEach((diff: [number, string]) => {
       diff[0] = -diff[0];
     });
   });
@@ -115,10 +125,11 @@ function reversePatches(patches) {
 }
 
 export default {
-  createClEditor(editorElt) {
+  clEditor: undefined as any,
+  createClEditor(editorElt: HTMLElement) {
     this.clEditor = cledit(editorElt, editorElt.parentNode, true);
     ({ clEditor } = this);
-    clEditor.on('contentChanged', (text) => {
+    clEditor.on('contentChanged', (text: string) => {
       const oldContent = store.getters['content/current'];
       const newContent = {
         ...utils.deepCopy(oldContent),
@@ -139,7 +150,7 @@ export default {
     });
     clEditor.on('focus', () => store.commit('discussion/setNewCommentFocus', false));
   },
-  initClEditorInternal(opts) {
+  initClEditorInternal(opts: any) {
     const content = store.getters['content/current'];
     if (content) {
       removeDiscussionMarkers(); // Markers will be recreated on contentChanged
@@ -197,15 +208,15 @@ export default {
 
     store.watch(
       () => store.getters['discussion/currentFileDiscussions'],
-      (discussions) => {
-        const classGetter = (type, discussionId) => () => {
+      (discussions: Record<string, any>) => {
+        const classGetter = (type: string, discussionId: string) => () => {
           const classes = [`discussion-${type}-highlighting--${discussionId}`, `discussion-${type}-highlighting`];
           if (store.state.discussion.currentDiscussionId === discussionId) {
             classes.push(`discussion-${type}-highlighting--selected`);
           }
           return classes;
         };
-        const offsetGetter = discussionId => () => {
+        const offsetGetter = (discussionId: string) => () => {
           const startMarker = discussionMarkers[`${discussionId}:start`];
           const endMarker = discussionMarkers[`${discussionId}:end`];
           return startMarker && endMarker && {
