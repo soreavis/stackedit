@@ -32,18 +32,19 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import cledit from '../services/editor/cledit';
 import store from '../store';
+import { useFindReplaceStore } from '../stores/findReplace';
 import EditorClassApplier from './common/EditorClassApplier';
 
 const accessor = (fieldName, setterName) => ({
   get() {
-    return store.state.findReplace[fieldName];
+    return useFindReplaceStore()[fieldName];
   },
   set(value) {
-    store.commit(`findReplace/${setterName}`, value);
+    useFindReplaceStore()[setterName](value);
   },
 });
 
@@ -90,7 +91,7 @@ export default {
     findPosition: 0,
   }),
   computed: {
-    ...mapState('findReplace', [
+    ...mapState(useFindReplaceStore, [
       'type',
       'lastOpen',
     ]),
@@ -130,7 +131,7 @@ export default {
     this.onKeyup = (evt) => {
       if (evt.which === 27) {
         // Esc key
-        store.commit('findReplace/setType');
+        useFindReplaceStore().setType();
       }
     };
     window.addEventListener('keyup', this.onKeyup);
@@ -272,7 +273,7 @@ export default {
       }
     },
     close() {
-      store.commit('findReplace/setType');
+      useFindReplaceStore().setType();
     },
     onEscape() {
       editorSvc.clEditor.focus();
