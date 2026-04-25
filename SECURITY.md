@@ -2,18 +2,19 @@
 
 ## Scope
 
-This policy covers the **fork-specific code** in this repository: the Vercel API routes (`api/`), dev-server middleware (`dev-server/`), build config (`vite.config.js`, `vercel.json`), HTML sanitizer, and OAuth integration code added by the fork.
+This policy covers the entire codebase — the Vercel API routes (`api/`), dev-server middleware (`dev-server/`), build config (`vite.config.mjs`, `vercel.json`), HTML sanitizer, OAuth integration code, and the rest of the editor / sync / markdown surface inherited from `benweet/stackedit`.
 
-For vulnerabilities in upstream StackEdit code (editor, sync providers, markdown rendering, Vuex store), please **report upstream first** at [`benweet/stackedit`](https://github.com/benweet/stackedit/security). If the issue is exploitable specifically on this fork's Vercel deployment and not upstream, report it here.
+Upstream `benweet/stackedit` has been dormant since 2023-05-27 and no longer accepts security reports — please report all vulnerabilities here directly. Apache-2.0 attribution to Benoit Schweblin is preserved per license obligations, but ongoing security maintenance is the responsibility of this codebase.
 
 ## Supported versions
 
 | Version | Supported |
 |---|---|
-| `main` (HEAD) | Yes |
-| `5.15.x` upstream (`benweet/stackedit`) | See upstream repository (dormant since 2023-05-27) |
+| `main` (HEAD) | Yes — security patches land here and are auto-deployed |
+| `5.16.x` (current release line) | Yes — patched on `main` |
+| `5.15.x` and earlier (upstream `benweet/stackedit`) | No — see upstream repository (dormant since 2023-05-27) |
 
-This project does not currently publish numbered releases. Security patches land on `main` and are auto-deployed.
+Numbered releases are tracked in [`CHANGELOG.md`](CHANGELOG.md). Security fixes land on `main` first and are tagged into the next patch / minor release.
 
 ## Reporting a vulnerability
 
