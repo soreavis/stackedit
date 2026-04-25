@@ -479,6 +479,57 @@ export default {
   padding-bottom: 0.1em;
 }
 
+// Layout for the textStats modal — three left-aligned-label / right-
+// aligned-value sections with thin dividers between them. Sized so the
+// stat lines don't wrap and the modal grows to fit instead of scrolling.
+.text-stats {
+  font-size: 0.95em;
+  line-height: 1.6;
+  margin: 0.5em 0 1em;
+}
+
+.text-stats__section {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #808080;
+  margin: 0.75em 0 0.25em;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.text-stats__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.5em;
+  padding: 0.15em 0;
+}
+
+.text-stats__label {
+  flex: 0 0 auto;
+}
+
+.text-stats__value {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.text-stats__sep {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.08);
+  margin: 0.5em 0;
+
+  .app--dark & {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
 .modal__button-bar {
   flex: 0 0 auto;
   padding: 16px 0 40px;
