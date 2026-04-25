@@ -9,7 +9,6 @@ import data from './data';
 import discussion from './discussion';
 import explorer from './explorer';
 import file from './file';
-import findReplace from './findReplace';
 import folder from './folder';
 import layout from './layout';
 import modal from './modal';
@@ -36,7 +35,6 @@ const store = new Vuex.Store({
     discussion,
     explorer,
     file,
-    findReplace,
     folder,
     layout,
     modal,
