@@ -7,6 +7,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 ## [Unreleased]
 
 ### Added
+- **Bundle-size gate in CI** — `size-limit` (`@size-limit/preset-app`) checks 7 per-chunk budgets on every PR after build: main bundle ≤ 200 KB, mermaid (lazy) ≤ 800 KB, prism ≤ 230 KB, abcjs ≤ 175 KB, katex ≤ 90 KB, markdown-it ≤ 80 KB, vue ≤ 40 KB (all compressed; size-limit uses brotli when smaller). Catches regressions where an innocent dep bump or import-of-default-export inflates a chunk. New `npm run size` script + new "Bundle size" CI step. Current bundle profile lands well under all budgets — budgets sized at ~10–25% headroom over the v5.16.0 baseline.
 - **TypeScript on the `api/` layer** — all 9 Vercel API routes (`_utils`, `conf`, `cspReport`, `googleDriveAction`, `health`, `userInfo`, `githubToken`, `pdfExport`, `pandocExport`) ported from `.js` to `.ts`. Edge-runtime handlers typed with the standard Web `Request` / `Response` types; Node-runtime handlers (`githubToken`, `pdfExport`, `pandocExport`) typed with `@vercel/node`'s `VercelRequest` / `VercelResponse`. New `tsconfig.json` (root) scoped to `api/**/*.ts` with strict mode + `moduleResolution: bundler`. New `npm run typecheck` script + CI step (`tsc --noEmit`). The 4 existing `_utils` hardening specs still pass unchanged. Vite handles `.ts` in tests natively (esbuild). Vercel auto-detects `.ts` in `api/` and compiles at deploy time. SPA stays JS — this is scoped to the security-critical surface only.
 
 ### Changed

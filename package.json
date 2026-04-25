@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "lint": "eslint 'src/**/*.{js,vue}' 'dev-server/**/*.js' 'test/unit/**/*.js'",
     "typecheck": "tsc --noEmit",
+    "size": "size-limit",
     "unit": "NODE_NO_WARNINGS=1 vitest run",
     "unit-with-coverage": "NODE_NO_WARNINGS=1 vitest run --coverage",
     "test": "NODE_NO_WARNINGS=1 vitest run",
@@ -57,6 +58,7 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.6",
     "@eslint/js": "^9.39.4",
+    "@size-limit/preset-app": "^12.1.0",
     "@types/node": "^25.6.0",
     "@vercel/node": "^5.7.13",
     "@vitejs/plugin-vue2": "^2.3.4",
@@ -69,6 +71,7 @@
     "playwright": "^1.59.1",
     "rollup-plugin-visualizer": "^7.0.1",
     "sass": "^1.99.0",
+    "size-limit": "^12.1.0",
     "typescript": "^6.0.3",
     "vite": "^7.3.2",
     "vite-plugin-pwa": "^1.2.0",
@@ -77,6 +80,43 @@
     "vue-template-compiler": "^2.5.16",
     "workbox-window": "^7.4.0"
   },
+  "size-limit": [
+    {
+      "name": "main bundle",
+      "path": "dist/static/index-*.js",
+      "limit": "200 KB"
+    },
+    {
+      "name": "mermaid (lazy-loaded)",
+      "path": "dist/static/mermaid-*.js",
+      "limit": "800 KB"
+    },
+    {
+      "name": "prism",
+      "path": "dist/static/prismjs-*.js",
+      "limit": "230 KB"
+    },
+    {
+      "name": "abcjs",
+      "path": "dist/static/abcjs-*.js",
+      "limit": "175 KB"
+    },
+    {
+      "name": "katex",
+      "path": "dist/static/katex-*.js",
+      "limit": "90 KB"
+    },
+    {
+      "name": "markdown-it",
+      "path": "dist/static/markdown-it-*.js",
+      "limit": "80 KB"
+    },
+    {
+      "name": "vue runtime",
+      "path": "dist/static/vue-*.js",
+      "limit": "40 KB"
+    }
+  ],
   "engines": {
     "node": "22.x",
     "npm": ">= 9.0.0"
