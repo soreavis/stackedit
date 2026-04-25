@@ -20,10 +20,11 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState } from 'pinia';
+import { useNotificationStore } from '../stores/notification';
 
 export default {
-  computed: mapState('notification', [
+  computed: mapState(useNotificationStore, [
     'items',
   ]),
 };

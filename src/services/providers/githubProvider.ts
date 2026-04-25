@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import githubHelper from './helpers/githubHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
@@ -81,7 +82,7 @@ export default new Provider({
       try {
         content = await this.downloadContent(token, syncLocation);
       } catch (e) {
-        store.dispatch('notification/error', `Could not open file ${syncLocation.path}.`);
+        useNotificationStore().error(`Could not open file ${syncLocation.path}.`);
         return;
       }
 
@@ -108,7 +109,7 @@ export default new Provider({
         ...syncLocation,
         fileId: item.id,
       });
-      store.dispatch('notification/info', `${store.getters['file/current'].name} was imported from GitHub.`);
+      useNotificationStore().info(`${store.getters['file/current'].name} was imported from GitHub.`);
     }
   },
   makeLocation(token, owner, repo, branch, path) {

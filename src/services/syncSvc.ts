@@ -6,6 +6,7 @@
 // this incremental migration.
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { useNotificationStore } from '../stores/notification';
 import utils from './utils';
 import diffUtils from './diffUtils';
 import networkSvc from './networkSvc';
@@ -226,7 +227,7 @@ const createSyncLocation = (syncLocation) => {
 
       store.commit('syncedContent/patchItem', newSyncedContent);
       workspaceSvc.addSyncLocation(updatedSyncLocation);
-      store.dispatch('notification/info', `A new synchronized location was added to "${currentFile.name}".`);
+      useNotificationStore().info(`A new synchronized location was added to "${currentFile.name}".`);
     },
   );
 };
@@ -427,7 +428,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
           const clientChanged = lastMergedContent && lastMergedContent.text !== clientContent.text;
           if (serverChanged && clientChanged && serverContent.text !== clientContent.text) {
             const fileName = (store.state.file.itemsById[fileId] || {}).name || 'a file';
-            store.dispatch('notification/info', `Sync auto-merged concurrent edits in "${fileName}". Use File → History to compare versions.`);
+            useNotificationStore().info(`Sync auto-merged concurrent edits in "${fileName}". Use File → History to compare versions.`);
           }
         }
         if (!mergedContent) {
@@ -528,7 +529,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
               throw err;
             }
             console.error(err);  
-            store.dispatch('notification/error', err);
+            useNotificationStore().error(err);
           }
         },
       });
