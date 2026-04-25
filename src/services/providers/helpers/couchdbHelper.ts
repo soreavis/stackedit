@@ -6,6 +6,7 @@
 import networkSvc from '../../networkSvc';
 import utils from '../../utils';
 import store from '../../../store';
+import { useModalStore } from '../../../stores/modal';
 import userSvc from '../../userSvc';
 
 const request = async (token, options = {}) => {
@@ -32,7 +33,7 @@ const request = async (token, options = {}) => {
       });
     } catch (err) {
       assertUnauthorized(err);
-      await store.dispatch('modal/open', {
+      await useModalStore().open({
         type: 'couchdbCredentials',
         token: getLastToken(),
       });

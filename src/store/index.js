@@ -10,7 +10,6 @@ import explorer from './explorer';
 import file from './file';
 import folder from './folder';
 import layout from './layout';
-import modal from './modal';
 import syncedContent from './syncedContent';
 import { useNotificationStore } from '../stores/notification';
 import userInfo from './userInfo';
@@ -34,7 +33,6 @@ const store = new Vuex.Store({
     file,
     folder,
     layout,
-    modal,
     publishLocation: locationTemplate(emptyPublishLocation),
     syncedContent,
     syncLocation: locationTemplate(emptySyncLocation),

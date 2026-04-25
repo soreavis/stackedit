@@ -8,7 +8,7 @@
 // optionally restore a sensible cursor position afterwards via
 // `selectionMgr.setSelectionStartEnd`.
 
-import store from '../store';
+import { useModalStore } from '../stores/modal';
 
 function getSelection(editorSvc) {
   const sel = editorSvc.clEditor.selectionMgr;
@@ -617,7 +617,7 @@ export const textStats = {
     }
     lines.push({ label: 'Estimated tokens', value: `~${tokensEst.toLocaleString()}` });
 
-    store.dispatch('modal/open', { type: 'textStats', scope, lines }).catch(() => {});
+    useModalStore().open({ type: 'textStats', scope, lines }).catch(() => {});
   },
 };
 

@@ -65,10 +65,11 @@
 <script>
 import Vue from 'vue';
 import { mapGetters } from 'vuex';
-import { mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
 import workspaceSvc from '../../services/workspaceSvc';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 import localDbSvc from '../../services/localDbSvc';
@@ -83,7 +84,7 @@ export default {
     availableOffline: {},
   }),
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     ...mapGetters('workspace', [
@@ -124,7 +125,7 @@ export default {
         this.info('Please close the workspace before removing it.');
       } else {
         try {
-          await store.dispatch('modal/open', 'removeWorkspace');
+          await useModalStore().open('removeWorkspace');
           workspaceSvc.removeWorkspace(id);
           badgeSvc.addBadge('removeWorkspace');
         } catch (e) { /* Cancel */ }

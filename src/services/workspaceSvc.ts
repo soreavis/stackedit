@@ -1,4 +1,5 @@
 import store from '../store';
+import { useModalStore } from '../stores/modal';
 import utils from './utils';
 import constants from '../data/constants';
 import badgeSvc from './badgeSvc';
@@ -67,7 +68,7 @@ export default {
     if (!background) {
       // If name is being stripped
       if (item.name !== constants.defaultName && item.name !== name) {
-        await store.dispatch('modal/open', {
+        await useModalStore().open({
           type: 'stripName',
           item,
         });
@@ -78,7 +79,7 @@ export default {
         const parentPath = store.getters.pathsByItemId[item.parentId as string] || '';
         const path = parentPath + item.name;
         if (store.getters.itemsByPath[path]) {
-          await store.dispatch('modal/open', {
+          await useModalStore().open({
             type: 'pathConflict',
             item,
           });
@@ -105,7 +106,7 @@ export default {
     const sanitizedName = utils.sanitizeFilename(item.name);
 
     if (item.type === 'folder' && forbiddenFolderNameMatcher.exec(sanitizedName)) {
-      await store.dispatch('modal/open', {
+      await useModalStore().open({
         type: 'unauthorizedName',
         item,
       });
@@ -115,7 +116,7 @@ export default {
     // Show warning dialogs
     // If name has been stripped
     if (sanitizedName !== constants.defaultName && sanitizedName !== item.name) {
-      await store.dispatch('modal/open', {
+      await useModalStore().open({
         type: 'stripName',
         item,
       });
@@ -127,7 +128,7 @@ export default {
       const path = parentPath + sanitizedName;
       const items: Item[] = store.getters.itemsByPath[path] || [];
       if (items.some(itemWithSamePath => itemWithSamePath.id !== id)) {
-        await store.dispatch('modal/open', {
+        await useModalStore().open({
           type: 'pathConflict',
           item,
         });

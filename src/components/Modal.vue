@@ -23,7 +23,9 @@ import simpleModals from '../data/simpleModals';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
 import googleHelper from '../services/providers/helpers/googleHelper';
+import { mapState as mapPiniaState } from 'pinia';
 import store from '../store';
+import { useModalStore } from '../stores/modal';
 
 import ModalInner from './modals/common/ModalInner';
 import FilePropertiesModal from './modals/FilePropertiesModal';
@@ -128,7 +130,7 @@ export default {
     ...mapGetters([
       'isSponsor',
     ]),
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     currentModalComponent() {
@@ -165,12 +167,12 @@ export default {
       try {
         if (!store.getters['workspace/sponsorToken']) {
           // User has to sign in
-          await store.dispatch('modal/open', 'signInForSponsorship');
+          await useModalStore().open('signInForSponsorship');
           await googleHelper.signin();
           syncSvc.requestSync();
         }
         if (!store.getters.isSponsor) {
-          await store.dispatch('modal/open', 'sponsor');
+          await useModalStore().open('sponsor');
         }
       } catch (e) { /* cancel */ }
     },
