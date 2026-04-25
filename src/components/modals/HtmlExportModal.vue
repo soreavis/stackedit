@@ -22,10 +22,11 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
+import { mapActions as mapPiniaActions } from 'pinia';
 import exportSvc from '../../services/exportSvc';
 import modalTemplate from './common/modalTemplate';
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 
 export default modalTemplate({
@@ -52,7 +53,7 @@ export default modalTemplate({
     });
   },
   methods: {
-    ...mapActions('notification', [
+    ...mapPiniaActions(useNotificationStore, [
       'info',
     ]),
     async resolve() {

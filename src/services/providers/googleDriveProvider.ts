@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import googleHelper from './helpers/googleHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
@@ -161,7 +162,7 @@ export default new Provider({
         try {
           content = await this.downloadContent(token, syncLocation);
         } catch (e) {
-          store.dispatch('notification/error', `Could not open file ${driveFile.id}.`);
+          useNotificationStore().error(`Could not open file ${driveFile.id}.`);
           return;
         }
 
@@ -179,7 +180,7 @@ export default new Provider({
           ...syncLocation,
           fileId: item.id,
         });
-        store.dispatch('notification/info', `${store.getters['file/current'].name} was imported from Google Drive.`);
+        useNotificationStore().info(`${store.getters['file/current'].name} was imported from Google Drive.`);
       }
     });
   },

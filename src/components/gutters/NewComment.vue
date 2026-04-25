@@ -30,6 +30,7 @@ import markdownConversionSvc from '../../services/markdownConversionSvc';
 import utils from '../../services/utils';
 import userSvc from '../../services/userSvc';
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 
 export default {
@@ -55,7 +56,7 @@ export default {
       const text = store.state.discussion.newCommentText.trim();
       if (text.length) {
         if (text.length > 2000) {
-          store.dispatch('notification/error', 'Comment is too long.');
+          useNotificationStore().error('Comment is too long.');
         } else {
           // Create comment
           const discussionId = store.state.discussion.currentDiscussionId;

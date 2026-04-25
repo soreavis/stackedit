@@ -55,6 +55,7 @@ import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import { useQueueStore } from '../../stores/queue';
 import badgeSvc from '../../services/badgeSvc';
 
@@ -192,7 +193,7 @@ export default {
           ));
           revisionContentPromises[revision.id] = revisionContentPromise;
           revisionContentPromise.catch((err) => {
-            store.dispatch('notification/error', err);
+            useNotificationStore().error(err);
             revisionContentPromises[revision.id] = null;
           });
         }
@@ -264,7 +265,7 @@ export default {
                 .then(resolve, reject),
             ))
               .catch((err) => {
-                store.dispatch('notification/error', err);
+                useNotificationStore().error(err);
                 cachedHistoryContextHash = null;
                 return [];
               });

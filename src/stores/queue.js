@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import store from '../store';
+import { useNotificationStore } from './notification';
 
 let queue = Promise.resolve();
 
@@ -35,7 +36,7 @@ export const useQueueStore = defineStore('queue', {
             console.error(err);
             checkOffline();
             // notification module still lives in Vuex during the transition.
-            store.dispatch('notification/error', err);
+            useNotificationStore().error(err);
           })
           .then(() => {
             if (newQueue === queue) {
