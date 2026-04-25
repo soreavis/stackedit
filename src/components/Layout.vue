@@ -76,6 +76,7 @@ import markdownConversionSvc from '../services/markdownConversionSvc';
 import workspaceSvc from '../services/workspaceSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
 import store from '../store';
+import { useFindReplaceStore } from '../stores/findReplace';
 
 export default {
   components: {
@@ -109,7 +110,7 @@ export default {
       'layoutSettings',
     ]),
     showFindReplace() {
-      return !!store.state.findReplace.type;
+      return !!useFindReplaceStore().type;
     },
     hasCurrentFile() {
       // Show the editor only when a real file is actually selected. If
