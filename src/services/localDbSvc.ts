@@ -1,5 +1,6 @@
 import utils from './utils';
 import store from '../store';
+import { useNotificationStore } from '../stores/notification';
 import welcomeFile from '../data/welcomeFile.md?raw';
 import workspaceSvc from './workspaceSvc';
 import draftFilesSvc from './draftFilesSvc';
@@ -488,7 +489,7 @@ const localDbSvc: LocalDbSvc = {
             );
           } catch (err) {
             console.error(err);
-            store.dispatch('notification/error', err);
+            useNotificationStore().error(err);
           }
         }
       },

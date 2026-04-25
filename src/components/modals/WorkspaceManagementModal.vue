@@ -64,10 +64,12 @@
 
 <script>
 import Vue from 'vue';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters } from 'vuex';
+import { mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
 import workspaceSvc from '../../services/workspaceSvc';
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 import localDbSvc from '../../services/localDbSvc';
 
@@ -91,7 +93,7 @@ export default {
     ]),
   },
   methods: {
-    ...mapActions('notification', [
+    ...mapPiniaActions(useNotificationStore, [
       'info',
     ]),
     edit(id) {
