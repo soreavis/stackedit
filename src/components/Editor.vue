@@ -80,7 +80,14 @@ export default {
   position: absolute;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  /* Vertical scrolling only. The inner <pre> uses `white-space: pre-wrap;
+     word-break: break-word` so prose can never produce horizontal overflow,
+     and fenced code blocks (`pre > code`) already get their own
+     `overflow-x: auto` from base.scss. Setting `overflow: auto` here used
+     to leave a permanent horizontal scrollbar on macOS systems with
+     "Always show scrollbars". */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .editor__inner {
