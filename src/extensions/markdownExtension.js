@@ -17,6 +17,11 @@ const coreBaseRules = [
   'linkify',
   'replacements',
   'smartquotes',
+  // markdown-it 14 added `text_join` to merge consecutive text/text_special
+  // tokens into a single text token. Required for escape sequences (`\*` etc.)
+  // to render correctly. Was implicit before; explicitly listed now so the
+  // pipeline stays deterministic if the upstream default ever flips.
+  'text_join',
 ];
 const blockBaseRules = [
   'code',
@@ -48,7 +53,10 @@ const inlineBaseRules2 = [
   'balance_pairs',
   'strikethrough',
   'emphasis',
-  'text_collapse',
+  // markdown-it 14 renamed the old `text_collapse` post-process rule to
+  // `fragments_join`. Same behavior — folds adjacent text fragments into
+  // a single text token after delimiter resolution.
+  'fragments_join',
 ];
 
 extensionSvc.onGetOptions((options, properties) => Object
