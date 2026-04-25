@@ -1,17 +1,45 @@
+// Section-dimension helpers used by the scroll-sync plumbing. Each
+// section (a paragraph, list, blockquote, heading…) gets measured in
+// editor-space, preview-space, and TOC-space, then normalized so empty
+// sections borrow height from their neighbors and the proportions hold
+// across all three columns.
+
 class SectionDimension {
-  constructor(startOffset, endOffset) {
+  startOffset: number;
+  endOffset: number;
+  height: number;
+
+  constructor(startOffset: number, endOffset: number) {
     this.startOffset = startOffset;
     this.endOffset = endOffset;
     this.height = endOffset - startOffset;
   }
 }
 
-const dimensionNormalizer = dimensionName => (editorSvc) => {
+// editorSvc has a `previewCtx.sectionDescList` of dimension-bearing
+// objects. The fields on each dimension are SectionDimension instances.
+interface SectionDesc {
+  editorDimension: SectionDimension;
+  previewDimension: SectionDimension;
+  tocDimension: SectionDimension;
+  editorElt?: HTMLElement;
+  previewElt?: HTMLElement;
+  tocElt?: HTMLElement;
+}
+
+interface EditorSvcLike {
+  previewCtx: { sectionDescList: SectionDesc[] };
+  editorElt: HTMLElement;
+  previewElt: HTMLElement;
+  tocElt: HTMLElement;
+}
+
+const dimensionNormalizer = (dimensionName: keyof SectionDesc) => (editorSvc: EditorSvcLike): void => {
   const dimensionList = editorSvc.previewCtx.sectionDescList
-    .map(sectionDesc => sectionDesc[dimensionName]);
-  let dimension;
-  let i;
-  let j;
+    .map(sectionDesc => sectionDesc[dimensionName] as SectionDimension);
+  let dimension: SectionDimension;
+  let i: number;
+  let j: number;
   for (i = 0; i < dimensionList.length; i += 1) {
     dimension = dimensionList[i];
     if (dimension.height) {
@@ -41,12 +69,12 @@ const normalizePreviewDimensions = dimensionNormalizer('previewDimension');
 const normalizeTocDimensions = dimensionNormalizer('tocDimension');
 
 export default {
-  measureSectionDimensions(editorSvc) {
+  measureSectionDimensions(editorSvc: EditorSvcLike): void {
     let editorSectionOffset = 0;
     let previewSectionOffset = 0;
     let tocSectionOffset = 0;
     let sectionDesc = editorSvc.previewCtx.sectionDescList[0];
-    let nextSectionDesc;
+    let nextSectionDesc: SectionDesc;
     let i = 1;
     for (; i < editorSvc.previewCtx.sectionDescList.length; i += 1) {
       nextSectionDesc = editorSvc.previewCtx.sectionDescList[i];
