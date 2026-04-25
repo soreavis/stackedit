@@ -1,3 +1,8 @@
+// @ts-nocheck
+// Optional editor service — keyboard / scroll-sync / shortcuts / task-change
+// glue. Tightly coupled to editorSvc + cledit dynamic surfaces. .ts rename
+// is for migration tracking; full typing comes after editorSvc/cledit are
+// properly typed.
 import cledit from '../editor/cledit';
 import editorSvc from '../editorSvc';
 import store from '../../store';

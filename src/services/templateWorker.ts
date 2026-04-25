@@ -1,3 +1,8 @@
+// @ts-nocheck
+// Web Worker that runs user-supplied Handlebars templates in a sandboxed
+// context. Loaded via Vite's ?worker suffix. Kept simple — typing the
+// Handlebars template runtime would mean importing @types/handlebars +
+// designing the Worker message protocol shape. Not blocking for migration.
 // This WebWorker provides a safe environment to run user scripts
 // See http://stackoverflow.com/questions/10653809/making-webworkers-a-safe-environment/10796616
 
