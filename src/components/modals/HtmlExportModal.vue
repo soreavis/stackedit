@@ -5,7 +5,7 @@
       <form-entry label="Template">
         <select class="textfield" slot="field" v-model="selectedTemplate" @keydown.enter="resolve()">
           <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
-            {{ template.name }}
+            {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
           </option>
         </select>
         <div class="form-entry__actions">

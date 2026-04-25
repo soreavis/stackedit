@@ -21,7 +21,7 @@ function pickVisibleReplacement() {
   for (let i = 0; i < ids.length; i += 1) {
     const id = ids[i];
     const file = store.state.file.itemsById[id];
-    if (!file || file.parentId === 'trash') continue; // eslint-disable-line no-continue
+    if (!file || file.parentId === 'trash') continue;
     let visible = true;
     for (
       let parent = nodeMap[file.parentId];
