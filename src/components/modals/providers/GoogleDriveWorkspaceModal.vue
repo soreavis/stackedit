@@ -27,6 +27,7 @@ import googleHelper from '../../../services/providers/helpers/googleHelper';
 import modalTemplate from '../common/modalTemplate';
 import utils from '../../../services/utils';
 import store from '../../../store';
+import { useModalStore } from '../../../stores/modal';
 
 export default modalTemplate({
   computedLocalSettings: {
@@ -34,8 +35,7 @@ export default modalTemplate({
   },
   methods: {
     openFolder() {
-      return store.dispatch(
-        'modal/hideUntil',
+      return useModalStore().hideUntil(
         googleHelper.openPicker(this.config.token, 'folder')
           .then((folders) => {
             if (folders[0]) {

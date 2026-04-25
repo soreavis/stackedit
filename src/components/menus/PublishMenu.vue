@@ -124,6 +124,7 @@ import wordpressHelper from '../../services/providers/helpers/wordpressHelper';
 import zendeskHelper from '../../services/providers/helpers/zendeskHelper';
 import publishSvc from '../../services/publishSvc';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 
 const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
   .filter(token => filter(token))
@@ -131,7 +132,7 @@ const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
 
 const publishModalOpener = (type, featureId) => async (token) => {
   try {
-    const publishLocation = await store.dispatch('modal/open', {
+    const publishLocation = await useModalStore().open({
       type,
       token,
     });
@@ -198,7 +199,7 @@ export default {
     },
     async managePublish() {
       try {
-        await store.dispatch('modal/open', 'publishManagement');
+        await useModalStore().open('publishManagement');
       } catch (e) { /* cancel */ }
     },
     async addBloggerAccount() {
@@ -208,25 +209,25 @@ export default {
     },
     async addDropboxAccount() {
       try {
-        await store.dispatch('modal/open', { type: 'dropboxAccount' });
+        await useModalStore().open({ type: 'dropboxAccount' });
         await dropboxHelper.addAccount(!store.getters['data/localSettings'].dropboxRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async addGithubAccount() {
       try {
-        await store.dispatch('modal/open', { type: 'githubAccount' });
+        await useModalStore().open({ type: 'githubAccount' });
         await githubHelper.addAccount(store.getters['data/localSettings'].githubRepoFullAccess);
       } catch (e) { /* cancel */ }
     },
     async addGitlabAccount() {
       try {
-        const { serverUrl, applicationId } = await store.dispatch('modal/open', { type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
         await gitlabHelper.addAccount(serverUrl, applicationId);
       } catch (e) { /* cancel */ }
     },
     async addGoogleDriveAccount() {
       try {
-        await store.dispatch('modal/open', { type: 'googleDriveAccount' });
+        await useModalStore().open({ type: 'googleDriveAccount' });
         await googleHelper.addDriveAccount(!store.getters['data/localSettings'].googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
@@ -237,7 +238,7 @@ export default {
     },
     async addZendeskAccount() {
       try {
-        const { subdomain, clientId } = await store.dispatch('modal/open', { type: 'zendeskAccount' });
+        const { subdomain, clientId } = await useModalStore().open({ type: 'zendeskAccount' });
         await zendeskHelper.addAccount(subdomain, clientId);
       } catch (e) { /* cancel */ }
     },

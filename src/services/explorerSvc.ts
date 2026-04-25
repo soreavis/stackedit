@@ -1,4 +1,5 @@
 import store from '../store';
+import { useModalStore } from '../stores/modal';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
 
@@ -82,7 +83,7 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
   });
 
   try {
-    await store.dispatch('modal/open', {
+    await useModalStore().open({
       type: 'bulkDeletion',
       toTrash: toTrashNodes.length,
       permanent: permanentNodes.length,
@@ -173,7 +174,7 @@ export default {
 
     if (selectedNode.isTrash || selectedNode.item.parentId === 'trash') {
       try {
-        await store.dispatch('modal/open', 'trashDeletion');
+        await useModalStore().open('trashDeletion');
       } catch {
         // Cancel
       }
@@ -184,16 +185,16 @@ export default {
     let moveToTrash = true;
     try {
       if (selectedNode.isTemp) {
-        await store.dispatch('modal/open', 'tempFolderDeletion');
+        await useModalStore().open('tempFolderDeletion');
         moveToTrash = false;
       } else if (selectedNode.item.parentId === 'temp') {
-        await store.dispatch('modal/open', {
+        await useModalStore().open({
           type: 'tempFileDeletion',
           item: selectedNode.item,
         });
         moveToTrash = false;
       } else if (selectedNode.isFolder) {
-        await store.dispatch('modal/open', {
+        await useModalStore().open({
           type: 'folderDeletion',
           item: selectedNode.item,
         });

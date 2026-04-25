@@ -10,11 +10,12 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
+import { useModalStore } from '../../../stores/modal';
 
 export default {
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
   },

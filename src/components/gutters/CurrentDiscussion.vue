@@ -37,6 +37,7 @@ import markdownConversionSvc from '../../services/markdownConversionSvc';
 import htmlSanitizer from '../../libs/htmlSanitizer';
 import StickyComment from './StickyComment';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
 
 export default {
@@ -103,7 +104,7 @@ export default {
     },
     async removeDiscussion() {
       try {
-        await store.dispatch('modal/open', 'discussionDeletion');
+        await useModalStore().open('discussionDeletion');
         store.dispatch('discussion/cleanCurrentFile', {
           filterDiscussion: this.currentDiscussion,
         });

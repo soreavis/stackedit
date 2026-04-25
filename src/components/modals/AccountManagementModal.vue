@@ -73,10 +73,11 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
 import ModalInner from './common/ModalInner';
 import MenuEntry from '../menus/common/MenuEntry';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import dropboxHelper from '../../services/providers/helpers/dropboxHelper';
@@ -92,7 +93,7 @@ export default {
     MenuEntry,
   },
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     entries() {
@@ -166,25 +167,25 @@ export default {
     },
     async addDropboxAccount() {
       try {
-        await store.dispatch('modal/open', { type: 'dropboxAccount' });
+        await useModalStore().open({ type: 'dropboxAccount' });
         await dropboxHelper.addAccount(!store.getters['data/localSettings'].dropboxRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async addGithubAccount() {
       try {
-        await store.dispatch('modal/open', { type: 'githubAccount' });
+        await useModalStore().open({ type: 'githubAccount' });
         await githubHelper.addAccount(store.getters['data/localSettings'].githubRepoFullAccess);
       } catch (e) { /* cancel */ }
     },
     async addGitlabAccount() {
       try {
-        const { serverUrl, applicationId } = await store.dispatch('modal/open', { type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
         await gitlabHelper.addAccount(serverUrl, applicationId);
       } catch (e) { /* cancel */ }
     },
     async addGoogleDriveAccount() {
       try {
-        await store.dispatch('modal/open', { type: 'googleDriveAccount' });
+        await useModalStore().open({ type: 'googleDriveAccount' });
         await googleHelper.addDriveAccount(!store.getters['data/localSettings'].googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
@@ -195,7 +196,7 @@ export default {
     },
     async addZendeskAccount() {
       try {
-        const { subdomain, clientId } = await store.dispatch('modal/open', { type: 'zendeskAccount' });
+        const { subdomain, clientId } = await useModalStore().open({ type: 'zendeskAccount' });
         await zendeskHelper.addAccount(subdomain, clientId);
       } catch (e) { /* cancel */ }
     },

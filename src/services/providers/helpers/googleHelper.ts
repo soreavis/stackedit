@@ -6,6 +6,7 @@
 import utils from '../../utils';
 import networkSvc from '../../networkSvc';
 import store from '../../../store';
+import { useModalStore } from '../../../stores/modal';
 import userSvc from '../../userSvc';
 import badgeSvc from '../../badgeSvc';
 
@@ -245,7 +246,7 @@ export default {
       if (store.state.offline) {
         throw err;
       }
-      await store.dispatch('modal/open', {
+      await useModalStore().open({
         type: 'providerRedirection',
         name: 'Google',
       });

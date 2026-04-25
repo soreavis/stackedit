@@ -5,6 +5,7 @@
 // tracking; full typing requires per-provider response interfaces.
 import networkSvc from '../../networkSvc';
 import store from '../../../store';
+import { useModalStore } from '../../../stores/modal';
 import badgeSvc from '../../badgeSvc';
 
 const tokenExpirationMargin = 5 * 60 * 1000; // 5 min (WordPress tokens expire after 2 weeks)
@@ -65,7 +66,7 @@ export default {
     }
     // Existing token is going to expire.
     // Try to get a new token in background
-    await store.dispatch('modal/open', {
+    await useModalStore().open({
       type: 'providerRedirection',
       name: 'WordPress',
     });

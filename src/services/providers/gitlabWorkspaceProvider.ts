@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 import gitlabHelper from './helpers/gitlabHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
@@ -80,7 +81,7 @@ export default new Provider({
     const sub = workspace ? workspace.sub : utils.queryParams.sub;
     let token = store.getters['data/gitlabTokensBySub'][sub];
     if (!token) {
-      const { applicationId } = await store.dispatch('modal/open', {
+      const { applicationId } = await useModalStore().open({
         type: 'gitlabAccount',
         forceServerUrl: serverUrl,
       });

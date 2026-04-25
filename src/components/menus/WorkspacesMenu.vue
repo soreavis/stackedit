@@ -37,7 +37,7 @@ import { mapGetters } from 'vuex';
 import MenuEntry from './common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import gitlabHelper from '../../services/providers/helpers/gitlabHelper';
-import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 
 export default {
   components: {
@@ -55,23 +55,23 @@ export default {
   methods: {
     async addCouchdbWorkspace() {
       try {
-        store.dispatch('modal/open', {
+        useModalStore().open({
           type: 'couchdbWorkspace',
         });
       } catch (e) { /* Cancel */ }
     },
     async addGithubWorkspace() {
       try {
-        store.dispatch('modal/open', {
+        useModalStore().open({
           type: 'githubWorkspace',
         });
       } catch (e) { /* Cancel */ }
     },
     async addGitlabWorkspace() {
       try {
-        const { serverUrl, applicationId } = await store.dispatch('modal/open', { type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
         const token = await gitlabHelper.addAccount(serverUrl, applicationId);
-        store.dispatch('modal/open', {
+        useModalStore().open({
           type: 'gitlabWorkspace',
           token,
         });
@@ -80,7 +80,7 @@ export default {
     async addGoogleDriveWorkspace() {
       try {
         const token = await googleHelper.addDriveAccount(true);
-        store.dispatch('modal/open', {
+        useModalStore().open({
           type: 'googleDriveWorkspace',
           token,
         });
@@ -88,7 +88,7 @@ export default {
     },
     manageWorkspaces() {
       try {
-        store.dispatch('modal/open', 'workspaceManagement');
+        useModalStore().open('workspaceManagement');
       } catch (e) { /* Cancel */ }
     },
   },
