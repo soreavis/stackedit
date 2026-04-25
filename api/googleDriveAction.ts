@@ -1,6 +1,6 @@
 export const config = { runtime: 'edge' };
 
-export default function handler(req) {
+export default function handler(req: Request): Response {
   const url = new URL(req.url);
   const state = encodeURIComponent(url.searchParams.get('state') || '');
   return Response.redirect(
