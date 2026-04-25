@@ -27,7 +27,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
+import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
 import faq from '../../data/faq.md?raw';
@@ -40,7 +41,7 @@ export default {
     version: VERSION,
   }),
   computed: {
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
     faq() {

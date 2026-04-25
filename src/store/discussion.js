@@ -1,6 +1,7 @@
 import utils from '../services/utils';
 import googleHelper from '../services/providers/helpers/googleHelper';
 import syncSvc from '../services/syncSvc';
+import { useModalStore } from '../stores/modal';
 
 const idShifter = offset => (state, getters) => {
   const ids = Object.keys(getters.currentFileDiscussions)
@@ -136,7 +137,7 @@ export default {
       const loginToken = rootGetters['workspace/loginToken'];
       if (!loginToken) {
         try {
-          await dispatch('modal/open', 'signInForComment', { root: true });
+          await useModalStore().open('signInForComment');
           await googleHelper.signin();
           syncSvc.requestSync();
           await dispatch('createNewDiscussion', selection);

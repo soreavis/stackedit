@@ -17,7 +17,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
+import { useModalStore } from '../../../stores/modal';
 import ModalInner from '../common/ModalInner';
 import FormEntry from '../common/FormEntry';
 
@@ -36,7 +37,7 @@ export default {
     thumbnailUrl() {
       return `url(${makeThumbnail(this.config.url, 320)})`;
     },
-    ...mapGetters('modal', [
+    ...mapPiniaState(useModalStore, [
       'config',
     ]),
   },

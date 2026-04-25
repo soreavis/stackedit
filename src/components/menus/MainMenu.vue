@@ -129,6 +129,7 @@ import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import userSvc from '../../services/userSvc';
 import store from '../../store';
+import { useModalStore } from '../../stores/modal';
 
 export default {
   components: {
@@ -188,7 +189,7 @@ export default {
     },
     async fileProperties() {
       try {
-        await store.dispatch('modal/open', 'fileProperties');
+        await useModalStore().open('fileProperties');
       } catch (e) {
         // Cancel
       }
@@ -198,33 +199,33 @@ export default {
     },
     async settings() {
       try {
-        await store.dispatch('modal/open', 'settings');
+        await useModalStore().open('settings');
       } catch (e) { /* Cancel */ }
     },
     async templates() {
       try {
-        await store.dispatch('modal/open', 'templates');
+        await useModalStore().open('templates');
       } catch (e) { /* Cancel */ }
     },
     async accounts() {
       try {
-        await store.dispatch('modal/open', 'accountManagement');
+        await useModalStore().open('accountManagement');
       } catch (e) { /* Cancel */ }
     },
     async badges() {
       try {
-        await store.dispatch('modal/open', 'badgeManagement');
+        await useModalStore().open('badgeManagement');
       } catch (e) { /* Cancel */ }
     },
     async reset() {
       try {
-        await store.dispatch('modal/open', 'reset');
+        await useModalStore().open('reset');
         localStorage.setItem('resetStackEdit', '1');
         window.location.reload();
       } catch (e) { /* Cancel */ }
     },
     about() {
-      store.dispatch('modal/open', 'about');
+      useModalStore().open('about');
     },
   },
 };

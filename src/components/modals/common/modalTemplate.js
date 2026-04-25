@@ -1,6 +1,7 @@
 import ModalInner from './ModalInner';
 import FormEntry from './FormEntry';
 import store from '../../../store';
+import { useModalStore } from '../../../stores/modal';
 
 const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
 
@@ -19,7 +20,7 @@ export default (desc) => {
     computed: {
       ...desc.computed || {},
       config() {
-        return store.getters['modal/config'];
+        return useModalStore().config;
       },
       currentFileName() {
         return store.getters['file/current'].name;
@@ -27,7 +28,7 @@ export default (desc) => {
     },
     methods: {
       ...desc.methods || {},
-      openFileProperties: () => store.dispatch('modal/open', 'fileProperties'),
+      openFileProperties: () => useModalStore().open('fileProperties'),
       setError(name) {
         clearTimeout(this.errorTimeouts[name]);
         const formEntry = this.$el.querySelector(`.form-entry[error=${name}]`);
@@ -64,7 +65,7 @@ export default (desc) => {
       };
       // Make use of `function` to have `this` bound to the component
       component.methods.configureTemplates = async function () {  
-        const { selectedId } = await store.dispatch('modal/open', {
+        const { selectedId } = await useModalStore().open({
           type: 'templates',
           selectedId: this.selectedTemplate,
         });
