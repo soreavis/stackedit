@@ -1,4 +1,7 @@
-import markdownItEmoji from 'markdown-it-emoji';
+// markdown-it-emoji v3 split its export into `bare` / `light` / `full`.
+// We use `full` (=bundled emoji map + named-shortcuts support) to match
+// the v1 default behavior.
+import { full as markdownItEmoji } from 'markdown-it-emoji';
 import extensionSvc from '../services/extensionSvc';
 
 extensionSvc.onGetOptions((options, properties) => {
