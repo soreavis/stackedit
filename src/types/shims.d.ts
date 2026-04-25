@@ -31,3 +31,4 @@ declare module 'abcjs';
 declare module 'mermaid';
 declare module 'prismjs';
 declare module 'markdown-it';
+declare module 'turndown/lib/turndown.browser.umd';
