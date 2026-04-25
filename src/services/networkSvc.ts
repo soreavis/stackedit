@@ -1,5 +1,6 @@
 import utils from './utils';
 import store from '../store';
+import { useNotificationStore } from '../stores/notification';
 import constants from '../data/constants';
 
 interface RequestConfig {
@@ -113,9 +114,9 @@ export default {
       if (store.state.offline !== offline) {
         store.commit('setOffline', offline);
         if (offline) {
-          store.dispatch('notification/error', 'You are offline.');
+          useNotificationStore().error('You are offline.');
         } else {
-          store.dispatch('notification/info', 'You are back online!');
+          useNotificationStore().info('You are back online!');
           this.getServerConf();
         }
       }

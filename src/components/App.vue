@@ -22,6 +22,7 @@ import networkSvc from '../services/networkSvc';
 import tempFileSvc from '../services/tempFileSvc';
 import uiPersistence from '../services/uiPersistence';
 import store from '../store';
+import { useNotificationStore } from '../stores/notification';
 import './common/vueGlobals';
 
 const themeClasses = {
@@ -64,7 +65,7 @@ export default {
         window.location.reload();
       } else if (err && err.message !== 'RELOAD') {
         console.error(err);  
-        store.dispatch('notification/error', err);
+        useNotificationStore().error(err);
       }
     }
   },

@@ -1,4 +1,5 @@
 import store from '../store';
+import { useNotificationStore } from '../stores/notification';
 
 interface Badge {
   isEarned: boolean;
@@ -15,7 +16,7 @@ const showInfo = (): void => {
   const earnedBadges: Badge[] = (store.getters['data/allBadges'] as Badge[])
     .filter(badge => badge.isEarned && !previouslyEarned.has(badge.featureId));
   if (earnedBadges.length) {
-    store.dispatch('notification/badge', earnedBadges.length > 1
+    useNotificationStore().badge(earnedBadges.length > 1
       ? `You've earned ${earnedBadges.length} badges: ${earnedBadges.map(badge => `"${badge.name}"`).join(', ')}.`
       : `You've earned 1 badge: "${earnedBadges[0].name}".`);
   }
