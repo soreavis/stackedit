@@ -1,11 +1,19 @@
 import store from '../store';
 
-let lastEarnedFeatureIds = null;
-let debounceTimeoutId;
+interface Badge {
+  isEarned: boolean;
+  featureId: string;
+  name: string;
+}
 
-const showInfo = () => {
-  const earnedBadges = store.getters['data/allBadges']
-    .filter(badge => badge.isEarned && !lastEarnedFeatureIds.has(badge.featureId));
+let lastEarnedFeatureIds: Set<string> | null = null;
+let debounceTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+const showInfo = (): void => {
+  if (!lastEarnedFeatureIds) return;
+  const previouslyEarned = lastEarnedFeatureIds;
+  const earnedBadges: Badge[] = (store.getters['data/allBadges'] as Badge[])
+    .filter(badge => badge.isEarned && !previouslyEarned.has(badge.featureId));
   if (earnedBadges.length) {
     store.dispatch('notification/badge', earnedBadges.length > 1
       ? `You've earned ${earnedBadges.length} badges: ${earnedBadges.map(badge => `"${badge.name}"`).join(', ')}.`
@@ -15,10 +23,10 @@ const showInfo = () => {
 };
 
 export default {
-  addBadge(featureId) {
+  addBadge(featureId: string): void {
     if (!store.getters['data/badgeCreations'][featureId]) {
       if (!lastEarnedFeatureIds) {
-        const earnedFeatureIds = store.getters['data/allBadges']
+        const earnedFeatureIds: string[] = (store.getters['data/allBadges'] as Badge[])
           .filter(badge => badge.isEarned)
           .map(badge => badge.featureId);
         lastEarnedFeatureIds = new Set(earnedFeatureIds);
