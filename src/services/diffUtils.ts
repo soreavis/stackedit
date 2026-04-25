@@ -1,3 +1,8 @@
+// @ts-nocheck
+// Utility module with dynamic-shape inputs (yaml properties, diff
+// tuples, marker offset maps). Full typing requires defining shared
+// content/discussion shapes — out of scope for this incremental
+// migration.
 import DiffMatchPatch from 'diff-match-patch';
 import utils from './utils';
 
