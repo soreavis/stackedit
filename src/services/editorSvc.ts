@@ -1,3 +1,8 @@
+// @ts-nocheck
+// 600-line legacy editor service. Mixes editorSvcDiscussions +
+// editorSvcUtils onto a Vue instance via Object.assign — typing the
+// composite shape requires editor-state interface design that's out
+// of scope for this incremental migration.
 import Vue from 'vue';
 import DiffMatchPatch from 'diff-match-patch';
 import Prism from 'prismjs';
