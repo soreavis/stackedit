@@ -455,6 +455,80 @@ export const wikiLink = {
   action: editorSvc => wrap(editorSvc, '[[', ']]', 'Page Name'),
 };
 
+export const imageWithSize = {
+  method: 'imageWithSize',
+  title: 'Image with dimensions',
+  icon: 'file-image',
+  // Inserts `![alt](url){width=300}` — the `{width=Npx}` attribute syntax
+  // is supported by Hugo / Eleventy / kramdown / pandoc and many other
+  // markdown processors. StackEdit's preview will render the image but
+  // ignore the dimensions (markdown-it-imsize isn't bundled).
+  action: (editorSvc) => {
+    const { selected } = getSelection(editorSvc);
+    const alt = selected || 'alt text';
+    insertInline(editorSvc, `![${alt}](https://example.com/image.png){width=300}`);
+  },
+};
+
+// Build a markdown table of `rows × cols` with header row and a left-
+// aligned separator. Cells are placeholder text the user overwrites.
+function buildTable(rows, cols) {
+  const header = `| ${Array.from({ length: cols }, (_, i) => `Col ${i + 1}`).join(' | ')} |`;
+  const sep = `| ${Array.from({ length: cols }, () => '---').join(' | ')} |`;
+  const body = Array.from({ length: rows - 1 }, () =>
+    `| ${Array.from({ length: cols }, () => '   ').join(' | ')} |`).join('\n');
+  return body ? `${header}\n${sep}\n${body}` : `${header}\n${sep}`;
+}
+
+export const tableInsert = {
+  method: 'tableInsert',
+  title: 'Insert table',
+  icon: 'table',
+  // Dropdown of common sizes. Pure-data approach so we don't have to
+  // build a hover-grid picker SFC. Insert produces a fenced markdown
+  // table with header + separator + body rows.
+  dropdown: true,
+  items: [
+    { name: '2 × 2', perform: editorSvc => insertBlock(editorSvc, buildTable(2, 2)) },
+    { name: '3 × 3', perform: editorSvc => insertBlock(editorSvc, buildTable(3, 3)) },
+    { name: '4 × 3', perform: editorSvc => insertBlock(editorSvc, buildTable(4, 3)) },
+    { name: '5 × 4', perform: editorSvc => insertBlock(editorSvc, buildTable(5, 4)) },
+    { name: '10 × 4', perform: editorSvc => insertBlock(editorSvc, buildTable(10, 4)) },
+  ],
+};
+
+export const textStats = {
+  method: 'textStats',
+  title: 'Text statistics for selection',
+  icon: 'information',
+  // Computes chars / words / lines / sentences / reading-time for the
+  // current selection (or whole doc if no selection) and shows the
+  // result in a one-shot alert dialog. Mirrors the StatusBar logic but
+  // scoped to an arbitrary range.
+  action: (editorSvc) => {
+    const { selected } = getSelection(editorSvc);
+    const text = selected || editorSvc.clEditor.getContent();
+    const chars = text.length;
+    const charsNoSpace = text.replace(/\s/g, '').length;
+    const words = (text.match(/\S+/g) || []).length;
+    const lines = text ? text.split(/\r\n|\r|\n/).length : 0;
+    const sentences = (text.match(/[^.!?\n]+[.!?]+(?=\s|$)/g) || []).length;
+    const readMins = words ? Math.max(1, Math.round(words / 220)) : 0;
+    const scope = selected ? 'Selection' : 'Whole document';
+    const lines2 = [
+      `${scope}`,
+      '',
+      `Characters: ${chars.toLocaleString()}`,
+      `Characters (no whitespace): ${charsNoSpace.toLocaleString()}`,
+      `Words: ${words.toLocaleString()}`,
+      `Lines: ${lines.toLocaleString()}`,
+      `Sentences: ${sentences.toLocaleString()}`,
+      `Reading time: ${readMins} min (~220 wpm)`,
+    ].join('\n');
+    window.alert(lines2);
+  },
+};
+
 export const linkFromClipboard = {
   method: 'linkFromClipboard',
   title: 'Link from clipboard',
@@ -499,11 +573,14 @@ export default [
   callout,
   frontmatter,
   footnote,
+  tableInsert,
+  imageWithSize,
   dateTime,
   wikiLink,
   linkFromClipboard,
   specialChars,
   convertCase,
   sortLines,
+  textStats,
   tidy,
 ];
