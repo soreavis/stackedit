@@ -1,7 +1,7 @@
 # StackEdit (soreavis)
 
 [![CI](https://github.com/soreavis/stackedit/actions/workflows/ci.yml/badge.svg)](https://github.com/soreavis/stackedit/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-5.15.5--fork.2-blue)
+![Version](https://img.shields.io/badge/version-5.16.0-blue)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 ![Node](https://img.shields.io/badge/node-22.x-green?logo=nodedotjs&logoColor=white)
 ![Vue 2](https://img.shields.io/badge/vue-2.7-42b883?logo=vuedotjs&logoColor=white)
