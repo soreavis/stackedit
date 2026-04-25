@@ -390,8 +390,66 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
     if (!data) {
       return;
     }
-    replace(selectionMgr.selectionStart, selectionMgr.selectionEnd, data);
+    // Auto-link: if the clipboard is a bare URL and there's a non-empty
+    // text selection, wrap as `[selected](url)` in one shot. Useful enough
+    // daily that it's worth the small carve-out from the default paste-as-
+    // text path. Trim before testing — pasted URLs often have trailing
+    // whitespace from the source app.
+    const start = selectionMgr.selectionStart;
+    const end = selectionMgr.selectionEnd;
+    const trimmed = data.trim();
+    if (start !== end && /^https?:\/\/\S+$/i.test(trimmed)) {
+      const text = getTextContent();
+      const selected = text.slice(Math.min(start, end), Math.max(start, end));
+      replace(start, end, `[${selected}](${trimmed})`);
+      adjustCursorPosition();
+      return;
+    }
+    replace(start, end, data);
     adjustCursorPosition();
+  });
+
+  // Drag-and-drop image upload: dropping image files onto the editor
+  // converts each to a base64 data URL and inserts a markdown image at
+  // the cursor. Mirrors the paste-image path in shape — bypasses any
+  // configured upload provider so it works offline / without setup.
+  // Files are read sequentially so multi-image drops insert in order.
+  contentElt.addEventListener('dragover', (evt) => {
+    if (!evt.dataTransfer) return;
+    const types = Array.from(evt.dataTransfer.types || []);
+    if (types.includes('Files')) {
+      evt.preventDefault();
+      evt.dataTransfer.dropEffect = 'copy';
+    }
+  });
+  contentElt.addEventListener('drop', (evt) => {
+    if (!evt.dataTransfer) return;
+    const files = Array.from(evt.dataTransfer.files || []);
+    const images = files.filter(f => f.type && f.type.startsWith('image/'));
+    if (!images.length) return;
+    evt.preventDefault();
+    undoMgr.setCurrentMode('single');
+    const insertOne = (file) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const alt = (file.name && file.name.replace(/\.[^.]+$/, '')) || 'image';
+        const md = `![${alt}](${reader.result})`;
+        replace(selectionMgr.selectionStart, selectionMgr.selectionEnd, md);
+        adjustCursorPosition();
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
+    (async () => {
+      for (let i = 0; i < images.length; i += 1) {
+        await insertOne(images[i]);
+        if (i < images.length - 1) {
+          // Newline between sequential image inserts
+          replace(selectionMgr.selectionStart, selectionMgr.selectionEnd, '\n');
+          adjustCursorPosition();
+        }
+      }
+    })();
   });
 
   contentElt.addEventListener('focus', () => {
