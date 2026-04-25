@@ -1,5 +1,8 @@
 import FileSaver from 'file-saver';
-import TemplateWorker from './templateWorker.js?worker';
+// Vite resolves `./templateWorker` to .ts via resolve.extensions. The
+// previous explicit `.js` was kept around for the original .js file —
+// drop it now that the worker source is .ts.
+import TemplateWorker from './templateWorker?worker';
 import localDbSvc from './localDbSvc';
 import markdownConversionSvc from './markdownConversionSvc';
 import extensionSvc from './extensionSvc';
