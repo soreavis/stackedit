@@ -45,9 +45,32 @@ const latex = {
   comment: /%.*/g,
 };
 
+// Prism grammar tree for the in-editor markdown highlighter. The shape is
+// a recursive Prism `Token` graph (regex `pattern` plus nested `inside`
+// definitions) — strictly typing the whole tree is busy-work for no
+// payoff, so the value type stays loose. Only the entry-point options
+// surface gets a real shape.
+interface GrammarOptions {
+  insideFences?: Record<string, unknown>;
+  fence?: boolean;
+  tasklist?: boolean;
+  footnote?: boolean;
+  abbr?: boolean;
+  math?: boolean;
+  imgsize?: boolean;
+  sub?: boolean;
+  sup?: boolean;
+  mark?: boolean;
+  del?: boolean;
+  emoji?: { enabled?: boolean };
+  [key: string]: unknown;
+}
+
+type Grammars = Record<string, Record<string, any>>;
+
 export default {
-  makeGrammars(options) {
-    const grammars = {
+  makeGrammars(options: GrammarOptions): Grammars {
+    const grammars: Grammars = {
       main: {},
       list: {},
       blockquote: {},
@@ -160,7 +183,7 @@ export default {
       };
     }
 
-    const defs = {};
+    const defs: Record<string, any> = {};
     if (options.footnote) {
       defs.fndef = {
         pattern: /^ {0,3}\[\^.*?\]:.*$/gm,
@@ -212,7 +235,7 @@ export default {
       pattern: /^\s*\n(?: {4}|\t).*\S.*\n((?: {4}|\t).*\n)*/gm,
     };
 
-    const rest = {};
+    const rest: Record<string, any> = {};
     rest.code = {
       pattern: /(`+)[\s\S]*?\1/g,
       inside: {
