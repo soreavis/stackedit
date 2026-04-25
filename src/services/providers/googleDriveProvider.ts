@@ -8,6 +8,7 @@ import googleHelper from './helpers/googleHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
 import workspaceSvc from '../workspaceSvc';
+import { useQueueStore } from '../../stores/queue';
 
 export default new Provider({
   id: 'googleDrive',
@@ -97,8 +98,7 @@ export default new Provider({
         return this.makeLocation(token, null, googleHelper.driveActionFolder.id);
       }
       case 'open':
-        store.dispatch(
-          'queue/enqueue',
+        useQueueStore().enqueue(
           () => this.openFiles(token, googleHelper.driveActionFiles),
         );
         return null;

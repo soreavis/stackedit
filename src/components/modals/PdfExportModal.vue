@@ -31,6 +31,7 @@ import googleHelper from '../../services/providers/helpers/googleHelper';
 import modalTemplate from './common/modalTemplate';
 import store from '../../store';
 import badgeSvc from '../../services/badgeSvc';
+import { useQueueStore } from '../../stores/queue';
 
 export default modalTemplate({
   computedLocalSettings: {
@@ -40,7 +41,7 @@ export default modalTemplate({
     async resolve() {
       this.config.resolve();
       const currentFile = store.getters['file/current'];
-      store.dispatch('queue/enqueue', async () => {
+      useQueueStore().enqueue(async () => {
         const [sponsorToken, html] = await Promise.all([
           Promise.resolve().then(() => {
             const tokenToRefresh = store.getters['workspace/sponsorToken'];
