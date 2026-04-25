@@ -9,7 +9,7 @@ const htmlSectionMarker = '\uF111\uF222\uF333\uF444';
 const diffMatchPatch = new DiffMatchPatch();
 
 // Create aliases for syntax highlighting
-const languageAliases = ({
+const languageAliases: Record<string, string> = {
   js: 'javascript',
   json: 'javascript',
   html: 'markup',
@@ -20,15 +20,15 @@ const languageAliases = ({
   yml: 'yaml',
   ps1: 'powershell',
   psm1: 'powershell',
-});
+};
 Object.entries(languageAliases).forEach(([alias, language]) => {
-  Prism.languages[alias] = Prism.languages[language];
+  (Prism.languages as any)[alias] = (Prism.languages as any)[language];
 });
 
 // Add programming language parsing capability to markdown fences
-const insideFences = {};
-Object.entries(Prism.languages).forEach(([name, language]) => {
-  if (Prism.util.type(language) === 'Object') {
+const insideFences: Record<string, unknown> = {};
+Object.entries(Prism.languages as Record<string, unknown>).forEach(([name, language]) => {
+  if ((Prism as any).util.type(language) === 'Object') {
     insideFences[`language-${name}`] = {
       pattern: new RegExp(`(\`\`\`|~~~)${name}\\W[\\s\\S]*`),
       inside: {
@@ -40,7 +40,7 @@ Object.entries(Prism.languages).forEach(([name, language]) => {
 });
 
 // Disable spell checking in specific tokens
-const noSpellcheckTokens = Object.create(null);
+const noSpellcheckTokens: Record<string, boolean> = Object.create(null);
 [
   'code',
   'pre',
@@ -54,14 +54,17 @@ const noSpellcheckTokens = Object.create(null);
   .forEach((key) => {
     noSpellcheckTokens[key] = true;
   });
-Prism.hooks.add('wrap', (env) => {
+(Prism.hooks as any).add('wrap', (env: any) => {
   if (noSpellcheckTokens[env.type]) {
     env.attributes.spellcheck = 'false';
   }
 });
 
-function createFlagMap(arr) {
-  return arr.reduce((map, type) => ({ ...map, [type]: true }), {});
+function createFlagMap(arr: string[]): Record<string, true> {
+  return arr.reduce<Record<string, true>>((map, type) => {
+    map[type] = true;
+    return map;
+  }, {});
 }
 const startSectionBlockTypeMap = createFlagMap([
   'paragraph_open',
@@ -90,8 +93,12 @@ const deflistBlockTypeMap = createFlagMap([
   'dl_open',
 ]);
 
-function hashArray(arr, valueHash, valueArray) {
-  const hash = [];
+function hashArray(
+  arr: string[],
+  valueHash: Record<string, number>,
+  valueArray: string[],
+): string {
+  const hash: number[] = [];
   arr.forEach((str) => {
     let strHash = valueHash[str];
     if (strHash === undefined) {
@@ -104,13 +111,29 @@ function hashArray(arr, valueHash, valueArray) {
   return String.fromCharCode.apply(null, hash);
 }
 
-export default {
-  defaultOptions: null,
-  defaultConverter: null,
-  defaultPrismGrammars: null,
+interface ParsingCtx {
+  text: string;
+  sections: Array<{ text: string; data: string }>;
+  converter: any;
+  markdownState: any;
+  markdownCoreRules: any[];
+  sectionList?: unknown[];
+}
 
-  init() {
-    const defaultProperties = { extensions: utils.computedPresets.default };
+interface ConversionCtx {
+  text: string;
+  sectionList?: unknown[];
+  htmlSectionList: string[];
+  htmlSectionDiff: unknown;
+}
+
+export default {
+  defaultOptions: null as any,
+  defaultConverter: null as any,
+  defaultPrismGrammars: null as any,
+
+  init(): void {
+    const defaultProperties = { extensions: (utils as any).computedPresets.default };
 
     // Default options for the markdown converter and the grammar
     this.defaultOptions = {
@@ -119,14 +142,13 @@ export default {
     };
 
     this.defaultConverter = this.createConverter(this.defaultOptions);
-    this.defaultPrismGrammars = markdownGrammarSvc.makeGrammars(this.defaultOptions);
+    this.defaultPrismGrammars = (markdownGrammarSvc as any).makeGrammars(this.defaultOptions);
   },
 
   /**
    * Creates a converter and init it with extensions.
-   * @returns {Object} A converter.
    */
-  createConverter(options) {
+  createConverter(options: any): any {
     // Let the listeners add the rules
     const converter = new MarkdownIt('zero');
     converter.core.ruler.enable([], true);
@@ -135,7 +157,7 @@ export default {
     extensionSvc.initConverter(converter, options);
     Object.keys(startSectionBlockTypeMap).forEach((type) => {
       const rule = converter.renderer.rules[type] || converter.renderer.renderToken;
-      converter.renderer.rules[type] = (tokens, idx, opts, env, self) => {
+      converter.renderer.rules[type] = (tokens: any, idx: number, opts: any, env: any, self: any) => {
         if (tokens[idx].sectionDelimiter) {
           // Add section delimiter
           return htmlSectionMarker + rule.call(converter.renderer, tokens, idx, opts, env, self);
@@ -148,11 +170,8 @@ export default {
 
   /**
    * Parse markdown sections by passing the 2 first block rules of the markdown-it converter.
-   * @param {Object} converter The markdown-it converter.
-   * @param {String} text The text to be parsed.
-   * @returns {Object} A parsing context to be passed to `convert`.
    */
-  parseSections(converter, text) {
+  parseSections(converter: any, text: string): ParsingCtx {
     const markdownState = new converter.core.State(text, converter, {});
     const markdownCoreRules = converter.core.ruler.getRules('');
     markdownCoreRules[0](markdownState); // Pass the normalize rule
@@ -163,7 +182,7 @@ export default {
       // Remove it as one will be added by addSection
       lines.pop();
     }
-    const parsingCtx = {
+    const parsingCtx: ParsingCtx = {
       text,
       sections: [],
       converter,
@@ -173,7 +192,7 @@ export default {
     let data = 'main';
     let i = 0;
 
-    function addSection(maxLine) {
+    function addSection(maxLine: number) {
       const section = {
         text: '',
         data,
@@ -185,7 +204,7 @@ export default {
         parsingCtx.sections.push(section);
       }
     }
-    markdownState.tokens.forEach((token, index) => {
+    markdownState.tokens.forEach((token: any, index: number) => {
       // index === 0 means there are empty lines at the begining of the file
       if (token.level === 0 && startSectionBlockTypeMap[token.type] === true) {
         if (index > 0) {
@@ -211,21 +230,19 @@ export default {
 
   /**
    * Convert markdown sections previously parsed with `parseSections`.
-   * @param {Object} parsingCtx The parsing context returned by `parseSections`.
-   * @param {Object} previousConversionCtx The conversion context returned by a previous call
-   * to `convert`, in order to calculate the `htmlSectionDiff` of the returned conversion context.
-   * @returns {Object} A conversion context.
    */
-  convert(parsingCtx, previousConversionCtx) {
+  convert(parsingCtx: ParsingCtx, previousConversionCtx?: ConversionCtx): ConversionCtx {
     // This function can be called twice without editor modification
     // so prevent from converting it again.
     if (!parsingCtx.markdownState.isConverted) {
       // Skip 2 first rules previously passed in parseSections
-      parsingCtx.markdownCoreRules.slice(2).forEach(rule => rule(parsingCtx.markdownState));
+      parsingCtx.markdownCoreRules
+        .slice(2)
+        .forEach((rule: (state: unknown) => void) => rule(parsingCtx.markdownState));
       parsingCtx.markdownState.isConverted = true;
     }
     const { tokens } = parsingCtx.markdownState;
-    const html = parsingCtx.converter.renderer.render(
+    const html: string = parsingCtx.converter.renderer.render(
       tokens,
       parsingCtx.converter.options,
       parsingCtx.markdownState.env,
@@ -234,10 +251,10 @@ export default {
     if (htmlSectionList[0] === '') {
       htmlSectionList.shift();
     }
-    const valueHash = Object.create(null);
-    const valueArray = [];
+    const valueHash: Record<string, number> = Object.create(null);
+    const valueArray: string[] = [];
     const newSectionHash = hashArray(htmlSectionList, valueHash, valueArray);
-    let htmlSectionDiff;
+    let htmlSectionDiff: unknown;
     if (previousConversionCtx) {
       const oldSectionHash = hashArray(
         previousConversionCtx.htmlSectionList,
@@ -260,14 +277,17 @@ export default {
 
   /**
    * Helper to highlight arbitrary markdown
-   * @param {Object} markdown The markdown content to highlight.
-   * @param {Object} converter An optional converter.
-   * @param {Object} grammars Optional grammars.
-   * @returns {Object} The highlighted markdown in HTML format.
    */
-  highlight(markdown, converter = this.defaultConverter, grammars = this.defaultPrismGrammars) {
-    const parsingCtx = this.parseSections(converter, markdown);
+  highlight(
+    markdown: string,
+    converter?: any,
+    grammars?: Record<string, unknown>,
+  ): string {
+    const useConverter = converter || this.defaultConverter;
+    const useGrammars = grammars || this.defaultPrismGrammars;
+    const parsingCtx = this.parseSections(useConverter, markdown);
     return parsingCtx.sections
-      .map(section => Prism.highlight(section.text, grammars[section.data])).join('');
+      .map(section => (Prism.highlight as any)(section.text, useGrammars[section.data]))
+      .join('');
   },
 };
