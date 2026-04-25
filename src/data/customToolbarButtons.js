@@ -8,6 +8,8 @@
 // optionally restore a sensible cursor position afterwards via
 // `selectionMgr.setSelectionStartEnd`.
 
+import store from '../store';
+
 function getSelection(editorSvc) {
   const sel = editorSvc.clEditor.selectionMgr;
   const start = Math.min(sel.selectionStart, sel.selectionEnd);
@@ -503,31 +505,119 @@ export const textStats = {
   method: 'textStats',
   title: 'Text statistics for selection',
   icon: 'information',
-  // Computes chars / words / lines / sentences / reading-time for the
-  // current selection (or whole doc if no selection) and shows the
-  // result in a one-shot alert dialog. Mirrors the StatusBar logic but
-  // scoped to an arbitrary range.
+  // Counts a mix of language-agnostic metrics (chars / words / lines /
+  // sentences / reading- and speaking-time / token estimate) plus
+  // markdown-aware structural counts (heading level breakdown, fenced
+  // code blocks, inline code, links, images, GFM task completion).
+  // Markdown counts are best-effort regex — close enough for an info
+  // popup, not authoritative. Optional sections only render when the
+  // doc contains the relevant construct, so plain prose stays terse.
   action: (editorSvc) => {
     const { selected } = getSelection(editorSvc);
     const text = selected || editorSvc.clEditor.getContent();
+
+    // Language-agnostic counts.
     const chars = text.length;
     const charsNoSpace = text.replace(/\s/g, '').length;
     const words = (text.match(/\S+/g) || []).length;
-    const lines = text ? text.split(/\r\n|\r|\n/).length : 0;
+    const lineCount = text ? text.split(/\r\n|\r|\n/).length : 0;
     const sentences = (text.match(/[^.!?\n]+[.!?]+(?=\s|$)/g) || []).length;
     const readMins = words ? Math.max(1, Math.round(words / 220)) : 0;
+    // ~150 wpm is the widely-cited mid-range for adult read-aloud /
+    // presentation pace; pairs with the existing 220 wpm silent-reading
+    // rate. Same Math.max guard so a one-word selection still says "1 min".
+    const speakMins = words ? Math.max(1, Math.round(words / 150)) : 0;
+    // Rough chars/4 tokenizer-agnostic estimate. Real BPE varies by
+    // model, but chars/4 is the canonical back-of-envelope for English
+    // markdown and is what every "is this prompt going to fit" check
+    // does in practice.
+    const tokensEst = Math.ceil(chars / 4);
+
+    // Paragraph count: blank-line-separated blocks that aren't pure
+    // structural markup (heading, fence, blockquote, HR / front-matter,
+    // table). Best-effort — short lists adjacent to prose may slip
+    // through, but for a stats popup this is good enough.
+    const paragraphs = text
+      .split(/\n\s*\n/)
+      .map(b => b.trim())
+      .filter(b => b && !/^(#{1,6}\s|```|~~~|>|---|===|\|)/.test(b))
+      .length;
+
+    // Markdown-aware structure (best-effort regex).
+    const headingsByLevel = [0, 0, 0, 0, 0, 0];
+    (text.match(/^#{1,6}\s/gm) || []).forEach((m) => {
+      headingsByLevel[m.trim().length - 1] += 1;
+    });
+    const headingsTotal = headingsByLevel.reduce((a, b) => a + b, 0);
+
+    // Triple-backtick fenced blocks (paired). markdown-it also accepts
+    // tilde fences but they're rare in real docs — skip for simplicity.
+    const codeBlocks = (text.match(/^```[^\n]*\n[\s\S]*?\n```/gm) || []).length;
+    // Strip fenced blocks first, then count inline code spans.
+    const noFences = text.replace(/^```[\s\S]*?\n```/gm, '');
+    const inlineCode = (noFences.match(/`[^`\n]+`/g) || []).length;
+
+    // Link / image counts run on a fully code-stripped copy so tutorial
+    // markdown that *quotes* `![alt](url)` inside backticks doesn't get
+    // double-counted as a real image. Negative-lookbehind keeps `![]()`
+    // images out of the link count. Reference-style `[text][label]`
+    // links and bare-URL linkify are not counted — the syntax-driven
+    // count is what the writer authored, not what the renderer auto-detects.
+    const prose = noFences.replace(/`[^`\n]+`/g, '');
+    const links = (prose.match(/(?<!!)\[[^\]]*\]\([^)]*\)/g) || []).length;
+    const images = (prose.match(/!\[[^\]]*\]\([^)]*\)/g) || []).length;
+
+    // GFM task list items: any list bullet followed by `[ ]`, `[x]`, or `[X]`.
+    const taskTotal = (text.match(/^[ \t]*[-*+]\s+\[[ xX]\]/gm) || []).length;
+    const taskDone = (text.match(/^[ \t]*[-*+]\s+\[[xX]\]/gm) || []).length;
+
     const scope = selected ? 'Selection' : 'Whole document';
-    const lines2 = [
-      `${scope}`,
-      '',
-      `Characters: ${chars.toLocaleString()}`,
-      `Characters (no whitespace): ${charsNoSpace.toLocaleString()}`,
-      `Words: ${words.toLocaleString()}`,
-      `Lines: ${lines.toLocaleString()}`,
-      `Sentences: ${sentences.toLocaleString()}`,
-      `Reading time: ${readMins} min (~220 wpm)`,
-    ].join('\n');
-    window.alert(lines2);
+    const lines = [
+      { section: 'Counts' },
+      { label: 'Characters', value: chars.toLocaleString() },
+      { label: 'Characters (no whitespace)', value: charsNoSpace.toLocaleString() },
+      { label: 'Words', value: words.toLocaleString() },
+      { label: 'Lines', value: lineCount.toLocaleString() },
+      { label: 'Paragraphs', value: paragraphs.toLocaleString() },
+      { label: 'Sentences', value: sentences.toLocaleString() },
+    ];
+
+    const structureRows = [];
+    if (headingsTotal > 0) {
+      const breakdown = headingsByLevel
+        .map((n, i) => (n > 0 ? `H${i + 1}: ${n}` : null))
+        .filter(Boolean)
+        .join(', ');
+      structureRows.push({ label: 'Headings', value: `${headingsTotal} (${breakdown})` });
+    }
+    if (codeBlocks > 0 || inlineCode > 0) {
+      structureRows.push({
+        label: 'Code',
+        value: `${codeBlocks} block${codeBlocks === 1 ? '' : 's'} + ${inlineCode} inline`,
+      });
+    }
+    if (links > 0 || images > 0) {
+      structureRows.push({ label: 'Links / Images', value: `${links} / ${images}` });
+    }
+    if (taskTotal > 0) {
+      const pct = Math.round((taskDone / taskTotal) * 100);
+      structureRows.push({ label: 'Tasks', value: `${taskDone}/${taskTotal} done (${pct}%)` });
+    }
+    if (structureRows.length) {
+      lines.push({ separator: true });
+      lines.push({ section: 'Structure' });
+      lines.push(...structureRows);
+    }
+
+    lines.push({ separator: true });
+    lines.push({ section: 'Reading' });
+    lines.push({ label: 'Reading time', value: `${readMins} min (~220 wpm)` });
+    if (words > 0) {
+      lines.push({ label: 'Speaking time', value: `${speakMins} min (~150 wpm)` });
+    }
+    lines.push({ label: 'Estimated tokens', value: `~${tokensEst.toLocaleString()}` });
+
+    store.dispatch('modal/open', { type: 'textStats', scope, lines }).catch(() => {});
   },
 };
 

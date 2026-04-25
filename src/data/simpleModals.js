@@ -99,6 +99,27 @@ export default {
     'No',
     'Yes, delete all',
   ),
+  textStats: simpleModal(
+    (config) => {
+      // Build a key:value table. `lines` is a flat array of {label, value}
+      // entries plus optional {section: '...'} headers and {separator: true}
+      // dividers. Renders as a definition-list-style block inside
+      // .text-stats so each row aligns left/right.
+      const rows = config.lines.map((row) => {
+        if (row.section) {
+          return `<div class="text-stats__section">${row.section}</div>`;
+        }
+        if (row.separator) {
+          return '<div class="text-stats__sep"></div>';
+        }
+        return `<div class="text-stats__row"><span class="text-stats__label">${row.label}</span><span class="text-stats__value">${row.value}</span></div>`;
+      }).join('');
+      return `<h3 class="modal__title">${config.scope}</h3>
+        <div class="text-stats">${rows}</div>`;
+    },
+    null,
+    'OK',
+  ),
   trashDeletion: simpleModal(
     '<p>Files in the trash are automatically deleted after 7 days of inactivity.</p>',
     'Ok',
