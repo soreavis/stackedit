@@ -7,6 +7,7 @@ import { tinykeys } from 'tinykeys';
 import store from '../../store';
 import editorSvc from '../../services/editorSvc';
 import syncSvc from '../../services/syncSvc';
+import { useFindReplaceStore } from '../../stores/findReplace';
 
 // -----------------------------------------------------------------------------
 // Keyboard shortcuts — chord bindings via tinykeys
@@ -27,7 +28,7 @@ const pagedownHandler = name => () => {
 };
 
 const findReplaceOpener = type => () => {
-  store.dispatch('findReplace/open', {
+  useFindReplaceStore().open({
     type,
     findText: editorSvc.clEditor.selectionMgr.hasFocus()
       && editorSvc.clEditor.selectionMgr.getSelectedText(),

@@ -1,4 +1,5 @@
 import Vue from 'vue';
+import { createPinia, PiniaVuePlugin } from 'pinia';
 import DOMPurify from 'dompurify';
 import { inject as injectAnalytics } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
@@ -9,6 +10,9 @@ import './icons';
 import App from './components/App';
 import store from './store';
 import localDbSvc from './services/localDbSvc';
+
+Vue.use(PiniaVuePlugin);
+const pinia = createPinia();
 
 // Skew protection: when a Vite deploy ships new chunk hashes, a long-open
 // tab may fail to dynamically load the old hash. Catch and reload to pick
@@ -84,5 +88,6 @@ Vue.config.productionTip = false;
 new Vue({
   el: '#app',
   store,
+  pinia,
   render: h => h(App),
 });
