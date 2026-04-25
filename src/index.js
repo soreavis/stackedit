@@ -9,6 +9,7 @@ import './services/optional';
 import './icons';
 import App from './components/App';
 import store from './store';
+import { useNotificationStore } from './stores/notification';
 import localDbSvc from './services/localDbSvc';
 
 Vue.use(PiniaVuePlugin);
@@ -50,7 +51,7 @@ const updateSW = registerSW({
   onNeedRefresh: async () => {
     if (store.state.light) return;
     try {
-      await store.dispatch('notification/confirm', 'A new version of StackEdit is ready. Reload now?');
+      await useNotificationStore().confirm('A new version of StackEdit is ready. Reload now?');
       await localDbSvc.sync();
       localStorage.updated = true;
       updateSW(true);
@@ -62,7 +63,7 @@ const updateSW = registerSW({
 });
 
 if (localStorage.updated) {
-  store.dispatch('notification/info', 'StackEdit has just updated itself!');
+  useNotificationStore().info('StackEdit has just updated itself!');
   setTimeout(() => localStorage.removeItem('updated'), 2000);
 }
 
@@ -72,7 +73,7 @@ if (!localStorage.installPrompted) {
     promptEvent.preventDefault();
 
     try {
-      await store.dispatch('notification/confirm', 'Add StackEdit to your home screen?');
+      await useNotificationStore().confirm('Add StackEdit to your home screen?');
       promptEvent.prompt();
       await promptEvent.userChoice;
     } catch (err) {

@@ -1,5 +1,6 @@
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { useNotificationStore } from '../stores/notification';
 import utils from './utils';
 import networkSvc from './networkSvc';
 import exportSvc from './exportSvc';
@@ -99,13 +100,13 @@ const publishFile = async (fileId: string): Promise<void> => {
               throw err;
             }
             console.error(err);
-            store.dispatch('notification/error', err);
+            useNotificationStore().error(err);
           }
         },
       });
     });
     const file = store.state.file.itemsById[fileId];
-    store.dispatch('notification/info', `"${file.name}" was published to ${counter} location(s).`);
+    useNotificationStore().info(`"${file.name}" was published to ${counter} location(s).`);
   } finally {
     await (localDbSvc as any).unloadContents();
   }
@@ -143,7 +144,7 @@ const createPublishLocation = (publishLocation: PublishLocation, featureId?: str
     async () => {
       const publishLocationToStore = await publish(publishLocation);
       (workspaceSvc as any).addPublishLocation(publishLocationToStore);
-      store.dispatch('notification/info', `A new publication location was added to "${currentFile.name}".`);
+      useNotificationStore().info(`A new publication location was added to "${currentFile.name}".`);
       if (featureId) {
         badgeSvc.addBadge(featureId);
       }

@@ -20,6 +20,7 @@
 import FileSaver from 'file-saver';
 import MenuEntry from './common/MenuEntry';
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import backupSvc from '../../services/backupSvc';
 import localDbSvc from '../../services/localDbSvc';
 
@@ -38,7 +39,7 @@ export default {
         reader.onload = (e) => {
           const text = e.target.result;
           if (text.match(/\uFFFD/)) {
-            store.dispatch('notification/error', 'File is not readable.');
+            useNotificationStore().error('File is not readable.');
           } else {
             backupSvc.importBackup(text);
           }

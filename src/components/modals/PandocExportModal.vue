@@ -32,6 +32,7 @@ import editorSvc from '../../services/editorSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import modalTemplate from './common/modalTemplate';
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
 
@@ -70,7 +71,7 @@ export default modalTemplate({
             store.dispatch('modal/open', 'sponsorOnly');
           } else {
             console.error(err);  
-            store.dispatch('notification/error', err);
+            useNotificationStore().error(err);
           }
         }
       });

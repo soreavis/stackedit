@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useNotificationStore } from '../../stores/notification';
 import gitlabHelper from './helpers/gitlabHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
@@ -95,7 +96,7 @@ export default new Provider({
       try {
         content = await this.downloadContent(token, updatedSyncLocation);
       } catch (e) {
-        store.dispatch('notification/error', `Could not open file ${updatedSyncLocation.path}.`);
+        useNotificationStore().error(`Could not open file ${updatedSyncLocation.path}.`);
         return;
       }
 
@@ -122,7 +123,7 @@ export default new Provider({
         ...updatedSyncLocation,
         fileId: item.id,
       });
-      store.dispatch('notification/info', `${store.getters['file/current'].name} was imported from GitLab.`);
+      useNotificationStore().info(`${store.getters['file/current'].name} was imported from GitLab.`);
     }
   },
   makeLocation(token, projectPath, branch, path) {

@@ -11,8 +11,8 @@ import file from './file';
 import folder from './folder';
 import layout from './layout';
 import modal from './modal';
-import notification from './notification';
 import syncedContent from './syncedContent';
+import { useNotificationStore } from '../stores/notification';
 import userInfo from './userInfo';
 import workspace from './workspace';
 import locationTemplate from './locationTemplate';
@@ -35,7 +35,6 @@ const store = new Vuex.Store({
     folder,
     layout,
     modal,
-    notification,
     publishLocation: locationTemplate(emptyPublishLocation),
     syncedContent,
     syncLocation: locationTemplate(emptySyncLocation),
@@ -160,13 +159,13 @@ const store = new Vuex.Store({
     },
   },
   actions: {
-    setOffline: ({ state, commit, dispatch }, value) => {
+    setOffline: ({ state, commit }, value) => {
       if (state.offline !== value) {
         commit('setOffline', value);
         if (state.offline) {
           return Promise.reject(new Error('You are offline.'));
         }
-        dispatch('notification/info', 'You are back online!');
+        useNotificationStore().info('You are back online!');
       }
       return Promise.resolve();
     },
