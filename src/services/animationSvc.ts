@@ -3,14 +3,20 @@ import bezierEasing from 'bezier-easing';
 // bezier-easing@3 returns a plain `(t) => y` function; the `.get()` and
 // `.toCSS()` methods that animationSvc relies on were v2-only, so re-attach
 // them to preserve the existing call sites.
-const makeEasing = (x1, y1, x2, y2) => {
-  const fn = bezierEasing(x1, y1, x2, y2);
-  fn.get = (t) => fn(t);
+interface EasingFn {
+  (t: number): number;
+  get(t: number): number;
+  toCSS(): string;
+}
+
+const makeEasing = (x1: number, y1: number, x2: number, y2: number): EasingFn => {
+  const fn = bezierEasing(x1, y1, x2, y2) as EasingFn;
+  fn.get = (t: number) => fn(t);
   fn.toCSS = () => `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`;
   return fn;
 };
 
-const easings = {
+const easings: Record<string, EasingFn> = {
   materialIn: makeEasing(0.75, 0, 0.8, 0.25),
   materialOut: makeEasing(0.25, 0.8, 0.25, 1),
   inOut: makeEasing(0.25, 0.1, 0.67, 1),
@@ -18,9 +24,9 @@ const easings = {
 
 const vendors = ['moz', 'webkit'];
 for (let x = 0; x < vendors.length && !window.requestAnimationFrame; x += 1) {
-  window.requestAnimationFrame = window[`${vendors[x]}RequestAnimationFrame`];
-  window.cancelAnimationFrame = window[`${vendors[x]}CancelAnimationFrame`] ||
-    window[`${vendors[x]}CancelRequestAnimationFrame`];
+  (window as any).requestAnimationFrame = (window as any)[`${vendors[x]}RequestAnimationFrame`];
+  (window as any).cancelAnimationFrame = (window as any)[`${vendors[x]}CancelAnimationFrame`]
+    || (window as any)[`${vendors[x]}CancelRequestAnimationFrame`];
 }
 
 const transformStyles = [
@@ -31,7 +37,7 @@ const transformStyles = [
   'transform',
 ];
 
-const transitionEndEvents = {
+const transitionEndEvents: Record<string, string> = {
   WebkitTransition: 'webkitTransitionEnd',
   MozTransition: 'transitionend',
   msTransition: 'MSTransitionEnd',
@@ -39,10 +45,10 @@ const transitionEndEvents = {
   transition: 'transitionend',
 };
 
-function getStyle(styles) {
+function getStyle(styles: string[]): string | undefined {
   const elt = document.createElement('div');
-  return styles.reduce((result, style) => {
-    if (elt.style[style] === undefined) {
+  return styles.reduce<string | undefined>((result, style) => {
+    if ((elt.style as any)[style] === undefined) {
       return undefined;
     }
     return style;
@@ -51,59 +57,97 @@ function getStyle(styles) {
 
 const transformStyle = getStyle(transformStyles);
 const transitionStyle = getStyle(Object.keys(transitionEndEvents));
-const transitionEndEvent = transitionEndEvents[transitionStyle];
+const transitionEndEvent = transitionEndEvents[transitionStyle as string];
 
-function identity(x) {
+function identity<T>(x: T): T {
   return x;
 }
 
-function ElementAttribute(name) {
-  this.name = name;
-  this.setStart = (animation) => {
-    const value = animation.elt[name];
-    animation.$start[name] = value;
-    return value !== undefined && animation.$end[name] !== undefined;
-  };
-  this.applyCurrent = (animation) => {
-    animation.elt[name] = animation.$current[name];
-  };
+interface AttributeHandler {
+  name: string;
+  setStart(animation: Animation): boolean;
+  applyCurrent(animation: Animation): unknown;
 }
 
-function StyleAttribute(name, unit, defaultValue, wrap = identity) {
-  this.name = name;
-  this.setStart = (animation) => {
-    let value = parseFloat(animation.elt.style[name]);
+class ElementAttribute implements AttributeHandler {
+  name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  setStart(animation: Animation): boolean {
+    const value = (animation.elt as any)[this.name];
+    animation.$start[this.name] = value;
+    return value !== undefined && animation.$end[this.name] !== undefined;
+  }
+
+  applyCurrent(animation: Animation): unknown {
+    (animation.elt as any)[this.name] = animation.$current[this.name];
+    return undefined;
+  }
+}
+
+class StyleAttribute implements AttributeHandler {
+  name: string;
+  unit: string;
+  defaultValue: number;
+  wrap: (x: number) => number;
+
+  constructor(name: string, unit: string, defaultValue: number, wrap: (x: number) => number = identity) {
+    this.name = name;
+    this.unit = unit;
+    this.defaultValue = defaultValue;
+    this.wrap = wrap;
+  }
+
+  setStart(animation: Animation): boolean {
+    let value = parseFloat((animation.elt.style as any)[this.name]);
     if (Number.isNaN(value)) {
-      value = animation.$current[name] || defaultValue;
+      value = animation.$current[this.name] || this.defaultValue;
     }
-    animation.$start[name] = value;
-    return animation.$end[name] !== undefined;
-  };
-  this.applyCurrent = (animation) => {
-    animation.elt.style[name] = wrap(animation.$current[name]) + unit;
-  };
+    animation.$start[this.name] = value;
+    return animation.$end[this.name] !== undefined;
+  }
+
+  applyCurrent(animation: Animation): unknown {
+    (animation.elt.style as any)[this.name] = this.wrap(animation.$current[this.name]) + this.unit;
+    return undefined;
+  }
 }
 
-function TransformAttribute(name, unit, defaultValue, wrap = identity) {
-  this.name = name;
-  this.setStart = (animation) => {
-    let value = animation.$current[name];
+class TransformAttribute implements AttributeHandler {
+  name: string;
+  unit: string;
+  defaultValue: number;
+  wrap: (x: number) => number;
+
+  constructor(name: string, unit: string, defaultValue: number, wrap: (x: number) => number = identity) {
+    this.name = name;
+    this.unit = unit;
+    this.defaultValue = defaultValue;
+    this.wrap = wrap;
+  }
+
+  setStart(animation: Animation): boolean {
+    let value = animation.$current[this.name];
     if (value === undefined) {
-      value = defaultValue;
+      value = this.defaultValue;
     }
-    animation.$start[name] = value;
-    if (animation.$end[name] === undefined) {
-      animation.$end[name] = value;
+    animation.$start[this.name] = value;
+    if (animation.$end[this.name] === undefined) {
+      animation.$end[this.name] = value;
     }
     return value !== undefined;
-  };
-  this.applyCurrent = (animation) => {
-    const value = animation.$current[name];
-    return value !== defaultValue && `${name}(${wrap(value)}${unit})`;
-  };
+  }
+
+  applyCurrent(animation: Animation): string | false {
+    const value = animation.$current[this.name];
+    return value !== this.defaultValue && `${this.name}(${this.wrap(value)}${this.unit})`;
+  }
 }
 
-const attributes = [
+const attributes: AttributeHandler[] = [
   new ElementAttribute('scrollTop'),
   new ElementAttribute('scrollLeft'),
   new StyleAttribute('opacity', '', 1),
@@ -112,23 +156,27 @@ const attributes = [
   new TransformAttribute('translateY', 'px', 0, Math.round),
   new TransformAttribute('scale', '', 1),
   new TransformAttribute('rotate', 'deg', 0),
-].concat([
-  'width',
-  'height',
-  'top',
-  'right',
-  'bottom',
-  'left',
-].map(name => new StyleAttribute(name, 'px', 0, Math.round)));
+  ...['width', 'height', 'top', 'right', 'bottom', 'left']
+    .map(name => new StyleAttribute(name, 'px', 0, Math.round)),
+];
 
 class Animation {
-  constructor(elt) {
+  elt: HTMLElement;
+  $current: Record<string, number>;
+  $pending: Record<string, unknown>;
+  $start!: Record<string, number>;
+  $end!: Record<string, any>;
+  $attributes!: AttributeHandler[];
+  $startTime!: number;
+  $requestId?: number;
+
+  constructor(elt: HTMLElement) {
     this.elt = elt;
     this.$current = {};
     this.$pending = {};
   }
 
-  start(param1, param2, param3) {
+  start(param1?: unknown, param2?: unknown, param3?: unknown): HTMLElement {
     let endCb = param1;
     let stepCb = param2;
     let useTransition = false;
@@ -159,12 +207,12 @@ class Animation {
     return this.elt;
   }
 
-  stop() {
-    window.cancelAnimationFrame(this.$requestId);
+  stop(): void {
+    if (this.$requestId) window.cancelAnimationFrame(this.$requestId);
   }
 
-  loop(useTransition) {
-    const onTransitionEnd = (evt) => {
+  loop(useTransition: boolean): void {
+    const onTransitionEnd = (evt: Event) => {
       if (evt.target === this.elt) {
         this.elt.removeEventListener(transitionEndEvent, onTransitionEnd);
         const { endCb } = this.$end;
@@ -201,7 +249,7 @@ class Animation {
     }
 
     const coeff = this.$end.easing.get(progress);
-    const transforms = this.$attributes.reduce((result, attribute) => {
+    const transforms = this.$attributes.reduce<string[]>((result, attribute) => {
       if (progress < 1) {
         const diff = this.$end[attribute.name] - this.$start[attribute.name];
         this.$current[attribute.name] = this.$start[attribute.name] + (diff * coeff);
@@ -210,7 +258,7 @@ class Animation {
       }
       const transform = attribute.applyCurrent(this);
       if (transform) {
-        result.push(transform);
+        result.push(transform as string);
       }
       return result;
     }, []);
@@ -219,23 +267,25 @@ class Animation {
       transforms.push('translateZ(0)'); // activate GPU
     }
     const transform = transforms.join(' ');
-    this.elt.style[transformStyle] = transform;
-    this.elt.style[transitionStyle] = transition;
+    (this.elt.style as any)[transformStyle as string] = transform;
+    (this.elt.style as any)[transitionStyle as string] = transition;
     if (this.$end.stepCb) {
       this.$end.stepCb();
     }
   }
 }
 
+// Attach `width(val)` / `height(val)` / etc setter methods to Animation
+// instances so the chained call syntax works (`animate(elt).width(120)`).
 attributes.map(attribute => attribute.name).concat('duration', 'easing', 'delay')
   .forEach((name) => {
-    Animation.prototype[name] = function setter(val) {
+    (Animation.prototype as any)[name] = function setter(this: Animation, val: unknown) {
       this.$pending[name] = val;
       return this;
     };
   });
 
-function animate(elt) {
+function animate(elt: HTMLElement & { $animation?: Animation }): Animation {
   if (!elt.$animation) {
     elt.$animation = new Animation(elt);
   }
