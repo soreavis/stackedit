@@ -1,6 +1,23 @@
 import cledit from './cleditCore';
 
-const Utils = {
+// cledit's Utils namespace — defer / debounce / event hooks / DOM helpers.
+// Attached to the cledit module export at the bottom so call sites can
+// reach them as `cledit.Utils.xxx`. Other ported services (tempFileSvc,
+// markdownConversionSvc) cast cledit to `any` to read this namespace —
+// once cleditCore itself is ported we can drop those casts.
+
+interface UtilsShape {
+  isGecko: boolean;
+  isWebkit: boolean;
+  isMsie: boolean;
+  isMac: boolean;
+  defer(fn: () => void): void;
+  debounce(func: () => void, wait?: number): () => void;
+  createEventHooks(object: any): void;
+  findContainer(elt: Node, offset: number): { container: Node; offsetInContainer: number };
+}
+
+const Utils: Partial<UtilsShape> = {
   isGecko: 'MozAppearance' in document.documentElement.style,
   isWebkit: 'WebkitAppearance' in document.documentElement.style,
   isMsie: 'msTransform' in document.documentElement.style,
@@ -9,14 +26,14 @@ const Utils = {
 
 // Faster than setTimeout(0). Credit: https://github.com/stefanpenner/es6-promise
 Utils.defer = (() => {
-  const queue = new Array(1000);
+  const queue: Array<(() => void) | undefined> = new Array(1000);
   let queueLength = 0;
   function flush() {
     for (let i = 0; i < queueLength; i += 1) {
       try {
-        queue[i]();
-      } catch (e) {
-         
+        const fn = queue[i];
+        if (fn) fn();
+      } catch (e: any) {
         console.error(e.message, e.stack);
       }
       queue[i] = undefined;
@@ -29,28 +46,28 @@ Utils.defer = (() => {
   const node = document.createTextNode('');
   observer.observe(node, { characterData: true });
 
-  return (fn) => {
+  return (fn: () => void) => {
     queue[queueLength] = fn;
     queueLength += 1;
     if (queueLength === 1) {
       iterations = (iterations + 1) % 2;
-      node.data = iterations;
+      node.data = String(iterations);
     }
   };
 })();
 
-Utils.debounce = (func, wait) => {
-  let timeoutId;
-  let isExpected;
+Utils.debounce = (func: () => void, wait?: number) => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let isExpected = false;
   return wait
     ? () => {
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(func, wait);
     }
     : () => {
       if (!isExpected) {
         isExpected = true;
-        Utils.defer(() => {
+        (Utils.defer as (fn: () => void) => void)(() => {
           isExpected = false;
           func();
         });
@@ -58,22 +75,21 @@ Utils.debounce = (func, wait) => {
     };
 };
 
-Utils.createEventHooks = (object) => {
-  const listenerMap = Object.create(null);
-  object.$trigger = (eventType, ...args) => {
+Utils.createEventHooks = (object: any): void => {
+  const listenerMap: Record<string, Array<(...args: unknown[]) => void>> = Object.create(null);
+  object.$trigger = (eventType: string, ...args: unknown[]) => {
     const listeners = listenerMap[eventType];
     if (listeners) {
-      listeners.cl_each((listener) => {
+      (listeners as any).cl_each((listener: (...args: unknown[]) => void) => {
         try {
           listener.apply(object, args);
-        } catch (e) {
-           
+        } catch (e: any) {
           console.error(e.message, e.stack);
         }
       });
     }
   };
-  object.on = (eventType, listener) => {
+  object.on = (eventType: string, listener: (...args: unknown[]) => void) => {
     let listeners = listenerMap[eventType];
     if (!listeners) {
       listeners = [];
@@ -81,7 +97,7 @@ Utils.createEventHooks = (object) => {
     }
     listeners.push(listener);
   };
-  object.off = (eventType, listener) => {
+  object.off = (eventType: string, listener: (...args: unknown[]) => void) => {
     const listeners = listenerMap[eventType];
     if (listeners) {
       const index = listeners.indexOf(listener);
@@ -92,16 +108,16 @@ Utils.createEventHooks = (object) => {
   };
 };
 
-Utils.findContainer = (elt, offset) => {
+Utils.findContainer = (elt: Node, offset: number) => {
   let containerOffset = 0;
-  let container;
-  let child = elt;
+  let container: Node;
+  let child: Node | null = elt;
   do {
     container = child;
     child = child.firstChild;
     if (child) {
       do {
-        const len = child.textContent.length;
+        const len = (child.textContent || '').length;
         if (containerOffset <= offset && containerOffset + len > offset) {
           break;
         }
@@ -122,8 +138,8 @@ Utils.findContainer = (elt, offset) => {
   }
   return {
     container,
-    offsetInContainer: container.nodeType === 3 ? container.textContent.length : 0,
+    offsetInContainer: container.nodeType === 3 ? (container.textContent || '').length : 0,
   };
 };
 
-cledit.Utils = Utils;
+(cledit as any).Utils = Utils;
