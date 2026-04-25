@@ -11,12 +11,12 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
-import store from '../store';
+import { mapState } from 'pinia';
+import { useContextMenuStore } from '../stores/contextMenu';
 
 export default {
   computed: {
-    ...mapState('contextMenu', [
+    ...mapState(useContextMenuStore, [
       'coordinates',
       'items',
       'resolve',
@@ -25,7 +25,7 @@ export default {
   methods: {
     close(item = null) {
       this.resolve(item);
-      store.dispatch('contextMenu/close');
+      useContextMenuStore().close();
     },
   },
 };

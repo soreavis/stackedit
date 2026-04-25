@@ -6,6 +6,7 @@ import exportSvc from './exportSvc';
 import providerRegistry from './providers/common/providerRegistry';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
+import { useQueueStore } from '../stores/queue';
 
 interface PublishLocation {
   fileId?: string;
@@ -80,7 +81,7 @@ const publishFile = async (fileId: string): Promise<void> => {
   ];
   try {
     await utils.awaitSequence(publishLocations, async (publishLocation: PublishLocation) => {
-      await store.dispatch('queue/doWithLocation', {
+      await useQueueStore().doWithLocation({
         location: publishLocation,
         action: async () => {
           const publishLocationToStore = await publish(publishLocation);
@@ -116,7 +117,7 @@ const requestPublish = (): void => {
     return;
   }
 
-  store.dispatch('queue/enqueuePublishRequest', async () => {
+  useQueueStore().enqueuePublishRequest(async () => {
     let intervalId: ReturnType<typeof setInterval>;
     const attempt = async () => {
       // Only start publishing when these conditions are met
@@ -138,8 +139,7 @@ const requestPublish = (): void => {
 const createPublishLocation = (publishLocation: PublishLocation, featureId?: string): void => {
   const currentFile = store.getters['file/current'];
   publishLocation.fileId = currentFile.id;
-  store.dispatch(
-    'queue/enqueue',
+  useQueueStore().enqueue(
     async () => {
       const publishLocationToStore = await publish(publishLocation);
       (workspaceSvc as any).addPublishLocation(publishLocationToStore);
