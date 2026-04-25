@@ -85,19 +85,22 @@ const notEnoughSpace = (layoutConstants, showGutter) =>
     layoutConstants.buttonBarWidth +
     (showGutter ? layoutConstants.gutterWidth : 0);
 
-// For templates
-const makeAdditionalTemplate = (name, value, helpers = '\n') => ({
+// For templates. `description` is optional — only the bundled default
+// templates carry one; user-created templates leave it undefined and the
+// dropdown renders just the name.
+const makeAdditionalTemplate = (name, value, helpers = '\n', description = '') => ({
   name,
+  description,
   value,
   helpers,
   isAdditional: true,
 });
 const defaultTemplates = {
-  plainText: makeAdditionalTemplate('Plain text', '{{{files.0.content.text}}}'),
-  plainHtml: makeAdditionalTemplate('Plain HTML', plainHtmlTemplate),
-  styledHtml: makeAdditionalTemplate('Styled HTML', styledHtmlTemplate),
-  styledHtmlWithToc: makeAdditionalTemplate('Styled HTML with TOC', styledHtmlWithTocTemplate),
-  jekyllSite: makeAdditionalTemplate('Jekyll site', jekyllSiteTemplate),
+  plainText: makeAdditionalTemplate('Plain text', '{{{files.0.content.text}}}', '\n', 'Raw markdown source'),
+  plainHtml: makeAdditionalTemplate('Plain HTML', plainHtmlTemplate, '\n', 'HTML body fragment, no styles'),
+  styledHtml: makeAdditionalTemplate('Styled HTML', styledHtmlTemplate, '\n', 'Full document with default styles'),
+  styledHtmlWithToc: makeAdditionalTemplate('Styled HTML with TOC', styledHtmlWithTocTemplate, '\n', 'Full document with TOC sidebar'),
+  jekyllSite: makeAdditionalTemplate('Jekyll site', jekyllSiteTemplate, '\n', 'YAML front-matter + body'),
 };
 
 // For tokens

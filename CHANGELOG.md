@@ -6,6 +6,17 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+### Changed
+- **Provider modals default to `main` instead of `master`** — all 8 GitHub / GitLab open / publish / save / workspace modals now suggest `main` as the implicit branch when the user leaves the field empty. Hint text updated to "If not supplied, the `main` branch will be used (use `master` for older repos)." `githubWorkspaceProvider.js` + `gitlabWorkspaceProvider.js` workspace bootstrap also defaults to `main`. Aligns with GitHub / GitLab's modern default for new repos. Users with legacy `master`-default repos can still type `master` explicitly.
+- **CONTRIBUTING.md lint section refreshed** — the line claiming "Lint is not run in CI" was stale (CI does run `npm run lint` and fails on errors, as we relearned via PR #37). Replaced with a description of the actual ESLint 9 flat-config setup and how warnings vs errors are treated.
+
+### Fixed
+- **Lint warnings to zero** — disabled the `vue/multiline-html-element-content-newline` cosmetic rule (was firing on the search-clear `×` button and the `ExplorerNode` row template; both intentionally on a single line for layout reasons). Removed an unused `eslint-disable-line no-continue` directive in `explorerSvc.js` that the lint config doesn't actually flag.
+- **File Properties modal opens cleanly on YAML tab** — the Simple-properties tab no longer visually masquerades as the active one after modal open. Root cause: `.tabs__tab > a` painted the same grey background on `:focus` as on `:hover`, so any programmatic / sticky focus on the inactive tab made it look selected against the actual YAML tab's blue underline. Tightened the rule to `:focus-visible` — keyboard nav still gets the bg affordance, mouse clicks and modal auto-focus do not.
+
+### Changed
+- **Template dropdowns show short descriptions** — each of the 5 bundled templates (`Plain text`, `Plain HTML`, `Styled HTML`, `Styled HTML with TOC`, `Jekyll site`) gained a one-line `description` field surfaced inline in option text via middle-dot (e.g. "Styled HTML with TOC · Full document with TOC sidebar"). Same separator the nav-bar file-meta strip already uses (`size · words · lines …`). Applied to all 12 modals that render the template select (HtmlExport, PdfExport, Templates, plus 9 provider publish modals: Dropbox, Wordpress, Blogger, Blogger pages, Gitlab, Github, Zendesk, Gist, Google Drive). User-created custom templates have no description and render unchanged.
+
 ## [5.16.0] - 2026-04-25
 
 First release as an independent successor to `benweet/stackedit` (dormant since 2023-05-27). Drops the `-fork.N` suffix in favor of continuing the StackEdit lineage where upstream stopped. Version `6.x` is reserved for the eventual rebrand (new logo + name); until then this codebase continues `5.x` semver.
