@@ -1,16 +1,17 @@
 # Privacy Policy
 
-_Last updated: 2026-04-24_
+_Last updated: 2026-04-25_
 
-This policy covers the community fork of StackEdit maintained at
+This policy covers this independent successor to StackEdit, maintained at
 [`github.com/soreavis/stackedit`](https://github.com/soreavis/stackedit) and
 its Vercel deployment. StackEdit is a Markdown editor that runs entirely in
 your browser. The short version: your documents live in your browser or in
 the cloud provider you connect them to — never on a server operated by this
-fork. The longer version is below.
+deployment. The longer version is below.
 
 If you are using a different deployment or the original upstream
-(`benweet/stackedit`), that deployment has its own policy.
+(`benweet/stackedit`, dormant since 2023-05-27), that deployment has its own
+policy.
 
 ## What stays in your browser
 
@@ -22,13 +23,13 @@ By default, StackEdit stores everything locally using the browser's
 - OAuth access tokens for any cloud provider you connect
 - Session state (current file, cursor position, undo history)
 
-None of this is transmitted to a server operated by this fork. Clearing your
+None of this is transmitted to a server operated by this deployment. Clearing your
 browser's site data removes it.
 
 Files you drag-and-drop onto the file explorer panel are read in your browser
 via the standard `FileReader` / `FileSystemEntry` APIs and stored in the same
 local workspace. Their contents are never sent to a server operated by this
-fork.
+deployment.
 
 ## What leaves your browser (only if you opt in)
 
@@ -46,15 +47,15 @@ Supported providers and their privacy policies:
 - **Zendesk** — [zendesk.com/company/privacy](https://www.zendesk.com/company/agreements-and-terms/privacy-notice/)
 - **CouchDB** — depends on the instance you connect to
 
-When you sync or publish, the fork holds an OAuth access token in your
+When you sync or publish, the app holds an OAuth access token in your
 browser's local storage and sends it directly to the provider's API to
 complete the request. The token is not stored on a server operated by this
-fork.
+deployment.
 
 ## What the server sees
 
-The fork is hosted on [Vercel](https://vercel.com). Vercel's edge network
-processes requests; standard web-server logs apply. The fork does not
+This deployment is hosted on [Vercel](https://vercel.com). Vercel's edge network
+processes requests; standard web-server logs apply. The deployment does not
 operate its own database or account system.
 
 ### Vercel platform
@@ -82,7 +83,7 @@ requests or joined to any other identifier.
 `/api/githubToken` performs the server-side leg of the GitHub OAuth flow
 (PKCE S256). The GitHub client secret lives on the server; the access token
 returned by GitHub is handed back to your browser and stored client-side.
-The fork does not retain the token after returning it.
+The server does not retain the token after returning it.
 
 ### CSP reports
 
@@ -124,7 +125,7 @@ is collected from anyone, including children.
 
 ## Your rights (GDPR / CCPA / similar)
 
-Because the fork holds no server-side user profile, data-subject rights
+Because this deployment holds no server-side user profile, data-subject rights
 are satisfied trivially:
 
 - **Access / export.** Your files live in your browser (File → Export as
@@ -151,4 +152,4 @@ noted in the [CHANGELOG](https://github.com/soreavis/stackedit/blob/main/CHANGEL
 ---
 
 _This policy is provided in good faith as an accurate description of the
-fork's data handling. It is not legal advice._
+deployment's data handling. It is not legal advice._

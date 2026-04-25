@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Privacy Policy — StackEdit (community fork)</title>
+<title>Privacy Policy — StackEdit</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Privacy policy for the community fork of StackEdit.">
+<meta name="description" content="Privacy policy for the StackEdit independent successor deployment.">
 <link rel="icon" href="/favicon.ico">
 <!--
   This file is a hand-synced mirror of PRIVACY.md at the repo root.
@@ -61,19 +61,20 @@
 <main>
   <header>
     <div class="nav"><a href="/app">← Back to the editor</a></div>
-    <h1>Privacy Policy <span class="fork-badge">Community Fork</span></h1>
-    <p class="last-updated">Last updated: 2026-04-24</p>
+    <h1>Privacy Policy <span class="fork-badge">Independent Successor</span></h1>
+    <p class="last-updated">Last updated: 2026-04-25</p>
   </header>
 
-  <p>This policy covers the community fork of StackEdit maintained at
+  <p>This policy covers this independent successor to StackEdit, maintained at
   <a href="https://github.com/soreavis/stackedit">github.com/soreavis/stackedit</a>
   and its Vercel deployment. StackEdit is a Markdown editor that runs
   entirely in your browser. The short version: your documents live in
   your browser or in the cloud provider you connect them to — never on a
-  server operated by this fork. The longer version is below.</p>
+  server operated by this deployment. The longer version is below.</p>
 
   <p>If you are using a different deployment or the original upstream
-  (<code>benweet/stackedit</code>), that deployment has its own policy.</p>
+  (<code>benweet/stackedit</code>, dormant since 2023-05-27), that deployment
+  has its own policy.</p>
 
   <h2>What stays in your browser</h2>
   <p>By default, StackEdit stores everything locally using the browser's
@@ -84,13 +85,13 @@
     <li>OAuth access tokens for any cloud provider you connect</li>
     <li>Session state (current file, cursor position, undo history)</li>
   </ul>
-  <p>None of this is transmitted to a server operated by this fork.
+  <p>None of this is transmitted to a server operated by this deployment.
   Clearing your browser's site data removes it.</p>
   <p>Files you drag-and-drop onto the file explorer panel are read in
   your browser via the standard <code>FileReader</code> /
   <code>FileSystemEntry</code> APIs and stored in the same local
   workspace. Their contents are never sent to a server operated by
-  this fork.</p>
+  this deployment.</p>
 
   <h2>What leaves your browser (only if you opt in)</h2>
   <p>If you connect an external storage provider, your files are stored
@@ -106,15 +107,15 @@
     <li><strong>Zendesk</strong> — <a href="https://www.zendesk.com/company/agreements-and-terms/privacy-notice/">zendesk.com/company/privacy</a></li>
     <li><strong>CouchDB</strong> — depends on the instance you connect to</li>
   </ul>
-  <p>When you sync or publish, the fork holds an OAuth access token in
+  <p>When you sync or publish, the app holds an OAuth access token in
   your browser's local storage and sends it directly to the provider's
   API to complete the request. The token is not stored on a server
-  operated by this fork.</p>
+  operated by this deployment.</p>
 
   <h2>What the server sees</h2>
-  <p>The fork is hosted on <a href="https://vercel.com">Vercel</a>.
+  <p>This deployment is hosted on <a href="https://vercel.com">Vercel</a>.
   Vercel's edge network processes requests; standard web-server logs
-  apply. The fork does not operate its own database or account system.</p>
+  apply. The deployment does not operate its own database or account system.</p>
 
   <h3>Vercel platform</h3>
   <ul>
@@ -143,7 +144,7 @@
   <p><code>/api/githubToken</code> performs the server-side leg of the
   GitHub OAuth flow (PKCE S256). The GitHub client secret lives on the
   server; the access token returned by GitHub is handed back to your
-  browser and stored client-side. The fork does not retain the token
+  browser and stored client-side. The server does not retain the token
   after returning it.</p>
 
   <h3>CSP reports</h3>
@@ -187,7 +188,7 @@
   data is collected from anyone, including children.</p>
 
   <h2>Your rights (GDPR / CCPA / similar)</h2>
-  <p>Because the fork holds no server-side user profile, data-subject
+  <p>Because this deployment holds no server-side user profile, data-subject
   rights are satisfied trivially:</p>
   <ul>
     <li><strong>Access / export.</strong> Your files live in your browser
@@ -214,7 +215,7 @@
 
   <hr>
   <p class="legal-note">This policy is provided in good faith as an
-  accurate description of the fork's data handling. It is not legal
+  accurate description of this deployment's data handling. It is not legal
   advice.</p>
 </main>
 </body>
