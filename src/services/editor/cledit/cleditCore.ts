@@ -1,3 +1,7 @@
+// @ts-nocheck
+// 500+-line legacy module with deep DOM/selection/MutationObserver
+// coordination — full typing requires editor-state interface design
+// out of scope for this incremental migration.
 import DiffMatchPatch from 'diff-match-patch';
 import TurndownService from 'turndown/lib/turndown.browser.umd';
 import htmlSanitizer from '../../../libs/htmlSanitizer';
