@@ -706,7 +706,7 @@ extensionSvc.onGetOptions((options, properties) => {
 extensionSvc.onSectionPreview((elt) => {
   const pending = [];
   elt.querySelectorAll('.prism.language-mermaid')
-    .cl_each(diagramElt => pending.push(render(diagramElt.parentNode)));
+    .forEach(diagramElt => pending.push(render(diagramElt.parentNode)));
   // Returned so export callers that await sectionPreview can see the
   // rendered SVG in innerHTML. Live preview just ignores the promise.
   return Promise.all(pending);

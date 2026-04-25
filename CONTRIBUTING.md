@@ -22,7 +22,7 @@ Dev server: http://localhost:8080
 ## Running tests
 
 ```bash
-npm run unit                  # 361 tests across hardening + component suites
+npm run unit                  # 353 tests across hardening + component suites
 npm run unit-with-coverage    # HTML coverage in ./coverage/
 ```
 

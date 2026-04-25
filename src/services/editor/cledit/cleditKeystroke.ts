@@ -15,7 +15,7 @@ let clearNewline;
 const charTypes = Object.create(null);
 
 // Word separators, as in Sublime Text
-'./\\()"\'-:,.;<>~!@#$%^&*|+=[]{}`~?'.split('').cl_each((wordSeparator) => {
+'./\\()"\'-:,.;<>~!@#$%^&*|+=[]{}`~?'.split('').forEach((wordSeparator) => {
   charTypes[wordSeparator] = 'wordSeparator';
 });
 charTypes[' '] = 'space';

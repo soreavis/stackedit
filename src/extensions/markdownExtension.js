@@ -152,7 +152,7 @@ extensionSvc.onInitConverter(0, (markdown, options) => {
 
 extensionSvc.onSectionPreview((elt, options, isEditor) => {
   // Highlight with Prism
-  elt.querySelectorAll('.prism').cl_each((prismElt) => {
+  elt.querySelectorAll('.prism').forEach((prismElt) => {
     if (!prismElt.$highlightedWithPrism) {
       Prism.highlightElement(prismElt);
       prismElt.$highlightedWithPrism = true;
@@ -160,7 +160,7 @@ extensionSvc.onSectionPreview((elt, options, isEditor) => {
   });
 
   // Transform task spans into checkboxes
-  elt.querySelectorAll('span.task-list-item-checkbox').cl_each((spanElt) => {
+  elt.querySelectorAll('span.task-list-item-checkbox').forEach((spanElt) => {
     const checkboxElt = document.createElement('input');
     checkboxElt.type = 'checkbox';
     checkboxElt.className = 'task-list-item-checkbox';

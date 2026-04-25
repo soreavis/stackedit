@@ -80,7 +80,7 @@ Utils.createEventHooks = (object: any): void => {
   object.$trigger = (eventType: string, ...args: unknown[]) => {
     const listeners = listenerMap[eventType];
     if (listeners) {
-      (listeners as any).cl_each((listener: (...args: unknown[]) => void) => {
+      (listeners as any).forEach((listener: (...args: unknown[]) => void) => {
         try {
           listener.apply(object, args);
         } catch (e: any) {
