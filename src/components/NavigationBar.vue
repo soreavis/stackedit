@@ -539,8 +539,12 @@ export default {
 }
 
 .navigation-bar__button {
-  width: 34px;
-  padding: 0 7px;
+  /* Slimmed from `width: 34; padding: 0 7px` (= 48 px effective) to
+     fit the wave-2/3 toolbar growth on common 1366–1920 px viewports
+     without wrapping. With ~37 buttons, every saved pixel matters; the
+     SVGs themselves render fine at 28×24. */
+  width: 30px;
+  padding: 0 5px;
   transition: opacity 0.25s;
 
   .navigation-bar__inner--button & {
