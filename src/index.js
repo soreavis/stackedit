@@ -39,11 +39,20 @@ if (!indexedDB) {
 }
 
 const updateSW = registerSW({
+  // New service-worker version is precached. Ask the user before
+  // forcing the reload — silent auto-reloads were jarring (cursor lost,
+  // unsynced edits dropped on slow networks). We still flush local-db
+  // before reloading regardless of the user's choice on the next click.
   onNeedRefresh: async () => {
-    if (!store.state.light) {
+    if (store.state.light) return;
+    try {
+      await store.dispatch('notification/confirm', 'A new version of StackEdit is ready. Reload now?');
       await localDbSvc.sync();
       localStorage.updated = true;
       updateSW(true);
+    } catch {
+      // user dismissed — they'll get prompted again on next focus or
+      // next service-worker check; nothing else to do here.
     }
   },
 });
