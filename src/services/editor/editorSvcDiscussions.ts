@@ -7,6 +7,7 @@ import cleditRaw from './cledit';
 import utils from '../utils';
 import diffUtils from '../diffUtils';
 import store from '../../store';
+import { useContentStateStore } from '../../stores/contentState';
 import EditorClassApplier from '../../components/common/EditorClassApplier';
 import PreviewClassApplier from '../../components/common/PreviewClassApplier';
 
@@ -154,7 +155,7 @@ export default {
     const content = store.getters['content/current'];
     if (content) {
       removeDiscussionMarkers(); // Markers will be recreated on contentChanged
-      const contentState = store.getters['contentState/current'];
+      const contentState = useContentStateStore().current;
       const options = Object.assign({
         selectionStart: contentState.selectionStart,
         selectionEnd: contentState.selectionEnd,
