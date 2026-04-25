@@ -71,25 +71,29 @@ extensionSvc.onInitConverter(0, (markdown, options) => {
     langPrefix: 'prism language-',
   });
 
+  // markdown-it's `enable(rules)` only TURNS ON the listed rules — it
+  // doesn't turn off rules that are already enabled (which is "all of
+  // them" under the default preset). The original code tried to disable
+  // optional rules (fence / table / strikethrough) by splicing them out
+  // of the array passed to `enable()`, which was a no-op even when the
+  // splice indices were correct. We use `disable()` for the opt-out
+  // path now, which actually flips the rule's enabled flag off.
   markdown.core.ruler.enable(coreBaseRules);
 
-  const blockRules = blockBaseRules.slice();
+  markdown.block.ruler.enable(blockBaseRules);
   if (!options.fence) {
-    blockRules.splice(blockRules.indexOf('fence'), 1);
+    markdown.block.ruler.disable('fence');
   }
   if (!options.table) {
-    blockRules.splice(blockRules.indexOf('table'), 1);
+    markdown.block.ruler.disable('table');
   }
-  markdown.block.ruler.enable(blockRules);
 
-  const inlineRules = inlineBaseRules.slice();
-  const inlineRules2 = inlineBaseRules2.slice();
+  markdown.inline.ruler.enable(inlineBaseRules);
+  markdown.inline.ruler2.enable(inlineBaseRules2);
   if (!options.del) {
-    inlineRules.splice(blockRules.indexOf('strikethrough'), 1);
-    inlineRules2.splice(blockRules.indexOf('strikethrough'), 1);
+    markdown.inline.ruler.disable('strikethrough');
+    markdown.inline.ruler2.disable('strikethrough');
   }
-  markdown.inline.ruler.enable(inlineRules);
-  markdown.inline.ruler2.enable(inlineRules2);
 
   if (options.abbr) {
     markdown.use(markdownitAbbr);
