@@ -2,9 +2,9 @@
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const pad = num => `0${num}`.slice(-2);
+const pad = (num: number): string => `0${num}`.slice(-2);
 
-function strftime(time, formatString) {
+function strftime(time: Date, formatString: string): string {
   const day = time.getDay();
   const date = time.getDate();
   const month = time.getMonth();
@@ -13,7 +13,7 @@ function strftime(time, formatString) {
   const minute = time.getMinutes();
   const second = time.getSeconds();
   return formatString.replace(/%([%aAbBcdeHIlmMpPSwyYZz])/g, (_arg) => {
-    let match;
+    let match: RegExpMatchArray | null;
     const modifier = _arg[1];
     switch (modifier) {
       case '%':
@@ -32,13 +32,13 @@ function strftime(time, formatString) {
       case 'd':
         return pad(date);
       case 'e':
-        return date;
+        return String(date);
       case 'H':
         return pad(hour);
       case 'I':
-        return pad(strftime(time, '%l'));
+        return pad(parseInt(strftime(time, '%l'), 10));
       case 'l':
-        return hour === 0 || hour === 12 ? 12 : (hour + 12) % 12;
+        return String(hour === 0 || hour === 12 ? 12 : (hour + 12) % 12);
       case 'm':
         return pad(month + 1);
       case 'M':
@@ -50,11 +50,11 @@ function strftime(time, formatString) {
       case 'S':
         return pad(second);
       case 'w':
-        return day;
+        return String(day);
       case 'y':
         return pad(year % 100);
       case 'Y':
-        return year;
+        return String(year);
       case 'Z':
         match = time.toString().match(/\((\w+)\)$/);
         return match ? match[1] : '';
@@ -65,15 +65,13 @@ function strftime(time, formatString) {
   });
 }
 
-let dayFirst = null;
-let yearSeparator = null;
+let dayFirst: boolean | null = null;
+let yearSeparator: boolean | null = null;
 
 // Private: Determine if the day should be formatted before the month name in
 // the user's current locale. For example, `9 Jun` for en-GB and `Jun 9`
 // for en-US.
-//
-// Returns true if the day appears before the month.
-function isDayFirst() {
+function isDayFirst(): boolean {
   if (dayFirst !== null) {
     return dayFirst;
   }
@@ -82,7 +80,7 @@ function isDayFirst() {
     return false;
   }
 
-  const options = { day: 'numeric', month: 'short' };
+  const options = { day: 'numeric' as const, month: 'short' as const };
   const formatter = new window.Intl.DateTimeFormat(undefined, options);
   const output = formatter.format(new Date(0));
 
@@ -92,9 +90,7 @@ function isDayFirst() {
 
 // Private: Determine if the year should be separated from the month and day
 // with a comma. For example, `9 Jun 2014` in en-GB and `Jun 9, 2014` in en-US.
-//
-// Returns true if the date needs a separator.
-function isYearSeparator() {
+function isYearSeparator(): boolean {
   if (yearSeparator !== null) {
     return yearSeparator;
   }
@@ -103,7 +99,7 @@ function isYearSeparator() {
     return true;
   }
 
-  const options = { day: 'numeric', month: 'short', year: 'numeric' };
+  const options = { day: 'numeric' as const, month: 'short' as const, year: 'numeric' as const };
   const formatter = new window.Intl.DateTimeFormat(undefined, options);
   const output = formatter.format(new Date(0));
 
@@ -112,26 +108,24 @@ function isYearSeparator() {
 }
 
 // Private: Determine if the date occurs in the same year as today's date.
-//
-// date - The Date to test.
-//
-// Returns true if it's this year.
-function isThisYear(date) {
+function isThisYear(date: Date): boolean {
   const now = new Date();
   return now.getUTCFullYear() === date.getUTCFullYear();
 }
 
 class RelativeTime {
-  constructor(date) {
+  private date: Date;
+
+  constructor(date: Date) {
     this.date = date;
   }
 
-  toString() {
+  toString(): string {
     const ago = this.timeElapsed();
     return ago || `on ${this.formatDate()}`;
   }
 
-  timeElapsed() {
+  timeElapsed(): string | null {
     const ms = new Date().getTime() - this.date.getTime();
     const sec = Math.round(ms / 1000);
     const min = Math.round(sec / 60);
@@ -157,7 +151,7 @@ class RelativeTime {
     return null;
   }
 
-  formatDate() {
+  formatDate(): string {
     let format = isDayFirst() ? '%e %b' : '%b %e';
     if (!isThisYear(this.date)) {
       format += isYearSeparator() ? ', %Y' : ' %Y';
@@ -167,7 +161,13 @@ class RelativeTime {
 }
 
 export default {
-  format(time) {
-    return time && new RelativeTime(new Date(time)).toString();
+  // The optional second argument is unused — callers (Vue filter in
+  // `vueGlobals.js`) pass `store.state.timeCounter` as a reactivity tripwire
+  // so Vue re-evaluates the filter every minute without us having to
+  // subscribe inside the service. Documented here so the signature matches
+  // the actual call shape.
+  format(time: number | string | Date | undefined | null, _refreshKey?: unknown): string | undefined {
+    if (!time) return undefined;
+    return new RelativeTime(new Date(time)).toString();
   },
 };
