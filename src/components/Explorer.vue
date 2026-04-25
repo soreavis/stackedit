@@ -14,11 +14,11 @@
         <button class="side-title__button side-title__button--rename button" v-show="!isMultiSelect" :disabled="!canRename" @click="editItem()" v-title="'Rename'">
           <icon-pen></icon-pen>
         </button>
-        <button class="side-title__button side-title__button--tree-glyph button" @click="expandAll" v-title="'Expand all folders'">
-          <span class="side-title__tree-glyph">⊞</span>
+        <button class="side-title__button button" @click="expandAll" v-title="'Expand all folders'">
+          <icon-chevron-down></icon-chevron-down>
         </button>
-        <button class="side-title__button side-title__button--tree-glyph button" @click="collapseAll" v-title="'Collapse all folders'">
-          <span class="side-title__tree-glyph">⊟</span>
+        <button class="side-title__button button" @click="collapseAll" v-title="'Collapse all folders'">
+          <icon-chevron-up></icon-chevron-up>
         </button>
         <button class="side-title__button button" @click="cycleSort" v-title="`Sort: ${sortLabel} (click to cycle)`">
           <span class="side-title__sort-glyph">{{ sortGlyph }}</span>
@@ -414,9 +414,12 @@ export default {
   flex-shrink: 0;
 }
 
-.side-title__tree-glyph,
 .side-title__sort-glyph {
-  font-size: 20px;
+  /* Unicode sort glyphs (A↓ / ◷ / ✱) need a noticeable font-size bump to
+     match SVG icons in the same toolbar — the visible character only fills
+     ~50% of the em box, so 20 px renders ~10 px of actual glyph. 26 px lands
+     close to the chevrons' rendered footprint. */
+  font-size: 26px;
   font-weight: 600;
   font-family: inherit;
   line-height: 1;
