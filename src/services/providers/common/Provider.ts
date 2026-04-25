@@ -7,6 +7,7 @@ import providerRegistry from './providerRegistry';
 import emptyContent from '../../../data/empties/emptyContent';
 import utils from '../../utils';
 import store from '../../../store';
+import { useFileStore } from '../../../stores/file';
 import workspaceSvc from '../../workspaceSvc';
 
 const dataExtractor = /<!--stackedit_data:([A-Za-z0-9+/=\s]+)-->\s*$/;
@@ -89,9 +90,9 @@ export default class Provider {
     const location = utils.search(store.getters['syncLocation/items'], criteria);
     if (location) {
       // Found one, open it if it exists
-      const item = store.state.file.itemsById[location.fileId];
+      const item = useFileStore().itemsById[location.fileId];
       if (item) {
-        store.commit('file/setCurrentId', item.id);
+        useFileStore().setCurrentId(item.id);
         // If file is in the trash, restore it
         if (item.parentId === 'trash') {
           workspaceSvc.setOrPatchItem({

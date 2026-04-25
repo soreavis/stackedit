@@ -1,5 +1,6 @@
 import utils from './utils';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
 import welcomeFile from '../data/welcomeFile.md?raw';
@@ -263,7 +264,7 @@ const localDbSvc: LocalDbSvc = {
         checker = cb => (id) => {
           if (!storeItemMap[id]) {
             const [fileId] = id.split('/');
-            if (!store.state.file.itemsById[fileId]) {
+            if (!(useFileStore().itemsById as Record<string, any>)[fileId]) {
               cb(id);
             }
           }
@@ -417,7 +418,7 @@ const localDbSvc: LocalDbSvc = {
       && (store.state.workspace.lastFocus + (constants as any).cleanTrashAfter < Date.now())
     ) {
       // Clean files
-      (store.getters['file/items'] as Array<{ id: string; parentId: string }>)
+      (useFileStore().items as Array<{ id: string; parentId: string }>)
         .filter(file => file.parentId === 'trash') // If file is in the trash
         .forEach(file => workspaceSvc.deleteFile(file.id));
     }
@@ -426,9 +427,9 @@ const localDbSvc: LocalDbSvc = {
     utils.setInterval(() => localDbSvc.sync(), 1000);
 
     // watch current file changing
-    let prevCurrentId: string | null = store.getters['file/current'].id || null;
+    let prevCurrentId: string | null = useFileStore().current.id || null;
     store.watch(
-      () => store.getters['file/current'].id,
+      () => useFileStore().current.id,
       async (newId: string | null | undefined) => {
         // If the file we're leaving was a brand-new draft the user never
         // edited, discard it so the workspace doesn't fill up with empty
@@ -439,18 +440,18 @@ const localDbSvc: LocalDbSvc = {
         }
         prevCurrentId = newId || null;
         // See if currentFile is real, ie it has an ID
-        const currentFile = store.getters['file/current'];
+        const currentFile = useFileStore().current;
         // If current file has no ID, get the most recent file
         if (!currentFile.id) {
           if (store.state.explorer.userClosedFile) {
             // User deliberately closed — don't auto-recover.
             return;
           }
-          const recentFile = store.getters['file/lastOpened'];
+          const recentFile = useFileStore().lastOpened;
           // Set it as the current file
           if (recentFile.id) {
-            store.commit('file/setCurrentId', recentFile.id);
-          } else if (!(store.getters['file/items'] as unknown[]).length) {
+            useFileStore().setCurrentId(recentFile.id);
+          } else if (!(useFileStore().items as unknown[]).length) {
             // Truly empty workspace (first boot) — bootstrap a welcome file.
             // If the only remaining items are in Trash, leave currentId
             // null so the explorer empty-state shows instead of resurrecting
@@ -460,7 +461,7 @@ const localDbSvc: LocalDbSvc = {
               text: welcomeFile,
             }, true);
             // Set it as the current file
-            store.commit('file/setCurrentId', newFile.id);
+            useFileStore().setCurrentId(newFile.id);
           }
         } else {
           if (store.state.explorer.userClosedFile) {
@@ -477,8 +478,8 @@ const localDbSvc: LocalDbSvc = {
               await localDbSvc.loadItem(`${currentFile.id}/content`);
             } catch (err) {
               // Failure (content is not available), go back to previous file
-              const lastOpenedFile = store.getters['file/lastOpened'];
-              store.commit('file/setCurrentId', lastOpenedFile.id);
+              const lastOpenedFile = useFileStore().lastOpened;
+              useFileStore().setCurrentId(lastOpenedFile.id);
               throw err;
             }
             // Set last opened file

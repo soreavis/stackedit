@@ -19,9 +19,11 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
 import CommentList from './gutters/CommentList';
 import PreviewNewDiscussionButton from './gutters/PreviewNewDiscussionButton';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 
 const appUri = `${window.location.protocol}//${window.location.host}`;
 
@@ -34,7 +36,7 @@ export default {
     previewTop: true,
   }),
   computed: {
-    ...mapGetters('file', [
+    ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
     ...mapGetters('layout', [

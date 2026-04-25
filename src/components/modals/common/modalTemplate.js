@@ -1,6 +1,7 @@
 import ModalInner from './ModalInner';
 import FormEntry from './FormEntry';
 import store from '../../../store';
+import { useFileStore } from '../../../stores/file';
 import { useModalStore } from '../../../stores/modal';
 
 const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
@@ -23,7 +24,7 @@ export default (desc) => {
         return useModalStore().config;
       },
       currentFileName() {
-        return store.getters['file/current'].name;
+        return useFileStore().current.name;
       },
     },
     methods: {

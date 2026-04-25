@@ -30,6 +30,7 @@ import networkSvc from '../../services/networkSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import modalTemplate from './common/modalTemplate';
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
@@ -42,7 +43,7 @@ export default modalTemplate({
   methods: {
     async resolve() {
       this.config.resolve();
-      const currentFile = store.getters['file/current'];
+      const currentFile = useFileStore().current;
       useQueueStore().enqueue(async () => {
         const [sponsorToken, html] = await Promise.all([
           Promise.resolve().then(() => {

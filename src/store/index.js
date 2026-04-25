@@ -6,7 +6,6 @@ import content from './content';
 import data from './data';
 import discussion from './discussion';
 import explorer from './explorer';
-import file from './file';
 import layout from './layout';
 import { useNotificationStore } from '../stores/notification';
 import { useFolderStore } from '../stores/folder';
@@ -28,7 +27,6 @@ const store = new Vuex.Store({
     data,
     discussion,
     explorer,
-    file,
     layout,
     publishLocation: locationTemplate(emptyPublishLocation),
     syncLocation: locationTemplate(emptySyncLocation),

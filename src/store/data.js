@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import yaml from 'js-yaml';
 import utils from '../services/utils';
+import { useFileStore } from '../stores/file';
 import defaultWorkspaces from '../data/defaults/defaultWorkspaces';
 import defaultSettings from '../data/defaults/defaultSettings.yml?raw';
 import defaultLocalSettings from '../data/defaults/defaultLocalSettings';
@@ -182,12 +183,12 @@ export default {
       const result = {
         ...lastOpened,
       };
-      const currentFileId = rootState.file.currentId;
+      const currentFileId = useFileStore().currentId;
       if (currentFileId && !result[currentFileId]) {
         result[currentFileId] = Date.now();
       }
       return Object.keys(result)
-        .filter(id => rootState.file.itemsById[id])
+        .filter(id => useFileStore().itemsById[id])
         .sort((id1, id2) => result[id2] - result[id1])
         .slice(0, 20);
     },
@@ -293,7 +294,7 @@ export default {
       // Remove entries that don't exist anymore
       const cleanedLastOpened = {};
       Object.entries(lastOpened).forEach(([id, value]) => {
-        if (rootState.file.itemsById[id]) {
+        if (useFileStore().itemsById[id]) {
           cleanedLastOpened[id] = value;
         }
       });

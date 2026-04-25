@@ -1,5 +1,9 @@
 import Vue from 'vue';
-import { createPinia, PiniaVuePlugin } from 'pinia';
+// Import pinia FIRST so the active Pinia instance is set up before any
+// service module / Vuex getter that touches a Pinia store at boot.
+// (e.g. scrollSync registers a Vuex watcher that evaluates layout/styles
+// eagerly, which now reads useFileStore().isCurrentTemp.)
+import pinia from './pinia';
 import DOMPurify from 'dompurify';
 import { inject as injectAnalytics } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
@@ -11,9 +15,6 @@ import App from './components/App';
 import store from './store';
 import { useNotificationStore } from './stores/notification';
 import localDbSvc from './services/localDbSvc';
-
-Vue.use(PiniaVuePlugin);
-const pinia = createPinia();
 
 // Skew protection: when a Vite deploy ships new chunk hashes, a long-open
 // tab may fail to dynamically load the old hash. Catch and reload to pick

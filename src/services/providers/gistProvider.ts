@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import githubHelper from './helpers/githubHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
@@ -29,7 +30,7 @@ export default new Provider({
     return Provider.parseContent(content, `${syncLocation.fileId}/content`);
   },
   async uploadContent(token, content, syncLocation) {
-    const file = store.state.file.itemsById[syncLocation.fileId];
+    const file = useFileStore().itemsById[syncLocation.fileId];
     const description = utils.sanitizeName(file && file.name);
     const gist = await githubHelper.uploadGist({
       ...syncLocation,

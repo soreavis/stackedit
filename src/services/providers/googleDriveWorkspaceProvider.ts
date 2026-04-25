@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import { useFolderStore } from '../../stores/folder';
 import { useModalStore } from '../../stores/modal';
 import googleHelper from './helpers/googleHelper';
@@ -175,7 +176,7 @@ export default new Provider({
         const file = await workspaceSvc.createFile({
           parentId: syncData && syncData.itemId,
         }, true);
-        store.commit('file/setCurrentId', file.id);
+        useFileStore().setCurrentId(file.id);
         // File will be created on next workspace sync
         break;
       }
@@ -186,7 +187,7 @@ export default new Provider({
         if (!syncData) {
           fileIdToOpen = firstFile.id;
         } else {
-          store.commit('file/setCurrentId', syncData.itemId);
+          useFileStore().setCurrentId(syncData.itemId);
         }
         break;
       }
@@ -399,7 +400,7 @@ export default new Provider({
       fileIdToOpen = null;
       // Open the file once downloaded content has been stored
       setTimeout(() => {
-        store.commit('file/setCurrentId', fileSyncData.itemId);
+        useFileStore().setCurrentId(fileSyncData.itemId);
       }, 10);
     }
 

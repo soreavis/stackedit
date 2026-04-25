@@ -2,6 +2,7 @@ import Vue from 'vue';
 import emptyFile from '../data/empties/emptyFile';
 import emptyFolder from '../data/empties/emptyFolder';
 import { useFolderStore } from '../stores/folder';
+import { useFileStore } from '../stores/file';
 
 const setter = propertyName => (state, value) => {
   state[propertyName] = value;
@@ -177,7 +178,7 @@ export default {
       });
       const syncLocationsByFileId = rootGetters['syncLocation/filteredGroupedByFileId'];
       const publishLocationsByFileId = rootGetters['publishLocation/filteredGroupedByFileId'];
-      rootGetters['file/items'].forEach((item) => {
+      useFileStore().items.forEach((item) => {
         const locations = [
           ...syncLocationsByFileId[item.id] || [],
           ...publishLocationsByFileId[item.id] || [],
