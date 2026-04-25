@@ -7,6 +7,7 @@ export default () => ({
   showExplorer: false,
   scrollSync: true,
   focusMode: false,
+  showLineNumbers: false,
   findCaseSensitive: false,
   findUseRegexp: false,
   sideBarPanel: 'menu',

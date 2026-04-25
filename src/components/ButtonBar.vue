@@ -18,6 +18,9 @@
       <button class="button-bar__button button-bar__button--scroll-sync-toggler button" :class="{ 'button-bar__button--on': layoutSettings.scrollSync }" @click="toggleScrollSync()" v-title="'Toggle scroll sync'">
         <icon-scroll-sync></icon-scroll-sync>
       </button>
+      <button class="button-bar__button button-bar__button--line-numbers-toggler button" :class="{ 'button-bar__button--on': layoutSettings.showLineNumbers }" @click="toggleLineNumbers()" v-title="'Toggle line numbers'">
+        <icon-format-list-numbers></icon-format-list-numbers>
+      </button>
       <button class="button-bar__button button-bar__button--status-bar-toggler button" :class="{ 'button-bar__button--on': layoutSettings.showStatusBar }" @click="toggleStatusBar()" v-title="'Toggle status bar'">
         <icon-status-bar></icon-status-bar>
       </button>
@@ -44,6 +47,7 @@ export default {
     'toggleStatusBar',
     'toggleFocusMode',
     'toggleScrollSync',
+    'toggleLineNumbers',
   ]),
 };
 </script>
