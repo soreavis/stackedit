@@ -43,6 +43,7 @@ import {
   removeClassRange,
   updateClassRange,
 } from './cm6Decorations';
+import { tabRenumberCommand, shiftTabRenumberCommand } from './cm6ListRenumber';
 
 const dmp = new DiffMatchPatch();
 
@@ -163,6 +164,11 @@ function baseExtensions(editableCompartment: Compartment): Extension[] {
       // continue blockquote) takes precedence over defaultKeymap's
       // plain newline.
       ...markdownKeymap,
+      // Tab / Shift+Tab in an ordered-list line: indent + renumber the
+      // surrounding ordered runs. Falls through (returns false) when
+      // not applicable so indentWithTab still handles the general case.
+      { key: 'Tab', run: tabRenumberCommand },
+      { key: 'Shift-Tab', run: shiftTabRenumberCommand },
       ...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab,
     ]),
     editableCompartment.of(EditorView.editable.of(true)),
