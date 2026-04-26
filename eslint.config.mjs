@@ -26,8 +26,9 @@ export default [
       'scripts/**',
       'test/fixtures/**',
       '**/*.min.js',
-      'src/libs/pagedown.js', // vendored upstream code
-      'src/libs/clunderscore.js', // vendored upstream code
+      // pagedown.js + clunderscore.js were deleted (Stage 3 batch 11
+      // and Stage 1 respectively). No vendored-upstream files remain
+      // under src/libs.
     ],
   },
 
