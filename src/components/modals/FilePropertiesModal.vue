@@ -98,6 +98,7 @@ import CodeEditor from '../CodeEditor';
 import utils from '../../services/utils';
 import presets from '../../data/presets';
 import store from '../../store';
+import { useContentStore } from '../../stores/content';
 import badgeSvc from '../../services/badgeSvc';
 
 const metadataProperties = {
@@ -142,7 +143,7 @@ export default {
     },
   },
   created() {
-    const content = store.getters['content/current'];
+    const content = useContentStore().current;
     this.contentId = content.id;
     this.setYamlProperties(content.properties);
     if (this.tab === 'simple') {
@@ -235,7 +236,7 @@ export default {
         if (Object.keys(extensions).filter(key => key !== 'preset').length) {
           badgeSvc.addBadge('changeExtension');
         }
-        store.commit('content/patchItem', {
+        useContentStore().patchItem({
           id: this.contentId,
           properties: utils.sanitizeText(this.yamlProperties),
         });
