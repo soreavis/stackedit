@@ -21,10 +21,28 @@ import { bracketMatching } from '@codemirror/language';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { markdown } from '@codemirror/lang-markdown';
 import { stackeditHighlight } from './cm6Highlighter';
+import { markerField } from './cm6Marker';
 
 export { isCm6FlagEnabled } from './cm6Flag';
 export { parseSectionsForCm6 } from './cm6SectionParser';
 export type { SectionEntry } from './cm6SectionParser';
+export {
+  markerField,
+  addMarkerEffect,
+  removeMarkerEffect,
+  addMarker,
+  removeMarker,
+  getMarkers,
+  getMarkerOffset,
+} from './cm6Marker';
+export type { MarkerEntry } from './cm6Marker';
+export {
+  getSelection,
+  setSelection,
+  hasFocus,
+  focusEditor,
+} from './cm6Selection';
+export type { SelectionRange } from './cm6Selection';
 
 export interface Cm6Handle {
   view: EditorView;
@@ -50,6 +68,7 @@ function baseExtensions(): Extension[] {
     EditorView.lineWrapping,
     stackeditHighlight(),
     markdown(),
+    markerField,
     keymap.of([
       ...defaultKeymap,
       ...historyKeymap,
