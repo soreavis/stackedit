@@ -1,15 +1,37 @@
-function parseNextNumber(str, pos, max) {
-  let code;
+// In-tree port of `markdown-it-imsize`: extends the default image rule to
+// recognize `![alt](url =WIDTHxHEIGHT)` syntax (note the space before `=`)
+// and emit `width` / `height` HTML attributes accordingly. Width-only
+// (`=300x`) and height-only (`=x150`) variants are both supported.
+import type MarkdownIt from 'markdown-it';
+import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
+
+interface NumberParseResult {
+  ok: boolean;
+  pos: number;
+  value: string;
+}
+
+function parseNextNumber(str: string, posIn: number, max: number): NumberParseResult {
+  let pos = posIn;
   const start = pos;
-  code = str.charCodeAt(pos);
+  let code = str.charCodeAt(pos);
   while ((pos < max && code >= 0x30 && code <= 0x39) || code === 0x25) {
-    code = str.charCodeAt(++pos);
+    pos += 1;
+    code = str.charCodeAt(pos);
   }
   return { ok: true, pos, value: str.slice(start, pos) };
 }
 
-function parseImageSize(str, pos, max) {
-  const result = { ok: false, pos: 0, width: '', height: '' };
+interface ImageSizeParseResult {
+  ok: boolean;
+  pos: number;
+  width: string;
+  height: string;
+}
+
+function parseImageSize(str: string, posIn: number, max: number): ImageSizeParseResult {
+  const result: ImageSizeParseResult = { ok: false, pos: 0, width: '', height: '' };
+  let pos = posIn;
   if (pos >= max) return result;
   let code = str.charCodeAt(pos);
   if (code !== 0x3d) return result;
@@ -30,17 +52,17 @@ function parseImageSize(str, pos, max) {
   return result;
 }
 
-function imageWithSize(md) {
-  return function image(state, silent) {
-    let attrs;
-    let code;
-    let label;
-    let labelEnd;
-    let labelStart;
-    let pos;
-    let ref;
-    let res;
-    let title;
+function imageWithSize(md: MarkdownIt) {
+  return function image(state: StateInline, silent: boolean): boolean {
+    let attrs: Array<[string, string]>;
+    let code: number;
+    let label: string | undefined;
+    let labelEnd: number;
+    let labelStart: number;
+    let pos: number;
+    let ref: { href: string; title?: string } | undefined;
+    let res: { ok?: boolean; pos?: number; str?: string };
+    let title = '';
     let width = '';
     let height = '';
     let token;
@@ -67,11 +89,13 @@ function imageWithSize(md) {
       if (pos >= max) return false;
 
       start = pos;
-      res = md.helpers.parseLinkDestination(state.src, pos, state.posMax);
-      if (res.ok) {
-        href = state.md.normalizeLink(res.str);
+      const linkRes = md.helpers.parseLinkDestination(state.src, pos, state.posMax) as {
+        ok: boolean; pos: number; str: string;
+      };
+      if (linkRes.ok) {
+        href = state.md.normalizeLink(linkRes.str);
         if (state.md.validateLink(href)) {
-          pos = res.pos;
+          pos = linkRes.pos;
         } else {
           href = '';
         }
@@ -83,10 +107,12 @@ function imageWithSize(md) {
         if (code !== 0x20 && code !== 0x0a) break;
       }
 
-      res = md.helpers.parseLinkTitle(state.src, pos, state.posMax);
-      if (pos < max && start !== pos && res.ok) {
-        title = res.str;
-        pos = res.pos;
+      const titleRes = md.helpers.parseLinkTitle(state.src, pos, state.posMax) as {
+        ok: boolean; pos: number; str: string;
+      };
+      if (pos < max && start !== pos && titleRes.ok) {
+        title = titleRes.str;
+        pos = titleRes.pos;
         for (; pos < max; pos += 1) {
           code = state.src.charCodeAt(pos);
           if (code !== 0x20 && code !== 0x0a) break;
@@ -100,9 +126,10 @@ function imageWithSize(md) {
         if (code === 0x20) {
           res = parseImageSize(state.src, pos, state.posMax);
           if (res.ok) {
-            width = res.width;
-            height = res.height;
-            pos = res.pos;
+            const sizeRes = res as ImageSizeParseResult;
+            width = sizeRes.width;
+            height = sizeRes.height;
+            pos = sizeRes.pos;
             for (; pos < max; pos += 1) {
               code = state.src.charCodeAt(pos);
               if (code !== 0x20 && code !== 0x0a) break;
@@ -117,7 +144,8 @@ function imageWithSize(md) {
       }
       pos += 1;
     } else {
-      if (typeof state.env.references === 'undefined') return false;
+      const env = state.env as { references?: Record<string, { href: string; title?: string }> };
+      if (typeof env.references === 'undefined') return false;
       for (; pos < max; pos += 1) {
         code = state.src.charCodeAt(pos);
         if (code !== 0x20 && code !== 0x0a) break;
@@ -135,20 +163,26 @@ function imageWithSize(md) {
         pos = labelEnd + 1;
       }
       if (!label) label = state.src.slice(labelStart, labelEnd);
-      ref = state.env.references[md.utils.normalizeReference(label)];
+      ref = env.references[md.utils.normalizeReference(label)];
       if (!ref) {
         state.pos = oldPos;
         return false;
       }
       href = ref.href;
-      title = ref.title;
+      title = ref.title || '';
     }
 
     if (!silent) {
       state.pos = labelStart;
       state.posMax = labelEnd;
       tokens = [];
-      const newState = new state.md.inline.State(
+      // markdown-it's inline State has a constructor on the public API even
+      // though the typings don't always expose it cleanly — cast the access
+      // path to keep this surgical.
+      const InlineState = (state.md.inline as unknown as {
+        State: new (src: string, md: MarkdownIt, env: unknown, tokens: unknown[]) => StateInline;
+      }).State;
+      const newState = new InlineState(
         state.src.slice(labelStart, labelEnd),
         state.md,
         state.env,
@@ -171,6 +205,6 @@ function imageWithSize(md) {
   };
 }
 
-export default function imsizePlugin(md) {
+export default function imsizePlugin(md: MarkdownIt): void {
   md.inline.ruler.before('emphasis', 'image', imageWithSize(md));
 }
