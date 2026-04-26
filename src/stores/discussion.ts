@@ -5,15 +5,44 @@ import { useModalStore } from './modal';
 import { useContentStore } from './content';
 import { useWorkspaceStore } from './workspace';
 
-const idShifter = offset => function shifter() {
+export interface Discussion {
+  start?: number;
+  end?: number;
+  text?: string;
+  [key: string]: unknown;
+}
+
+export interface Comment {
+  discussionId: string;
+  created: number;
+  [key: string]: unknown;
+}
+
+interface CommentSelection {
+  start: number;
+  end: number;
+}
+
+interface DiscussionState {
+  currentDiscussionId: string | null;
+  newDiscussion: Discussion | null;
+  newDiscussionId: string | null;
+  isCommenting: boolean;
+  newCommentText: string;
+  newCommentSelection: CommentSelection;
+  newCommentFocus: boolean;
+  stickyComment: Comment | null;
+}
+
+const idShifter = (offset: number) => function shifter(this: { currentFileDiscussions: Record<string, unknown>; newDiscussionId: string | null; currentDiscussionId: string | null }): string | undefined {
   const ids = Object.keys(this.currentFileDiscussions)
     .filter(id => id !== this.newDiscussionId);
-  const idx = ids.indexOf(this.currentDiscussionId) + offset + ids.length;
+  const idx = ids.indexOf(this.currentDiscussionId as string) + offset + ids.length;
   return ids[idx % ids.length];
 };
 
 export const useDiscussionStore = defineStore('discussion', {
-  state: () => ({
+  state: (): DiscussionState => ({
     currentDiscussionId: null,
     newDiscussion: null,
     newDiscussionId: null,
@@ -24,12 +53,12 @@ export const useDiscussionStore = defineStore('discussion', {
     stickyComment: null,
   }),
   getters: {
-    newDiscussionFromCurrent({ currentDiscussionId, newDiscussionId, newDiscussion }) {
-      return currentDiscussionId === newDiscussionId && newDiscussion;
+    newDiscussionFromCurrent({ currentDiscussionId, newDiscussionId, newDiscussion }): Discussion | null {
+      return currentDiscussionId === newDiscussionId ? newDiscussion : null;
     },
-    currentFileDiscussionLastComments() {
-      const { discussions, comments } = useContentStore().current;
-      const discussionLastComments = {};
+    currentFileDiscussionLastComments(): Record<string, Comment> {
+      const { discussions, comments } = useContentStore().current as { discussions: Record<string, Discussion>; comments: Record<string, Comment> };
+      const discussionLastComments: Record<string, Comment> = {};
       Object.entries(comments).forEach(([, comment]) => {
         if (discussions[comment.discussionId]) {
           const lastComment = discussionLastComments[comment.discussionId];
@@ -40,30 +69,30 @@ export const useDiscussionStore = defineStore('discussion', {
       });
       return discussionLastComments;
     },
-    currentFileDiscussions() {
-      const currentFileDiscussions = {};
+    currentFileDiscussions(): Record<string, Discussion> {
+      const currentFileDiscussions: Record<string, Discussion> = {};
       const newDiscussion = this.newDiscussionFromCurrent;
       if (newDiscussion) {
-        currentFileDiscussions[this.newDiscussionId] = newDiscussion;
+        currentFileDiscussions[this.newDiscussionId as string] = newDiscussion;
       }
-      const { discussions } = useContentStore().current;
+      const { discussions } = useContentStore().current as { discussions: Record<string, Discussion> };
       Object.entries(this.currentFileDiscussionLastComments)
         .sort(([, lastComment1], [, lastComment2]) =>
-          lastComment1.created - lastComment2.created)
+          (lastComment1 as Comment).created - (lastComment2 as Comment).created)
         .forEach(([discussionId]) => {
           currentFileDiscussions[discussionId] = discussions[discussionId];
         });
       return currentFileDiscussions;
     },
-    currentDiscussion() {
-      return this.currentFileDiscussions[this.currentDiscussionId];
+    currentDiscussion(): Discussion | undefined {
+      return this.currentFileDiscussions[this.currentDiscussionId as string];
     },
     previousDiscussionId: idShifter(-1),
     nextDiscussionId: idShifter(1),
-    currentDiscussionComments() {
-      const comments = {};
+    currentDiscussionComments(): Record<string, Comment> {
+      const comments: Record<string, Comment> = {};
       if (this.currentDiscussion) {
-        const contentComments = useContentStore().current.comments;
+        const contentComments = (useContentStore().current as { comments: Record<string, Comment> }).comments;
         Object.entries(contentComments)
           .filter(([, comment]) =>
             comment.discussionId === this.currentDiscussionId)
@@ -75,31 +104,31 @@ export const useDiscussionStore = defineStore('discussion', {
       }
       return comments;
     },
-    currentDiscussionLastCommentId() {
+    currentDiscussionLastCommentId(): string | undefined {
       return Object.keys(this.currentDiscussionComments).pop();
     },
-    currentDiscussionLastComment() {
-      return this.currentDiscussionComments[this.currentDiscussionLastCommentId];
+    currentDiscussionLastComment(): Comment | undefined {
+      return this.currentDiscussionComments[this.currentDiscussionLastCommentId as string];
     },
   },
   actions: {
-    setCurrentDiscussionId(value) {
+    setCurrentDiscussionId(value: string | null | undefined): void {
       if (this.currentDiscussionId !== value) {
-        this.currentDiscussionId = value;
+        this.currentDiscussionId = value ?? null;
         this.isCommenting = false;
       }
     },
-    setNewDiscussion(value) {
+    setNewDiscussion(value: Discussion): void {
       this.newDiscussion = value;
       this.newDiscussionId = utils.uid();
       this.currentDiscussionId = this.newDiscussionId;
       this.isCommenting = true;
       this.newCommentFocus = true;
     },
-    patchNewDiscussion(value) {
-      Object.assign(this.newDiscussion, value);
+    patchNewDiscussion(value: Partial<Discussion>): void {
+      Object.assign(this.newDiscussion as Discussion, value);
     },
-    setIsCommenting(value) {
+    setIsCommenting(value: boolean): void {
       this.isCommenting = value;
       if (!value) {
         this.newDiscussionId = null;
@@ -107,39 +136,39 @@ export const useDiscussionStore = defineStore('discussion', {
         this.newCommentFocus = true;
       }
     },
-    setNewCommentText(value) {
+    setNewCommentText(value: string | null | undefined): void {
       this.newCommentText = value || '';
     },
-    setNewCommentSelection(value) {
+    setNewCommentSelection(value: CommentSelection): void {
       this.newCommentSelection = value;
     },
-    setNewCommentFocus(value) {
+    setNewCommentFocus(value: boolean): void {
       this.newCommentFocus = value;
     },
-    setStickyComment(value) {
+    setStickyComment(value: Comment | null): void {
       this.stickyComment = value;
     },
-    cancelNewComment() {
+    cancelNewComment(): void {
       this.setIsCommenting(false);
       if (!this.currentDiscussion) {
-        this.setCurrentDiscussionId(this.nextDiscussionId);
+        this.setCurrentDiscussionId(this.nextDiscussionId as string);
       }
     },
-    async createNewDiscussion(selection) {
-      const loginToken = useWorkspaceStore().loginToken;
+    async createNewDiscussion(selection?: { start: number; end: number }): Promise<void> {
+      const loginToken = (useWorkspaceStore() as any).loginToken;
       if (!loginToken) {
         try {
           await useModalStore().open('signInForComment');
-          await googleHelper.signin();
+          await (googleHelper as any).signin();
           // dynamic import — pulling syncSvc at module load drags in
           // localDbSvc which touches localStorage at module init,
           // breaking happy-dom unit tests of unrelated services.
           const syncSvc = (await import('../services/syncSvc')).default;
-          syncSvc.requestSync();
+          (syncSvc as any).requestSync();
           await this.createNewDiscussion(selection);
         } catch (e) { /* cancel */ }
       } else if (selection) {
-        let text = useContentStore().current.text.slice(selection.start, selection.end).trim();
+        let text = (useContentStore().current as any).text.slice(selection.start, selection.end).trim();
         const maxLength = 80;
         if (text.length > maxLength) {
           text = `${text.slice(0, maxLength - 1).trim()}…`;
@@ -147,12 +176,12 @@ export const useDiscussionStore = defineStore('discussion', {
         this.setNewDiscussion({ ...selection, text });
       }
     },
-    cleanCurrentFile({ filterComment, filterDiscussion } = {}) {
-      const { discussions } = useContentStore().current;
-      const { comments } = useContentStore().current;
+    cleanCurrentFile({ filterComment, filterDiscussion }: { filterComment?: Comment; filterDiscussion?: Discussion } = {}): void {
+      const { discussions } = useContentStore().current as { discussions: Record<string, Discussion> };
+      const { comments } = useContentStore().current as { comments: Record<string, Comment> };
       const patch = {
-        discussions: {},
-        comments: {},
+        discussions: {} as Record<string, Discussion>,
+        comments: {} as Record<string, Comment>,
       };
       Object.entries(comments).forEach(([commentId, comment]) => {
         const discussion = discussions[comment.discussionId];
@@ -163,9 +192,9 @@ export const useDiscussionStore = defineStore('discussion', {
       });
 
       const { nextDiscussionId } = this;
-      useContentStore().patchCurrent(patch);
+      (useContentStore() as any).patchCurrent(patch);
       if (!this.currentDiscussion) {
-        this.setCurrentDiscussionId(nextDiscussionId);
+        this.setCurrentDiscussionId(nextDiscussionId as string);
       }
     },
   },
