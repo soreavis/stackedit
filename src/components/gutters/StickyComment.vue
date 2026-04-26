@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState } from 'pinia';
 import Comment from './Comment';
 import NewComment from './NewComment';
 import { useLayoutStore } from '../../stores/layout';

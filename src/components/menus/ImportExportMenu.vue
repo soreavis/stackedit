@@ -50,7 +50,7 @@
 </template>
 
 <script>
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState } from 'pinia';
 import TurndownService from 'turndown/lib/turndown.browser.umd';
 import htmlSanitizer from '../../libs/htmlSanitizer';
 import MenuEntry from './common/MenuEntry';

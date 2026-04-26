@@ -17,7 +17,7 @@
 
 <script>
 
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState } from 'pinia';
 import CommentList from './gutters/CommentList';
 import EditorNewDiscussionButton from './gutters/EditorNewDiscussionButton';
 import editorSvc from '../services/editorSvc';
