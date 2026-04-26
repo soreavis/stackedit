@@ -1,9 +1,9 @@
-import cledit from '../../services/editor/cledit';
+import { debounce, findContainer } from '../../services/editor/sharedUtils';
 import editorSvc from '../../services/editorSvc';
 import utils from '../../services/utils';
 
 const nextTickCbs = [];
-const nextTickExecCbs = cledit.Utils.debounce(() => {
+const nextTickExecCbs = debounce(() => {
   while (nextTickCbs.length) {
     nextTickCbs.shift()();
   }
@@ -48,11 +48,11 @@ export default class PreviewClassApplier {
           editorSvc.previewCtx.sectionDescList,
         );
         if (offsetStart != null && offsetEnd != null && offsetStart !== offsetEnd) {
-          const start = cledit.Utils.findContainer(
+          const start = findContainer(
             editorSvc.previewElt,
             Math.min(offsetStart, offsetEnd),
           );
-          const end = cledit.Utils.findContainer(
+          const end = findContainer(
             editorSvc.previewElt,
             Math.max(offsetStart, offsetEnd),
           );

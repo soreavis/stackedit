@@ -5,7 +5,6 @@ import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia'
 // cledit core first. .ts extension applied for migration tracking; nocheck
 // suppresses errors until the underlying cledit types flow through.
 import DiffMatchPatch from 'diff-match-patch';
-import cleditRaw from './cledit';
 import utils from '../utils';
 import diffUtils from '../diffUtils';
 import { useContentStore } from '../../stores/content';
@@ -13,13 +12,12 @@ import { useContentStateStore } from '../../stores/contentState';
 import EditorClassApplier from '../../components/common/EditorClassApplier';
 import PreviewClassApplier from '../../components/common/PreviewClassApplier';
 import { useDiscussionStore } from '../../stores/discussion';
-import { isCm6LiveFlagEnabled } from './cm6/cm6Flag';
 
-// CM6 bridge is dynamically imported (Layout.vue's mount calls
-// `setCm6BridgeFactory` before invoking editorSvc.init) so the
-// flag-off path never loads the heavy CM6 chunk. Without this
-// indirection a static import would inline the entire CM6 stack
-// into the main bundle and blow the size-limit gate.
+// CM6 bridge is dynamically imported (App.vue's created hook calls
+// `setCm6BridgeFactory` before Layout mounts) so the heavy CM6 chunk
+// stays out of the main bundle. Without this indirection a static
+// import would inline the entire CM6 stack into the main bundle and
+// blow the size-limit gate.
 type Cm6BridgeFactory = (parent: HTMLElement, scroll: HTMLElement) => any;
 type Cm6MarkerCtor = new (offset: number, trailing?: boolean) => any;
 let cm6BridgeFactory: Cm6BridgeFactory | null = null;
@@ -35,10 +33,7 @@ export function setCm6BridgeFactory(
 
 // editorSvcDiscussions plugs into a discussions/markers/class-applier
 // pipeline that has very dynamic shapes — type the module-level state
-// loosely until the surrounding modules (cledit core, EditorClassApplier,
-// discussion store) are ported and proper types can flow through.
-const cledit = cleditRaw as any;
-
+// loosely until the surrounding modules are properly ported.
 let clEditor: any;
 // let discussionIds = {};
 let discussionMarkers: Record<string, any> = {};
@@ -56,7 +51,7 @@ function getDiscussionMarkers(discussion: any, discussionId: string, onMarker: (
     const markerKey = `${discussionId}:${offsetName}`;
     let marker = discussionMarkers[markerKey];
     if (!marker) {
-      marker = new cledit.Marker(discussion[offsetName], offsetName === 'end');
+      marker = new (cm6MarkerCtor as Cm6MarkerCtor)(discussion[offsetName], offsetName === 'end');
       marker.discussionId = discussionId;
       marker.offsetName = offsetName;
       clEditor.addMarker(marker);
@@ -149,24 +144,17 @@ function reversePatches(patches: any) {
 export default {
   clEditor: undefined as any,
   createClEditor(editorElt: HTMLElement) {
-    if (isCm6LiveFlagEnabled() && cm6BridgeFactory && cm6MarkerCtor) {
-      // Stage 3 batch 6: behind ?cm6live=1, route the live editor through
-      // the CM6 bridge instead of cledit. Layout.vue's async mount has
-      // already loaded the bridge module and called setCm6BridgeFactory
-      // by the time editorSvc.init runs. Bridge mounts CM6 inside the
-      // existing .editor__inner <pre> so editorSvc.editorElt remains the
-      // same node external consumers reach for.
-      this.clEditor = cm6BridgeFactory(
-        editorElt,
-        editorElt.parentNode as HTMLElement,
-      );
-      // Route `new cledit.Marker(offset, trailing)` to the bridge-aware
-      // Cm6Marker so the ~15 existing call sites work unchanged until
-      // batch 7 cleanup.
-      (cledit as any).Marker = cm6MarkerCtor;
-    } else {
-      this.clEditor = cledit(editorElt, editorElt.parentNode, true);
+    if (!cm6BridgeFactory || !cm6MarkerCtor) {
+      throw new Error('CM6 bridge factory not registered — App.vue must call setCm6BridgeFactory before Layout mounts');
     }
+    // Stage 3 batch 11: CM6 bridge is the only path. App.vue's created
+    // hook dynamic-imports cm6ClEditorBridge and calls setCm6BridgeFactory
+    // before ready=true, so by the time Layout mounts and calls
+    // editorSvc.init the factory + marker constructor are wired in.
+    this.clEditor = cm6BridgeFactory(
+      editorElt,
+      editorElt.parentNode as HTMLElement,
+    );
     ({ clEditor } = this);
     clEditor.on('contentChanged', (text: string) => {
       const oldContent = useContentStore().current;

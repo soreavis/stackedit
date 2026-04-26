@@ -34,7 +34,8 @@
 <script>
 import { mapState, mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
-import cledit from '../services/editor/cledit';
+import { Cm6Marker } from '../services/editor/cm6/cm6MarkerClass';
+import { debounce } from '../services/editor/sharedUtils';
 import { useFindReplaceStore } from '../stores/findReplace';
 import EditorClassApplier from './common/EditorClassApplier';
 import { useDataStore } from '../stores/data';
@@ -61,8 +62,8 @@ const computedLayoutSetting = key => ({
 
 class DynamicClassApplier {
   constructor(cssClass, offset, silent) {
-    this.startMarker = new cledit.Marker(offset.start);
-    this.endMarker = new cledit.Marker(offset.end);
+    this.startMarker = new Cm6Marker(offset.start);
+    this.endMarker = new Cm6Marker(offset.end);
     editorSvc.clEditor.addMarker(this.startMarker);
     editorSvc.clEditor.addMarker(this.endMarker);
     if (!silent) {
@@ -104,7 +105,7 @@ export default {
     this.classAppliers = {};
 
     // Highlight occurences
-    this.debouncedHighlightOccurrences = cledit.Utils.debounce(
+    this.debouncedHighlightOccurrences = debounce(
       () => this.highlightOccurrences(),
       25,
     );
