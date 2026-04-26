@@ -1,25 +1,22 @@
-// @ts-nocheck
-// Utility module with dynamic-shape inputs (yaml properties, diff
-// tuples, marker offset maps). Full typing requires defining shared
-// content/discussion shapes — out of scope for this incremental
-// migration.
+// diff-match-patch wrapper + content-merge orchestrator. Diff tuples
+// and content/discussion shapes are dynamic — typed loosely with `any`.
 import DiffMatchPatch from 'diff-match-patch';
 import utils from './utils';
 
-const diffMatchPatch = new DiffMatchPatch();
+const diffMatchPatch: any = new DiffMatchPatch();
 diffMatchPatch.Match_Distance = 10000;
 
-function makePatchableText(content, markerKeys, markerIdxMap) {
+function makePatchableText(content: any, markerKeys: any[], markerIdxMap: any): any {
   if (!content || !content.discussions) {
     return null;
   }
-  const markers = [];
+  const markers: any[] = [];
   // Sort keys to have predictable marker positions in case of same offset
-  const discussionKeys = Object.keys(content.discussions).sort();
-  discussionKeys.forEach((discussionId) => {
+  const discussionKeys: string[] = Object.keys(content.discussions).sort();
+  discussionKeys.forEach((discussionId: string) => {
     const discussion = content.discussions[discussionId];
 
-    function addMarker(offsetName) {
+    function addMarker(offsetName: string): void {
       const markerKey = discussionId + offsetName;
       if (discussion[offsetName] !== undefined) {
         let idx = markerIdxMap[markerKey];
@@ -45,8 +42,8 @@ function makePatchableText(content, markerKeys, markerIdxMap) {
   let lastOffset = 0;
   let result = '';
   markers
-    .sort((marker1, marker2) => marker1.offset - marker2.offset)
-    .forEach((marker) => {
+    .sort((marker1: any, marker2: any) => marker1.offset - marker2.offset)
+    .forEach((marker: any) => {
       result +=
         content.text.slice(lastOffset, marker.offset) +
         String.fromCharCode(0xe000 + marker.idx); // Use a character from the private use area
@@ -55,12 +52,12 @@ function makePatchableText(content, markerKeys, markerIdxMap) {
   return result + content.text.slice(lastOffset);
 }
 
-function stripDiscussionOffsets(objectMap) {
+function stripDiscussionOffsets(objectMap: any): any {
   if (objectMap == null) {
     return objectMap;
   }
-  const result = {};
-  Object.keys(objectMap).forEach((id) => {
+  const result: any = {};
+  Object.keys(objectMap).forEach((id: string) => {
     result[id] = {
       text: objectMap[id].text,
     };
@@ -68,13 +65,13 @@ function stripDiscussionOffsets(objectMap) {
   return result;
 }
 
-function restoreDiscussionOffsets(content, markerKeys) {
+function restoreDiscussionOffsets(content: any, markerKeys: any[]): void {
   if (markerKeys.length) {
     // Go through markers
     let count = 0;
     content.text = content.text.replace(
       new RegExp(`[\ue000-${String.fromCharCode((0xe000 + markerKeys.length) - 1)}]`, 'g'),
-      (match, offset) => {
+      (match: string, offset: number) => {
         const idx = match.charCodeAt(0) - 0xe000;
         const markerKey = markerKeys[idx];
         const discussion = content.discussions[markerKey.id];
@@ -86,7 +83,7 @@ function restoreDiscussionOffsets(content, markerKeys) {
       },
     );
     // Sanitize offsets
-    Object.keys(content.discussions).forEach((discussionId) => {
+    Object.keys(content.discussions).forEach((discussionId: string) => {
       const discussion = content.discussions[discussionId];
       if (discussion.start === undefined) {
         discussion.start = discussion.end || 0;
@@ -98,22 +95,22 @@ function restoreDiscussionOffsets(content, markerKeys) {
   }
 }
 
-function mergeText(serverText, clientText, lastMergedText) {
+function mergeText(serverText: any, clientText: any, lastMergedText: any): any {
   const serverClientDiffs = diffMatchPatch.diff_main(serverText, clientText);
   diffMatchPatch.diff_cleanupSemantic(serverClientDiffs);
   // Fusion text is a mix of both server and client contents
-  const fusionText = serverClientDiffs.map(diff => diff[1]).join('');
+  const fusionText = serverClientDiffs.map((diff: any) => diff[1]).join('');
   if (!lastMergedText) {
     return fusionText;
   }
   // Let's try to find out what text has to be removed from fusion
   const intersectionText = serverClientDiffs
     // Keep only equalities
-    .filter(diff => diff[0] === DiffMatchPatch.DIFF_EQUAL)
-    .map(diff => diff[1]).join('');
+    .filter((diff: any) => diff[0] === (DiffMatchPatch as any).DIFF_EQUAL)
+    .map((diff: any) => diff[1]).join('');
   const lastMergedTextDiffs = diffMatchPatch.diff_main(lastMergedText, intersectionText)
     // Keep only equalities and deletions
-    .filter(diff => diff[0] !== DiffMatchPatch.DIFF_INSERT);
+    .filter((diff: any) => diff[0] !== (DiffMatchPatch as any).DIFF_INSERT);
   diffMatchPatch.diff_cleanupSemantic(lastMergedTextDiffs);
   // Make a patch with deletions only
   const patches = diffMatchPatch.patch_make(lastMergedText, lastMergedTextDiffs);
@@ -121,7 +118,7 @@ function mergeText(serverText, clientText, lastMergedText) {
   return diffMatchPatch.patch_apply(patches, fusionText)[0];
 }
 
-function mergeValues(serverValue, clientValue, lastMergedValue) {
+function mergeValues(serverValue: any, clientValue: any, lastMergedValue: any): any {
   if (!lastMergedValue) {
     return serverValue || clientValue; // Take the server value in priority
   }
@@ -143,12 +140,12 @@ function mergeValues(serverValue, clientValue, lastMergedValue) {
   return serverValue; // Take the server value
 }
 
-function mergeObjects(serverObject, clientObject, lastMergedObject = {}) {
-  const mergedObject = {};
+function mergeObjects(serverObject: any, clientObject: any, lastMergedObject: any = {}): any {
+  const mergedObject: any = {};
   Object.keys({
     ...clientObject,
     ...serverObject,
-  }).forEach((key) => {
+  }).forEach((key: string) => {
     const mergedValue = mergeValues(serverObject[key], clientObject[key], lastMergedObject[key]);
     if (mergedValue != null) {
       mergedObject[key] = mergedValue;
@@ -157,9 +154,9 @@ function mergeObjects(serverObject, clientObject, lastMergedObject = {}) {
   return utils.deepCopy(mergedObject);
 }
 
-function mergeContent(serverContent, clientContent, lastMergedContent = {}) {
-  const markerKeys = [];
-  const markerIdxMap = Object.create(null);
+function mergeContent(serverContent: any, clientContent: any, lastMergedContent: any = {}): any {
+  const markerKeys: any[] = [];
+  const markerIdxMap: any = Object.create(null);
   const lastMergedText = makePatchableText(lastMergedContent, markerKeys, markerIdxMap);
   const serverText = makePatchableText(serverContent, markerKeys, markerIdxMap);
   const clientText = makePatchableText(clientContent, markerKeys, markerIdxMap);
