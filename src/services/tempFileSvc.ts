@@ -1,9 +1,8 @@
-// cledit and editorSvc are large legacy JS modules whose inferred types
-// from `allowJs` only capture a partial surface. Re-cast to `any` at the
-// import boundary so call sites don't get bogus errors. Tightening these
-// is a follow-up that needs the cledit + editorSvc files ported too.
+// editorSvc is a large legacy JS module whose inferred types from
+// `allowJs` only capture a partial surface. Re-cast to `any` at the
+// import boundary so call sites don't get bogus errors.
 import { watch } from 'vue';
-import cleditRaw from './editor/cledit';
+import { debounce } from './editor/sharedUtils';
 import editorSvcRaw from './editorSvc';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
@@ -11,8 +10,6 @@ import utils from './utils';
 import workspaceSvc from './workspaceSvc';
 import { useDataStore } from '../stores/data';
 import { useGlobalStore } from '../stores/global';
-
-const cledit = cleditRaw as any;
 const editorSvc = editorSvcRaw as any;
 
 const {
@@ -92,7 +89,7 @@ const svc: TempFileSvc = {
     useDataStore().setLastCreated(lastCreated);
     useFileStore().setCurrentId(file.id);
 
-    const onChange = cledit.Utils.debounce(() => {
+    const onChange = debounce(() => {
       const currentFile = useFileStore().current;
       if (currentFile.id !== file.id) {
         // Close editor if file has changed for some reason

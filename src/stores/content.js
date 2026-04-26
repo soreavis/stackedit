@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import DiffMatchPatch from 'diff-match-patch';
 import empty from '../data/empties/emptyContent';
 import utils from '../services/utils';
-import cledit from '../services/editor/cledit';
+import { Cm6Marker } from '../services/editor/cm6/cm6MarkerClass';
 import badgeSvc from '../services/badgeSvc';
 import { useFileStore } from './file';
 import { useModalStore } from './modal';
@@ -120,7 +120,7 @@ export const useContentStore = defineStore('content', {
           diffMatchPatch.diff_cleanupSemantic(diffs);
           Object.entries(currentContent.discussions).forEach(([, discussion]) => {
             const adjustOffset = (offsetName) => {
-              const marker = new cledit.Marker(discussion[offsetName], offsetName === 'end');
+              const marker = new Cm6Marker(discussion[offsetName], offsetName === 'end');
               marker.adjustOffset(diffs);
               discussion[offsetName] = marker.offset;
             };

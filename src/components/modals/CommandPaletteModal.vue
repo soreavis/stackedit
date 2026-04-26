@@ -39,6 +39,11 @@ import ModalInner from './common/ModalInner';
 import customToolbarButtons from '../../data/customToolbarButtons';
 import pagedownButtons from '../../data/pagedownButtons';
 import editorSvc from '../../services/editorSvc';
+import {
+  cm6Commands,
+  linkCommand as makeCm6LinkCommand,
+  imageCommand as makeCm6ImageCommand,
+} from '../../services/editor/cm6/cm6Commands';
 import { useContentStore } from '../../stores/content';
 import badgeSvc from '../../services/badgeSvc';
 
@@ -54,7 +59,13 @@ function buildCommands() {
       group: 'Format',
       perform: () => {
         if (!useContentStore().isCurrentEditable) return;
-        editorSvc.pagedownEditor.uiManager.doClick(btn.method);
+        const view = editorSvc.clEditor.view;
+        const command = btn.method === 'link'
+          ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
+          : btn.method === 'image'
+            ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
+            : cm6Commands[btn.method === 'hr' ? 'horizontalRule' : btn.method];
+        if (command) command(view);
         badgeSvc.addBadge('formatButtons');
       },
     });
