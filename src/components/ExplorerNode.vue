@@ -35,6 +35,7 @@ import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
 import store from '../store';
+import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { useContextMenuStore } from '../stores/contextMenu';
 import badgeSvc from '../services/badgeSvc';
@@ -108,7 +109,7 @@ export default {
       if (this.node.isFolder) {
         rows.push({ k: 'Contains', v: `${this.node.fileCount || 0} files` });
       } else {
-        const entry = store.state.content.itemsById[`${id}/content`];
+        const entry = useContentStore().itemsById[`${id}/content`];
         const text = (entry && entry.text) || '';
         if (text) {
           const bytes = new Blob([text]).size;
@@ -292,7 +293,7 @@ export default {
       // Finder / desktop produces a real .md file. No-op for folders,
       // multi-select drags, and unloaded files.
       if (!this.node.isFolder && !isInMulti) {
-        const entry = store.state.content.itemsById[`${id}/content`];
+        const entry = useContentStore().itemsById[`${id}/content`];
         if (entry && typeof entry.text === 'string') {
           try {
             const blob = new Blob([entry.text], { type: 'text/markdown' });

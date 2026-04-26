@@ -7,6 +7,7 @@ import providerRegistry from './providerRegistry';
 import emptyContent from '../../../data/empties/emptyContent';
 import utils from '../../utils';
 import store from '../../../store';
+import { useContentStore } from '../../../stores/content';
 import { useFileStore } from '../../../stores/file';
 import workspaceSvc from '../../workspaceSvc';
 
@@ -55,7 +56,7 @@ export default class Provider {
     let result;
     if (!extractedData) {
       // In case stackedit's data has been manually removed, try to restore them
-      result = utils.deepCopy(store.state.content.itemsById[id]) || emptyContent(id);
+      result = utils.deepCopy(useContentStore().itemsById[id]) || emptyContent(id);
     } else {
       result = emptyContent(id);
       try {

@@ -30,6 +30,7 @@ import markdownConversionSvc from '../../services/markdownConversionSvc';
 import utils from '../../services/utils';
 import userSvc from '../../services/userSvc';
 import store from '../../store';
+import { useContentStore } from '../../stores/content';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 
@@ -68,21 +69,21 @@ export default {
           };
           const patch = {
             comments: {
-              ...store.getters['content/current'].comments,
+              ...useContentStore().current.comments,
               [utils.uid()]: comment,
             },
           };
           if (discussionId === store.state.discussion.newDiscussionId) {
             // Create discussion
             patch.discussions = {
-              ...store.getters['content/current'].discussions,
+              ...useContentStore().current.discussions,
               [discussionId]: store.getters['discussion/newDiscussion'],
             };
             badgeSvc.addBadge('createDiscussion');
           } else {
             badgeSvc.addBadge('addComment');
           }
-          store.dispatch('content/patchCurrent', patch);
+          useContentStore().patchCurrent(patch);
           store.commit('discussion/setNewCommentText');
           store.commit('discussion/setIsCommenting');
         }

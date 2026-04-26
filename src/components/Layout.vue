@@ -60,6 +60,7 @@
 
 <script>
 import { mapState, mapGetters, mapActions } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
 import NavigationBar from './NavigationBar';
 import ButtonBar from './ButtonBar';
 import StatusBar from './StatusBar';
@@ -77,6 +78,7 @@ import workspaceSvc from '../services/workspaceSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
 import store from '../store';
 import { useFileStore } from '../stores/file';
+import { useContentStore } from '../stores/content';
 import { useFindReplaceStore } from '../stores/findReplace';
 
 export default {
@@ -97,7 +99,7 @@ export default {
     ...mapState([
       'light',
     ]),
-    ...mapState('content', [
+    ...mapPiniaState(useContentStore, [
       'revisionContent',
     ]),
     ...mapState('discussion', [
