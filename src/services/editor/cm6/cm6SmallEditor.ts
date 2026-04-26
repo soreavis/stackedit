@@ -14,6 +14,7 @@ import {
   history, historyKeymap, defaultKeymap, indentWithTab,
 } from '@codemirror/commands';
 import { markdown, markdownKeymap } from '@codemirror/lang-markdown';
+import { yaml } from '@codemirror/lang-yaml';
 import { stackeditHighlight } from './cm6Highlighter';
 
 class Emitter {
@@ -39,7 +40,7 @@ export interface SmallEditorOptions {
   content?: string;
   selectionStart?: number;
   selectionEnd?: number;
-  language?: 'markdown' | 'plain';
+  language?: 'markdown' | 'yaml' | 'plain';
   readOnly?: boolean;
 }
 
@@ -76,12 +77,18 @@ export function mountSmallEditor(parent: HTMLElement, options: SmallEditorOption
   const editableCompartment = new Compartment();
   let lastSelection = { from: selectionStart, to: selectionEnd };
 
+  const langExtensions = language === 'markdown'
+    ? [markdown()]
+    : language === 'yaml'
+      ? [yaml()]
+      : [];
+
   const extensions = [
     history(),
     drawSelection(),
     EditorView.lineWrapping,
     stackeditHighlight(),
-    ...(language === 'markdown' ? [markdown()] : []),
+    ...langExtensions,
     keymap.of([
       ...markdownKeymap,
       ...defaultKeymap,
