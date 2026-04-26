@@ -42,7 +42,7 @@ class Connection {
   db?: IDBDatabase;
   getTxCbs: TxCb[] | null;
 
-  constructor(workspaceId: string = useWorkspaceStore().currentWorkspace.id) {
+  constructor(workspaceId: string = useWorkspaceStore().currentWorkspace.id as string) {
     this.getTxCbs = [];
 
     // Make the DB name
@@ -408,7 +408,7 @@ const localDbSvc: LocalDbSvc = {
 
     // Save welcome file content hash if not done already
     const hash = utils.hash(welcomeFile);
-    const { welcomeFileHashes } = useDataStore().localSettings;
+    const welcomeFileHashes = (useDataStore().localSettings.welcomeFileHashes || {}) as Record<string, number>;
     if (!welcomeFileHashes[hash]) {
       useDataStore().patchLocalSettings({
         welcomeFileHashes: {
