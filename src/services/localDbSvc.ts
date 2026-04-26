@@ -1,5 +1,6 @@
 import utils from './utils';
 import store from '../store';
+import { useWorkspaceStore } from '../stores/workspace';
 import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
@@ -37,7 +38,7 @@ class Connection {
   db?: IDBDatabase;
   getTxCbs: TxCb[] | null;
 
-  constructor(workspaceId: string = store.getters['workspace/currentWorkspace'].id) {
+  constructor(workspaceId: string = useWorkspaceStore().currentWorkspace.id) {
     this.getTxCbs = [];
 
     // Make the DB name
@@ -379,7 +380,7 @@ const localDbSvc: LocalDbSvc = {
   async init(): Promise<void> {
     // Reset the app if the reset flag was passed
     if (resetApp) {
-      await Promise.all(Object.keys(store.getters['workspace/workspacesById'])
+      await Promise.all(Object.keys(useWorkspaceStore().workspacesById)
         .map((workspaceId: string) => workspaceSvc.removeWorkspace(workspaceId)));
       (constants as any).localStorageDataIds.forEach((id: string) => {
         // Clean data stored in localStorage
@@ -414,8 +415,8 @@ const localDbSvc: LocalDbSvc = {
     }
 
     // If app was last opened 7 days ago and synchronization is off
-    if (!store.getters['workspace/syncToken']
-      && (store.state.workspace.lastFocus + (constants as any).cleanTrashAfter < Date.now())
+    if (!useWorkspaceStore().syncToken
+      && (useWorkspaceStore().lastFocus + (constants as any).cleanTrashAfter < Date.now())
     ) {
       // Clean files
       (useFileStore().items as Array<{ id: string; parentId: string }>)

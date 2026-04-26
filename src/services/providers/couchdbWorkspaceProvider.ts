@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 import couchdbHelper from './helpers/couchdbHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
@@ -15,7 +16,7 @@ export default new Provider({
   id: 'couchdbWorkspace',
   name: 'CouchDB',
   getToken() {
-    return store.getters['workspace/syncToken'];
+    return useWorkspaceStore().syncToken;
   },
   getWorkspaceParams({ dbUrl }) {
     return {
@@ -47,11 +48,11 @@ export default new Provider({
     }
 
     // Create the workspace if it doesn't exist
-    if (!store.getters['workspace/workspacesById'][workspaceId]) {
+    if (!useWorkspaceStore().workspacesById[workspaceId]) {
       try {
         // Make sure the database exists and retrieve its name
         const db = await couchdbHelper.getDb(store.getters['data/couchdbTokensBySub'][workspaceId]);
-        store.dispatch('workspace/patchWorkspacesById', {
+        useWorkspaceStore().patchWorkspacesById({
           [workspaceId]: {
             id: workspaceId,
             name: db.db_name,
@@ -65,10 +66,10 @@ export default new Provider({
     }
 
     badgeSvc.addBadge('addCouchdbWorkspace');
-    return store.getters['workspace/workspacesById'][workspaceId];
+    return useWorkspaceStore().workspacesById[workspaceId];
   },
   async getChanges() {
-    const syncToken = store.getters['workspace/syncToken'];
+    const syncToken = useWorkspaceStore().syncToken;
     const lastSeq = store.getters['data/localSettings'].syncLastSeq;
     const result = await couchdbHelper.getChanges(syncToken, lastSeq);
     const changes = result.changes.filter((change) => {
@@ -98,7 +99,7 @@ export default new Provider({
     });
   },
   async saveWorkspaceItem({ item, syncData }) {
-    const syncToken = store.getters['workspace/syncToken'];
+    const syncToken = useWorkspaceStore().syncToken;
     const { id, rev } = await couchdbHelper.uploadDocument({
       token: syncToken,
       item,
@@ -118,7 +119,7 @@ export default new Provider({
     };
   },
   removeWorkspaceItem({ syncData }) {
-    const syncToken = store.getters['workspace/syncToken'];
+    const syncToken = useWorkspaceStore().syncToken;
     return couchdbHelper.removeDocument(syncToken, syncData.id, syncData.rev);
   },
   async downloadWorkspaceContent({ token, contentSyncData }) {

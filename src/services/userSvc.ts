@@ -1,4 +1,5 @@
 import store from '../store';
+import { useWorkspaceStore } from '../stores/workspace';
 import { useUserInfoStore } from '../stores/userInfo';
 import utils from './utils';
 
@@ -62,11 +63,11 @@ export default {
     typesBySubPrefix[subPrefix] = type;
   },
   getCurrentUserId(): string | null {
-    const loginToken = store.getters['workspace/loginToken'];
+    const loginToken = useWorkspaceStore().loginToken;
     if (!loginToken) {
       return null;
     }
-    const loginType = store.getters['workspace/loginType'];
+    const loginType = useWorkspaceStore().loginType;
     const prefix = subPrefixesByType[loginType];
     return prefix ? `${prefix}:${loginToken.sub}` : loginToken.sub;
   },

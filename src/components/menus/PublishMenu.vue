@@ -115,6 +115,8 @@
 
 <script>
 import { mapState, mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
+import { useWorkspaceStore } from '../../stores/workspace';
 import MenuEntry from './common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import dropboxHelper from '../../services/providers/helpers/dropboxHelper';
@@ -124,6 +126,7 @@ import wordpressHelper from '../../services/providers/helpers/wordpressHelper';
 import zendeskHelper from '../../services/providers/helpers/zendeskHelper';
 import publishSvc from '../../services/publishSvc';
 import store from '../../store';
+import { usePublishLocationStore } from '../../stores/publishLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 
@@ -152,7 +155,7 @@ export default {
     ...mapGetters('file', [
       'isCurrentTemp',
     ]),
-    ...mapGetters('publishLocation', {
+    ...mapPiniaState(usePublishLocationStore, {
       publishLocations: 'current',
     }),
     locationCount() {

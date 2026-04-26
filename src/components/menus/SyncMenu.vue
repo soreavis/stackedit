@@ -109,6 +109,8 @@ import githubProvider from '../../services/providers/githubProvider';
 import gitlabProvider from '../../services/providers/gitlabProvider';
 import syncSvc from '../../services/syncSvc';
 import store from '../../store';
+import { useSyncLocationStore } from '../../stores/syncLocation';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
@@ -131,13 +133,13 @@ export default {
     ...mapState('queue', [
       'isSyncRequested',
     ]),
-    ...mapGetters('workspace', [
+    ...mapPiniaState(useWorkspaceStore, [
       'syncToken',
     ]),
     ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
-    ...mapGetters('syncLocation', {
+    ...mapPiniaState(useSyncLocationStore, {
       syncLocations: 'currentWithWorkspaceSyncLocation',
     }),
     locationCount() {

@@ -56,6 +56,7 @@ import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import store from '../../store';
+import { useSyncLocationStore } from '../../stores/syncLocation';
 import { useContentStore } from '../../stores/content';
 import { useFileStore } from '../../stores/file';
 import { useNotificationStore } from '../../stores/notification';
@@ -86,7 +87,7 @@ export default {
     ...mapGetters('data', [
       'syncDataByItemId',
     ]),
-    ...mapGetters('syncLocation', {
+    ...mapPiniaState(useSyncLocationStore, {
       syncLocations: 'currentWithWorkspaceSyncLocation',
     }),
     ...mapPiniaState(useContentStore, [

@@ -25,6 +25,7 @@ import syncSvc from '../services/syncSvc';
 import googleHelper from '../services/providers/helpers/googleHelper';
 import { mapState as mapPiniaState } from 'pinia';
 import store from '../store';
+import { useWorkspaceStore } from '../stores/workspace';
 import { useModalStore } from '../stores/modal';
 
 import ModalInner from './modals/common/ModalInner';
@@ -165,7 +166,7 @@ export default {
   methods: {
     async sponsor() {
       try {
-        if (!store.getters['workspace/sponsorToken']) {
+        if (!useWorkspaceStore().sponsorToken) {
           // User has to sign in
           await useModalStore().open('signInForSponsorship');
           await googleHelper.signin();
