@@ -1,8 +1,9 @@
-// @ts-nocheck
-// Optional editor service — keyboard / scroll-sync / shortcuts / task-change
-// glue. Tightly coupled to editorSvc + cledit dynamic surfaces. .ts rename
-// is for migration tracking; full typing comes after editorSvc/cledit are
-// properly typed.
+// Keyboard / shortcuts / text-expansion glue.
+//
+// Coupled to editorSvc's dynamic surface (`.clEditor`, `.$on`) — those
+// fields aren't statically typed because editorSvc is built via
+// Object.assign mixins. Cast through permissive types at the boundary
+// rather than designing an editorSvc-wide interface for one consumer.
 import { watch } from 'vue';
 import { tinykeys } from 'tinykeys';
 import { useContentStore } from '../../stores/content';
@@ -35,21 +36,25 @@ import {
 // Each toolbar / shortcut name maps to a cm6Commands entry (link / image
 // take a modal opener, the rest are direct lookups; `hr` is renamed
 // to `horizontalRule`).
-const pagedownHandler = name => () => {
-  const view = editorSvc.clEditor.view;
+type ModalOpenerCb = (url: string | null) => void;
+
+const pagedownHandler = (name: string) => (): void => {
+  const view = (editorSvc as any).clEditor.view;
   const command = name === 'link'
-    ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
+    ? makeCm6LinkCommand((cb: ModalOpenerCb) => useModalStore().open({ type: 'link', callback: cb as unknown as (...args: unknown[]) => void }) as unknown as Promise<void>)
     : name === 'image'
-      ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
-      : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
+      ? makeCm6ImageCommand((cb: ModalOpenerCb) => useModalStore().open({ type: 'image', callback: cb as unknown as (...args: unknown[]) => void }) as unknown as Promise<void>)
+      : (cm6Commands as Record<string, (view: unknown) => unknown>)[name === 'hr' ? 'horizontalRule' : name];
   if (command) command(view);
 };
 
-const findReplaceOpener = type => () => {
+const findReplaceOpener = (type: 'find' | 'replace') => (): void => {
+  const selectionMgr = (editorSvc as any).clEditor.selectionMgr;
   useFindReplaceStore().open({
     type,
-    findText: editorSvc.clEditor.selectionMgr.hasFocus()
-      && editorSvc.clEditor.selectionMgr.getSelectedText(),
+    findText: selectionMgr.hasFocus()
+      ? selectionMgr.getSelectedText()
+      : '',
   });
 };
 
@@ -75,14 +80,14 @@ const methods = {
   replace: findReplaceOpener('replace'),
 };
 
-const modifierMap = {
+const modifierMap: Record<string, string> = {
   mod: '$mod',
   shift: 'Shift',
   alt: 'Alt',
   ctrl: 'Control',
   meta: 'Meta',
 };
-const namedKeyMap = {
+const namedKeyMap: Record<string, string> = {
   space: 'Space',
   enter: 'Enter',
   escape: 'Escape',
@@ -94,7 +99,7 @@ const namedKeyMap = {
 // Convert a mousetrap-style chord ("mod+shift+b") into a tinykeys binding
 // ("$mod+Shift+KeyB"). Returns null for sequences (space-separated) so the
 // caller can hand those off to the text-expander.
-function toTinykeys(chord) {
+function toTinykeys(chord: string): string | null {
   if (chord.trim().includes(' ')) return null;
   return chord.split('+').map((rawPart) => {
     const part = rawPart.trim();
@@ -107,10 +112,10 @@ function toTinykeys(chord) {
   }).join('+');
 }
 
-const shortcutsAllowed = () => !useModalStore().config
+const shortcutsAllowed = (): boolean => !useModalStore().config
   && useContentStore().isCurrentEditable;
 
-const guard = fn => (event) => {
+const guard = (fn: () => void) => (event: KeyboardEvent): void => {
   if (!shortcutsAllowed()) return;
   event.preventDefault();
   fn();
@@ -123,42 +128,60 @@ const guard = fn => (event) => {
 // sequences with arrow glyphs. Instead of tracking keystrokes, we scan the
 // content after each input event and rewrite the recent suffix when it matches.
 
-const expansions = [];
-function collectExpansions(computedSettings) {
+interface Expansion { trigger: string; replacement: string }
+interface Shortcut { method?: string; params?: unknown[] }
+
+const expansions: Expansion[] = [];
+function collectExpansions(computedSettings: { shortcuts?: Record<string, Shortcut | string> }): void {
   expansions.length = 0;
   Object.values(computedSettings.shortcuts || {}).forEach((shortcut) => {
-    if (shortcut && shortcut.method === 'expand' && Array.isArray(shortcut.params)) {
-      const [trigger, replacement] = shortcut.params;
+    if (shortcut && typeof shortcut === 'object' && shortcut.method === 'expand' && Array.isArray(shortcut.params)) {
+      const [trigger, replacement] = shortcut.params as [string, string];
       if (trigger && replacement) expansions.push({ trigger, replacement });
     }
   });
 }
 
-let unbindAll = () => {};
+let unbindAll: () => void = () => {};
 
 watch(
   () => useDataStore().computedSettings,
-  (computedSettings) => {
+  (computedSettings: Record<string, unknown>) => {
     unbindAll();
-    const bindings = {};
-    Object.entries(computedSettings.shortcuts).forEach(([key, shortcut]) => {
+    const bindings: Record<string, (event: KeyboardEvent) => void> = {};
+    const shortcutsMap = (computedSettings.shortcuts || {}) as Record<string, Shortcut | string>;
+    Object.entries(shortcutsMap).forEach(([key, shortcut]) => {
       if (!shortcut) return;
-      const method = `${shortcut.method || shortcut}`;
+      const method = typeof shortcut === 'string'
+        ? shortcut
+        : `${shortcut.method || ''}`;
       if (!Object.prototype.hasOwnProperty.call(methods, method)) return;
       const binding = toTinykeys(key);
       // Sequence-style entries (e.g. the `expand` shortcuts) are handled by
       // the text-expansion listener below, not by the chord registry.
       if (!binding) return;
-      bindings[binding] = guard(methods[method]);
+      bindings[binding] = guard((methods as Record<string, () => void>)[method]);
     });
     unbindAll = tinykeys(window, bindings);
-    collectExpansions(computedSettings);
+    collectExpansions(computedSettings as { shortcuts?: Record<string, Shortcut | string> });
   }, { immediate: true },
 );
 
-function applyExpansion() {
+interface EditorSelectionMgr {
+  selectionStart: number;
+  selectionEnd: number;
+  hasFocus(): boolean;
+  getSelectedText(): string;
+}
+interface EditorSurface {
+  selectionMgr: EditorSelectionMgr;
+  getContent(): string;
+  replace(start: number, end: number, text: string): void;
+}
+
+function applyExpansion(): void {
   if (!shortcutsAllowed() || !expansions.length) return;
-  const editor = editorSvc.clEditor;
+  const editor = (editorSvc as any).clEditor as EditorSurface | undefined;
   if (!editor) return;
   const { selectionMgr } = editor;
   if (!selectionMgr) return;
@@ -189,8 +212,9 @@ function applyExpansion() {
 // other paths in cledit mode; on the CM6 bridge they didn't fire at
 // all, which is why text-expansion was the visible regression after
 // Stage 3 cutover.
-if (typeof editorSvc.$on === 'function') {
-  editorSvc.$on('sectionList', () => setTimeout(applyExpansion, 1));
+const editorEvents = editorSvc as unknown as { $on?: (event: string, handler: () => void) => void };
+if (typeof editorEvents.$on === 'function') {
+  editorEvents.$on('sectionList', () => setTimeout(applyExpansion, 1));
 }
 
 // Always-on global shortcuts:
@@ -200,12 +224,12 @@ if (typeof editorSvc.$on === 'function') {
 // they're meta actions (find any other command) — always bound, always
 // available, even when an editor element has focus.
 tinykeys(window, {
-  '$mod+KeyK': (e) => {
+  '$mod+KeyK': (e: KeyboardEvent) => {
     if (useModalStore().config) return;
     e.preventDefault();
     useModalStore().open('commandPalette').catch(() => {});
   },
-  '$mod+Slash': (e) => {
+  '$mod+Slash': (e: KeyboardEvent) => {
     if (useModalStore().config) return;
     e.preventDefault();
     useModalStore().open({ type: 'commandPalette', initialQuery: '' }).catch(() => {});
