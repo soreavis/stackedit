@@ -24,7 +24,7 @@
 
 <script>
 
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import utils from '../services/utils';
 import { useLayoutStore } from '../stores/layout';

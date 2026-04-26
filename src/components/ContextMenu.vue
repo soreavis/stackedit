@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { mapState, mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState } from 'pinia';
 import { useContextMenuStore } from '../stores/contextMenu';
 
 export default {

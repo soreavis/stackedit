@@ -115,7 +115,6 @@
 
 <script>
 import { mapState as mapPiniaState } from 'pinia';
-import { useWorkspaceStore } from '../../stores/workspace';
 import MenuEntry from './common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import dropboxHelper from '../../services/providers/helpers/dropboxHelper';
