@@ -1,22 +1,20 @@
 import bezierEasing from 'bezier-easing';
 
-// bezier-easing@3 returns a plain `(t) => y` function; the `.get()` and
-// `.toCSS()` methods that animationSvc relies on were v2-only, so re-attach
-// them to preserve the existing call sites.
-interface EasingFn {
-  (t: number): number;
-  get(t: number): number;
-  toCSS(): string;
+// Easing entry: bezier-easing@3 returns a plain `(t) => y` function. We
+// pair it with the matching CSS `cubic-bezier(...)` string so the
+// transition path can read both without method-on-function shims that
+// the v2 API used to expose.
+interface Easing {
+  fn: (t: number) => number;
+  css: string;
 }
 
-const makeEasing = (x1: number, y1: number, x2: number, y2: number): EasingFn => {
-  const fn = bezierEasing(x1, y1, x2, y2) as EasingFn;
-  fn.get = (t: number) => fn(t);
-  fn.toCSS = () => `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`;
-  return fn;
-};
+const makeEasing = (x1: number, y1: number, x2: number, y2: number): Easing => ({
+  fn: bezierEasing(x1, y1, x2, y2),
+  css: `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`,
+});
 
-const easings: Record<string, EasingFn> = {
+const easings: Record<string, Easing> = {
   materialIn: makeEasing(0.75, 0, 0.8, 0.25),
   materialOut: makeEasing(0.25, 0.8, 0.25, 1),
   inOut: makeEasing(0.25, 0.1, 0.67, 1),
@@ -230,7 +228,7 @@ class Animation {
       const transitions = [
         'all',
         `${this.$end.duration}ms`,
-        this.$end.easing.toCSS(),
+        this.$end.easing.css,
       ];
       if (this.$end.delay) {
         transitions.push(`${this.$end.duration}ms`);
@@ -248,7 +246,7 @@ class Animation {
       this.$requestId = window.requestAnimationFrame(this.$end.endCb);
     }
 
-    const coeff = this.$end.easing.get(progress);
+    const coeff = this.$end.easing.fn(progress);
     const transforms = this.$attributes.reduce<string[]>((result, attribute) => {
       if (progress < 1) {
         const diff = this.$end[attribute.name] - this.$start[attribute.name];
