@@ -25,6 +25,11 @@ interface SectionDesc {
   editorElt?: HTMLElement;
   previewElt?: HTMLElement;
   tocElt?: HTMLElement;
+  // section: the markdown-it section ({ data, text }); editorSvc's
+  // SectionDesc constructor stashes it for downstream consumers
+  // (textToPreviewDiffs, scroll sync). Optional because the cledit
+  // path didn't always need it.
+  section?: { text: string; data: string };
 }
 
 interface EditorSvcLike {
@@ -32,6 +37,16 @@ interface EditorSvcLike {
   editorElt: HTMLElement;
   previewElt: HTMLElement;
   tocElt: HTMLElement;
+  clEditor?: {
+    // Stage 3 batch 9: when the CM6 bridge is active, section.elt is
+    // never set (CM6 doesn't render `<div class="cledit-section">`
+    // wrappers). Instead we measure via `view.coordsAtPos(offset)`
+    // — character-offset in the doc maps to a viewport y, which we
+    // translate to a scroll-container-relative offsetTop.
+    view?: {
+      coordsAtPos(pos: number): { top: number; bottom: number; left: number; right: number } | null;
+    };
+  };
 }
 
 const dimensionNormalizer = (dimensionName: keyof SectionDesc) => (editorSvc: EditorSvcLike): void => {
@@ -68,6 +83,33 @@ const normalizeEditorDimensions = dimensionNormalizer('editorDimension');
 const normalizePreviewDimensions = dimensionNormalizer('previewDimension');
 const normalizeTocDimensions = dimensionNormalizer('tocDimension');
 
+// Resolve a section's editor-space top offset. Cledit path uses the
+// rendered `<div class="cledit-section">` wrapper's offsetTop; CM6
+// bridge path computes from char offset via view.coordsAtPos().
+function resolveEditorSectionTop(
+  editorSvc: EditorSvcLike,
+  desc: SectionDesc,
+  charOffset: number,
+  fallback: number,
+): number {
+  if (desc.editorElt) return desc.editorElt.offsetTop;
+  const view = editorSvc.clEditor?.view;
+  if (!view) return fallback;
+  try {
+    const coords = view.coordsAtPos(charOffset);
+    if (!coords) return fallback;
+    const scrollerRect = editorSvc.editorElt.getBoundingClientRect();
+    // editorElt.parentNode is the scroll container in cledit-mode; in
+    // bridge-mode editorElt itself wraps the cm-content. Either way,
+    // bounding-rect-relative y + scrollTop gives the equivalent of
+    // offsetTop within the scrollable surface.
+    const scrollTop = (editorSvc.editorElt.parentElement?.scrollTop) ?? editorSvc.editorElt.scrollTop ?? 0;
+    return Math.max(0, Math.round(coords.top - scrollerRect.top + scrollTop));
+  } catch {
+    return fallback;
+  }
+}
+
 export default {
   measureSectionDimensions(editorSvc: EditorSvcLike): void {
     let editorSectionOffset = 0;
@@ -76,13 +118,18 @@ export default {
     let sectionDesc = editorSvc.previewCtx.sectionDescList[0];
     let nextSectionDesc: SectionDesc;
     let i = 1;
+    // Track running character offset for CM6-mode top resolution.
+    let runningCharOffset = sectionDesc?.section?.text?.length ?? 0;
     for (; i < editorSvc.previewCtx.sectionDescList.length; i += 1) {
       nextSectionDesc = editorSvc.previewCtx.sectionDescList[i];
 
       // Measure editor section
-      let newEditorSectionOffset = nextSectionDesc.editorElt
-        ? nextSectionDesc.editorElt.offsetTop
-        : editorSectionOffset;
+      let newEditorSectionOffset = resolveEditorSectionTop(
+        editorSvc,
+        nextSectionDesc,
+        runningCharOffset,
+        editorSectionOffset,
+      );
       newEditorSectionOffset = newEditorSectionOffset > editorSectionOffset
         ? newEditorSectionOffset
         : editorSectionOffset;
@@ -116,6 +163,7 @@ export default {
       tocSectionOffset = newTocSectionOffset;
 
       sectionDesc = nextSectionDesc;
+      runningCharOffset += nextSectionDesc?.section?.text?.length ?? 0;
     }
 
     // Last section
