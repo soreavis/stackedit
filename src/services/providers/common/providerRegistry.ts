@@ -1,12 +1,24 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
-export default {
+// Lightweight registry for sync/publish providers. Providers register
+// themselves at module load (via Provider's constructor), keyed by id.
+// Consumers (workspaceSvc, syncSvc, publishSvc, store getters) look up
+// by string id from the data the user persisted.
+
+interface ProviderShape {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface Registry {
+  providersById: Record<string, ProviderShape>;
+  register<T extends ProviderShape>(provider: T): T;
+}
+
+const providerRegistry: Registry = {
   providersById: {},
-  register(provider) {
+  register<T extends ProviderShape>(provider: T): T {
     this.providersById[provider.id] = provider;
     return provider;
   },
 };
+
+export default providerRegistry;
