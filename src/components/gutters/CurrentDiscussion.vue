@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import { mapState, mapGetters, mapMutations } from 'vuex';
+import { mapState } from 'vuex';
 import { mapActions as mapPiniaActions, mapState as mapPiniaState } from 'pinia';
 import { useNotificationStore } from '../../stores/notification';
 import editorSvc from '../../services/editorSvc';
@@ -36,22 +36,22 @@ import animationSvc from '../../services/animationSvc';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
 import htmlSanitizer from '../../libs/htmlSanitizer';
 import StickyComment from './StickyComment';
-import store from '../../store';
 import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
 import { useDataStore } from '../../stores/data';
 import { useLayoutStore } from '../../stores/layout';
+import { useDiscussionStore } from '../../stores/discussion';
 
 export default {
   components: {
     StickyComment,
   },
   computed: {
-    ...mapState('discussion', [
+    ...mapPiniaState(useDiscussionStore, [
       'stickyComment',
       'currentDiscussionId',
     ]),
-    ...mapGetters('discussion', [
+    ...mapPiniaState(useDiscussionStore, [
       'currentDiscussion',
       'previousDiscussionId',
       'nextDiscussionId',
@@ -72,7 +72,7 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('discussion', [
+    ...mapPiniaActions(useDiscussionStore, [
       'setCurrentDiscussionId',
     ]),
     ...mapPiniaActions(useNotificationStore, [
@@ -107,7 +107,7 @@ export default {
     async removeDiscussion() {
       try {
         await useModalStore().open('discussionDeletion');
-        store.dispatch('discussion/cleanCurrentFile', {
+        useDiscussionStore().cleanCurrentFile({
           filterDiscussion: this.currentDiscussion,
         });
         badgeSvc.addBadge('removeDiscussion');

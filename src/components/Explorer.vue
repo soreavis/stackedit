@@ -67,17 +67,17 @@
 </template>
 
 <script>
-import { mapState, mapGetters, mapActions } from 'vuex';
+import { mapState, mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ExplorerNode from './ExplorerNode';
 import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
 import workspaceSvc from '../services/workspaceSvc';
 import badgeSvc from '../services/badgeSvc';
-import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useFolderStore } from '../stores/folder';
 import { useDataStore } from '../stores/data';
+import { useExplorerStore } from '../stores/explorer';
 
 export default {
   components: {
@@ -90,10 +90,10 @@ export default {
     ...mapState([
       'light',
     ]),
-    ...mapState('explorer', [
+    ...mapPiniaState(useExplorerStore, [
       'newChildNode',
     ]),
-    ...mapGetters('explorer', [
+    ...mapPiniaState(useExplorerStore, [
       'rootNode',
       'selectedNode',
       'dragTargetNodeFolder',
@@ -104,7 +104,7 @@ export default {
     hasTargetItem() {
       // Any real node (file or folder) counts; sentinels do not so the
       // toolbar buttons don't light up when only Trash/Temp is selected.
-      return store.getters['explorer/selectedNodes']
+      return useExplorerStore().selectedNodes
         .some(n => !n.isNil && !n.isTrash && !n.isTemp && !n.isRoot);
     },
     canRename() {
@@ -112,7 +112,7 @@ export default {
       return !node.isNil && !node.isTrash && !node.isTemp && !node.isRoot;
     },
     isMultiSelect() {
-      return Object.keys(store.state.explorer.selectedIds).length > 1;
+      return Object.keys(useExplorerStore().selectedIds).length > 1;
     },
     sortMode() {
       return (useDataStore().localSettings || {}).explorerSort || 'name';
@@ -124,8 +124,8 @@ export default {
       return { name: 'A↓', modified: '◷', created: '✱' }[this.sortMode];
     },
     searchQuery: {
-      get() { return store.state.explorer.searchQuery; },
-      set(value) { store.commit('explorer/setSearchQuery', value); },
+      get() { return useExplorerStore().searchQuery; },
+      set(value) { useExplorerStore().setSearchQuery(value); },
     },
     marqueeStyle() {
       if (!this.marquee) return null;
@@ -142,7 +142,7 @@ export default {
     ...mapPiniaActions(useDataStore, [
       'toggleExplorer',
     ]),
-    ...mapActions('explorer', [
+    ...mapPiniaActions(useExplorerStore, [
       'setDragTarget',
     ]),
     newItem: isFolder => explorerSvc.newItem(isFolder),
@@ -153,10 +153,10 @@ export default {
       open.trash = true;
       open.temp = true;
       open.recent = true;
-      store.commit('explorer/setOpenNodes', open);
+      useExplorerStore().setOpenNodes(open);
     },
     collapseAll() {
-      store.commit('explorer/setOpenNodes', {});
+      useExplorerStore().setOpenNodes({});
     },
     cycleSort() {
       const order = ['name', 'modified', 'created'];
@@ -176,7 +176,7 @@ export default {
       // Let the Delete-key handler on the template own removal.
       if (evt.key === 'Delete' || evt.key === 'Backspace') return;
 
-      const primaryId = store.state.explorer.selectedId;
+      const primaryId = useExplorerStore().selectedId;
       const ids = this.visibleNodeIds();
 
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
@@ -193,10 +193,10 @@ export default {
           const a = ids.indexOf(primaryId);
           const b = nextIdx;
           const [lo, hi] = a < b ? [a, b] : [b, a];
-          store.commit('explorer/setSelectedIds', ids.slice(lo, hi + 1));
-          store.commit('explorer/setSelectedId', nextId);
+          useExplorerStore().setSelectedIds(ids.slice(lo, hi + 1));
+          useExplorerStore().setSelectedId(nextId);
         } else {
-          store.commit('explorer/setSelectedIds', [nextId]);
+          useExplorerStore().setSelectedIds([nextId]);
         }
         this.$nextTick(() => {
           const el = this.$refs.tree && this.$refs.tree
@@ -209,10 +209,10 @@ export default {
       if (evt.key === 'Enter') {
         if (!primaryId) return;
         evt.preventDefault();
-        const node = store.getters['explorer/nodeMap'][primaryId];
+        const node = useExplorerStore().nodeMap[primaryId];
         if (!node) return;
         if (node.isFolder) {
-          store.commit('explorer/toggleOpenNode', primaryId);
+          useExplorerStore().toggleOpenNode(primaryId);
         } else {
           useFileStore().setCurrentId(primaryId);
         }
@@ -221,23 +221,23 @@ export default {
 
       if (evt.key === 'F2') {
         if (!primaryId) return;
-        const node = store.getters['explorer/nodeMap'][primaryId];
+        const node = useExplorerStore().nodeMap[primaryId];
         if (!node || node.isTrash || node.isTemp || node.isRecent) return;
         evt.preventDefault();
-        store.commit('explorer/setEditingId', primaryId);
+        useExplorerStore().setEditingId(primaryId);
         return;
       }
 
       if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === 'd') {
         if (!primaryId) return;
-        const node = store.getters['explorer/nodeMap'][primaryId];
+        const node = useExplorerStore().nodeMap[primaryId];
         if (!node || node.isFolder) return;
         evt.preventDefault();
         this.duplicatePrimary();
       }
     },
     async duplicatePrimary() {
-      const primaryId = store.state.explorer.selectedId;
+      const primaryId = useExplorerStore().selectedId;
       if (!primaryId) return;
       const original = useFileStore().itemsById[primaryId];
       if (!original) return;
@@ -258,7 +258,7 @@ export default {
     editItem() {
       const node = this.selectedNode;
       if (!node.isTrash && !node.isTemp) {
-        store.commit('explorer/setEditingId', node.item.id);
+        useExplorerStore().setEditingId(node.item.id);
       }
     },
     onTreeDragEnter() {
@@ -285,8 +285,8 @@ export default {
         return;
       }
 
-      const sourceIds = store.state.explorer.dragSourceIds;
-      const { nodeMap } = store.getters['explorer/nodeStructure'];
+      const sourceIds = useExplorerStore().dragSourceIds;
+      const { nodeMap } = useExplorerStore().nodeStructure;
       let folderMoved = false;
       let fileMoved = false;
       sourceIds.forEach((sourceId) => {
@@ -315,7 +315,7 @@ export default {
       const startY = evt.clientY - rect.top + treeElt.scrollTop;
       const additive = evt.metaKey || evt.ctrlKey || evt.shiftKey;
       const baseIds = additive
-        ? Object.keys(store.state.explorer.selectedIds)
+        ? Object.keys(useExplorerStore().selectedIds)
         : [];
 
       let moved = false;
@@ -336,7 +336,7 @@ export default {
         window.removeEventListener('mouseup', onUp);
         if (!moved && !additive) {
           // Plain click on empty area — clear selection.
-          store.commit('explorer/setSelectedIds', []);
+          useExplorerStore().setSelectedIds([]);
         }
         this.marquee = null;
       };
@@ -365,15 +365,15 @@ export default {
           && relTop < bottom && relBottom > top;
         if (intersects) hit.add(id);
       });
-      store.commit('explorer/setSelectedIds', [...hit]);
+      useExplorerStore().setSelectedIds([...hit]);
     },
   },
   created() {
     this.$watch(
       () => useFileStore().current.id,
       (currentFileId) => {
-        store.commit('explorer/setSelectedIds', currentFileId ? [currentFileId] : []);
-        store.dispatch('explorer/openNode', currentFileId);
+        useExplorerStore().setSelectedIds(currentFileId ? [currentFileId] : []);
+        useExplorerStore().openNode(currentFileId);
       }, {
         immediate: true,
       },

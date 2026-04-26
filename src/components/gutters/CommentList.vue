@@ -9,15 +9,15 @@
 </template>
 
 <script>
-import { mapState, mapGetters, mapMutations } from 'vuex';
+import { mapState } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import Comment from './Comment';
 import NewComment from './NewComment';
 import editorSvc from '../../services/editorSvc';
-import store from '../../store';
 import utils from '../../services/utils';
 import { useDataStore } from '../../stores/data';
 import { useLayoutStore } from '../../stores/layout';
+import { useDiscussionStore } from '../../stores/discussion';
 
 export default {
   components: {
@@ -32,13 +32,13 @@ export default {
       'constants',
       'styles',
     ]),
-    ...mapState('discussion', [
+    ...mapPiniaState(useDiscussionStore, [
       'currentDiscussionId',
       'isCommenting',
       'newCommentText',
       'stickyComment',
     ]),
-    ...mapGetters('discussion', [
+    ...mapPiniaState(useDiscussionStore, [
       'newDiscussion',
       'currentDiscussion',
       'currentFileDiscussions',
@@ -73,7 +73,7 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('discussion', [
+    ...mapPiniaActions(useDiscussionStore, [
       'setCurrentDiscussionId',
     ]),
     updateTops() {
@@ -167,8 +167,8 @@ export default {
       } else if (offsetTop < minOffsetTop) {
         stickyComment = 'top';
       }
-      if (store.state.discussion.stickyComment !== stickyComment) {
-        store.commit('discussion/setStickyComment', stickyComment);
+      if (useDiscussionStore().stickyComment !== stickyComment) {
+        useDiscussionStore().setStickyComment(stickyComment);
       }
     };
 

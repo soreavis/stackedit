@@ -1,21 +1,17 @@
-import Vue from 'vue';
+import { defineStore } from 'pinia';
 import emptyFile from '../data/empties/emptyFile';
 import emptyFolder from '../data/empties/emptyFolder';
-import { useFolderStore } from '../stores/folder';
-import { useFileStore } from '../stores/file';
-import { useSyncLocationStore } from '../stores/syncLocation';
-import { usePublishLocationStore } from '../stores/publishLocation';
-import { useDataStore } from '../stores/data';
-
-const setter = propertyName => (state, value) => {
-  state[propertyName] = value;
-};
+import { useFolderStore } from './folder';
+import { useFileStore } from './file';
+import { useSyncLocationStore } from './syncLocation';
+import { usePublishLocationStore } from './publishLocation';
+import { useDataStore } from './data';
 
 function debounceAction(action, wait) {
   let timeoutId;
-  return (context) => {
+  return function debounced(...args) {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => action(context), wait);
+    timeoutId = setTimeout(() => action.apply(this, args), wait);
   };
 }
 
@@ -88,73 +84,25 @@ function getFolder(node, getters) {
     getParent(node, getters);
 }
 
-export default {
-  namespaced: true,
-  state: {
+export const useExplorerStore = defineStore('explorer', {
+  state: () => ({
     selectedId: null,
-    selectedIds: {}, // map of id → true; includes the primary selectedId
+    selectedIds: {},
     editingId: null,
     dragSourceId: null,
-    dragSourceIds: [], // ordered list for multi-drag; falls back to [dragSourceId]
+    dragSourceIds: [],
     dragTargetId: null,
     newChildNode: nilFileNode,
     openNodes: {},
     searchQuery: '',
-    userClosedFile: false, // set when user explicitly closes current file
-    recentSnapshot: null, // [{ id, ts }] captured at boot; stable within session
-  },
-  mutations: {
-    setSelectedId: setter('selectedId'),
-    setSelectedIds(state, ids) {
-      const map = {};
-      (ids || []).forEach((id) => { if (id) map[id] = true; });
-      state.selectedIds = map;
-      // Keep selectedId inside the set — pick last if it drifted out.
-      if (!state.selectedId || !map[state.selectedId]) {
-        state.selectedId = ids && ids.length ? ids[ids.length - 1] : null;
-      }
-    },
-    toggleSelectedId(state, id) {
-      if (!id) return;
-      const next = { ...state.selectedIds };
-      if (next[id]) {
-        delete next[id];
-        if (state.selectedId === id) {
-          const keys = Object.keys(next);
-          state.selectedId = keys[keys.length - 1] || null;
-        }
-      } else {
-        next[id] = true;
-        state.selectedId = id;
-      }
-      state.selectedIds = next;
-    },
-    setEditingId: setter('editingId'),
-    setDragSourceId: setter('dragSourceId'),
-    setDragSourceIds: setter('dragSourceIds'),
-    setDragTargetId: setter('dragTargetId'),
-    setSearchQuery: setter('searchQuery'),
-    setUserClosedFile: setter('userClosedFile'),
-    setRecentSnapshot: setter('recentSnapshot'),
-    setNewItem(state, item) {
-      state.newChildNode = item ? new Node(item, [], item.type === 'folder') : nilFileNode;
-    },
-    setNewItemName(state, name) {
-      state.newChildNode.item.name = name;
-    },
-    toggleOpenNode(state, id) {
-      Vue.set(state.openNodes, id, !state.openNodes[id]);
-    },
-    setOpenNodes(state, openNodes) {
-      state.openNodes = openNodes || {};
-    },
-  },
+    userClosedFile: false,
+    recentSnapshot: null,
+  }),
   getters: {
-    nodeStructure: (state) => {
+    nodeStructure(state) {
       const rootNode = new Node(emptyFolder(), [], true);
       rootNode.isRoot = true;
 
-      // Create Trash node
       const trashFolderNode = new Node(emptyFolder(), [], true);
       trashFolderNode.item.id = 'trash';
       trashFolderNode.item.name = 'Trash';
@@ -162,7 +110,6 @@ export default {
       trashFolderNode.isTrash = true;
       trashFolderNode.parentNode = rootNode;
 
-      // Create Temp node
       const tempFolderNode = new Node(emptyFolder(), [], true);
       tempFolderNode.item.id = 'temp';
       tempFolderNode.item.name = 'Temp';
@@ -171,7 +118,6 @@ export default {
       tempFolderNode.isTemp = true;
       tempFolderNode.parentNode = rootNode;
 
-      // Fill nodeMap with all file and folder nodes
       const nodeMap = {
         trash: trashFolderNode,
         temp: tempFolderNode,
@@ -189,7 +135,6 @@ export default {
         nodeMap[item.id] = new Node(item, locations);
       });
 
-      // Build the tree
       Object.entries(nodeMap).forEach(([, node]) => {
         let parentNode = nodeMap[node.item.parentId];
         if (!parentNode || !parentNode.isFolder) {
@@ -206,7 +151,6 @@ export default {
         node.parentNode = parentNode;
       });
 
-      // Sort honoring user's mode + pinned folders.
       const localSettings = useDataStore().localSettings || {};
       const sortMode = localSettings.explorerSort || 'name';
       const pinnedFolderIds = localSettings.pinnedFolderIds || {};
@@ -215,7 +159,6 @@ export default {
       const comparator = makeComparator(sortMode, lastOpened, lastCreated, pinnedFolderIds);
       rootNode.sortChildren(comparator);
 
-      // Compute recursive descendant-file counts for every folder.
       const countFiles = (node) => {
         if (!node.isFolder) return 1;
         let total = (node.files || [])
@@ -227,9 +170,6 @@ export default {
       };
       countFiles(rootNode);
 
-      // Synthesize a Recent folder at the very top, clones of real file
-      // nodes (same item.id — clicks still open the real file). Ranked by
-      // data/lastOpened timestamp, capped at 10 entries.
       const recentFolderNode = new Node(emptyFolder(), [], true);
       recentFolderNode.item.id = 'recent';
       recentFolderNode.item.name = 'Recent';
@@ -237,10 +177,6 @@ export default {
       recentFolderNode.noDrop = true;
       recentFolderNode.isRecent = true;
       recentFolderNode.parentNode = rootNode;
-      // Prefer the session snapshot so clicking a file in Recent doesn't
-      // re-sort the list under the user. uiPersistence seeds the snapshot
-      // at boot from data/lastOpened; within a session the ordering is
-      // frozen until reload.
       const snapshot = state.recentSnapshot && state.recentSnapshot.length
         ? state.recentSnapshot
         : Object.entries(lastOpened)
@@ -271,7 +207,6 @@ export default {
       });
       recentFolderNode.fileCount = recentFolderNode.files.length;
 
-      // Add Trash, Temp, Recent nodes
       rootNode.folders.unshift(tempFolderNode);
       tempFolderNode.files.forEach((node) => {
         node.noDrop = true;
@@ -281,23 +216,36 @@ export default {
         rootNode.folders.unshift(recentFolderNode);
       }
 
-      // Add a fake file at the end of the root folder to allow drag and drop into it
       rootNode.files.push(fakeFileNode);
       return {
         nodeMap,
         rootNode,
       };
     },
-    nodeMap: (state, { nodeStructure }) => nodeStructure.nodeMap,
-    rootNode: (state, { nodeStructure }) => nodeStructure.rootNode,
-    newChildNodeParent: (state, getters) => getParent(state.newChildNode, getters),
-    selectedNode: ({ selectedId }, { nodeMap }) => nodeMap[selectedId] || nilFileNode,
-    selectedNodeFolder: (state, getters) => getFolder(getters.selectedNode, getters),
-    selectedNodes: ({ selectedIds }, { nodeMap }) => Object.keys(selectedIds)
-      .map(id => nodeMap[id])
-      .filter(node => node && !node.isNil),
-    searchMatchIds: ({ searchQuery }, { rootNode }) => {
-      const q = (searchQuery || '').trim().toLowerCase();
+    nodeMap() { return this.nodeStructure.nodeMap; },
+    rootNode() { return this.nodeStructure.rootNode; },
+    newChildNodeParent(state) {
+      return getParent(state.newChildNode, {
+        nodeMap: this.nodeMap,
+        rootNode: this.rootNode,
+      });
+    },
+    selectedNode() {
+      return this.nodeMap[this.selectedId] || nilFileNode;
+    },
+    selectedNodeFolder() {
+      return getFolder(this.selectedNode, {
+        nodeMap: this.nodeMap,
+        rootNode: this.rootNode,
+      });
+    },
+    selectedNodes() {
+      return Object.keys(this.selectedIds)
+        .map(id => this.nodeMap[id])
+        .filter(node => node && !node.isNil);
+    },
+    searchMatchIds() {
+      const q = (this.searchQuery || '').trim().toLowerCase();
       if (!q) return null;
       const matches = new Set();
       const visit = (node) => {
@@ -319,71 +267,112 @@ export default {
         }
         return any;
       };
-      visit(rootNode);
+      visit(this.rootNode);
       return matches;
     },
-    editingNode: ({ editingId }, { nodeMap }) => nodeMap[editingId] || nilFileNode,
-    dragSourceNode: ({ dragSourceId }, { nodeMap }) => nodeMap[dragSourceId] || nilFileNode,
-    dragTargetNode: ({ dragTargetId }, { nodeMap }) => {
-      if (dragTargetId === 'fake') {
-        return fakeFileNode;
-      }
-      return nodeMap[dragTargetId] || nilFileNode;
+    editingNode() {
+      return this.nodeMap[this.editingId] || nilFileNode;
     },
-    dragTargetNodeFolder: ({ dragTargetId }, getters) => {
-      if (dragTargetId === 'fake') {
-        return getters.rootNode;
-      }
-      return getFolder(getters.dragTargetNode, getters);
+    dragSourceNode() {
+      return this.nodeMap[this.dragSourceId] || nilFileNode;
+    },
+    dragTargetNode() {
+      if (this.dragTargetId === 'fake') return fakeFileNode;
+      return this.nodeMap[this.dragTargetId] || nilFileNode;
+    },
+    dragTargetNodeFolder() {
+      if (this.dragTargetId === 'fake') return this.rootNode;
+      return getFolder(this.dragTargetNode, {
+        nodeMap: this.nodeMap,
+        rootNode: this.rootNode,
+      });
     },
   },
   actions: {
-    openNode({
-      state,
-      getters,
-      commit,
-      dispatch,
-    }, id) {
-      const node = getters.nodeMap[id];
-      if (node) {
-        if (node.isFolder && !state.openNodes[id]) {
-          commit('toggleOpenNode', id);
-        }
-        dispatch('openNode', node.item.parentId);
+    setSelectedId(value) { this.selectedId = value; },
+    setSelectedIds(ids) {
+      const map = {};
+      (ids || []).forEach((id) => { if (id) map[id] = true; });
+      this.selectedIds = map;
+      if (!this.selectedId || !map[this.selectedId]) {
+        this.selectedId = ids && ids.length ? ids[ids.length - 1] : null;
       }
     },
-    openDragTarget: debounceAction(({ state, dispatch }) => {
-      dispatch('openNode', state.dragTargetId);
+    toggleSelectedId(id) {
+      if (!id) return;
+      const next = { ...this.selectedIds };
+      if (next[id]) {
+        delete next[id];
+        if (this.selectedId === id) {
+          const keys = Object.keys(next);
+          this.selectedId = keys[keys.length - 1] || null;
+        }
+      } else {
+        next[id] = true;
+        this.selectedId = id;
+      }
+      this.selectedIds = next;
+    },
+    setEditingId(value) { this.editingId = value; },
+    setDragSourceId(value) { this.dragSourceId = value; },
+    setDragSourceIds(value) { this.dragSourceIds = value; },
+    setDragTargetId(value) { this.dragTargetId = value; },
+    setSearchQuery(value) { this.searchQuery = value; },
+    setUserClosedFile(value) { this.userClosedFile = value; },
+    setRecentSnapshot(value) { this.recentSnapshot = value; },
+    setNewItem(item) {
+      this.newChildNode = item ? new Node(item, [], item.type === 'folder') : nilFileNode;
+    },
+    setNewItemName(name) {
+      this.newChildNode.item.name = name;
+    },
+    toggleOpenNode(id) {
+      this.openNodes = { ...this.openNodes, [id]: !this.openNodes[id] };
+    },
+    setOpenNodes(openNodes) {
+      this.openNodes = openNodes || {};
+    },
+    openNode(id) {
+      const node = this.nodeMap[id];
+      if (node) {
+        if (node.isFolder && !this.openNodes[id]) {
+          this.toggleOpenNode(id);
+        }
+        this.openNode(node.item.parentId);
+      }
+    },
+    openDragTarget: debounceAction(function open() {
+      this.openNode(this.dragTargetId);
     }, 1000),
-    setDragTarget({ state, commit, getters, dispatch }, node) {
+    setDragTarget(node) {
       if (!node) {
-        commit('setDragTargetId');
+        this.setDragTargetId();
         return;
       }
-      // Root has no real id; route through the 'fake' sentinel so
-      // dragTargetNodeFolder resolves back to rootNode (see getters).
       if (node.isRoot) {
-        commit('setDragTargetId', 'fake');
+        this.setDragTargetId('fake');
         return;
       }
-      // Make sure target folder is not a descendant of any dragged source.
-      const folderNode = getFolder(node, getters);
-      const sourceIds = state.dragSourceIds && state.dragSourceIds.length
-        ? state.dragSourceIds
-        : [getters.dragSourceNode.item.id];
-      const { nodeMap } = getters;
+      const folderNode = getFolder(node, {
+        nodeMap: this.nodeMap,
+        rootNode: this.rootNode,
+      });
+      const sourceIds = this.dragSourceIds && this.dragSourceIds.length
+        ? this.dragSourceIds
+        : [this.dragSourceNode.item.id];
+      const { nodeMap } = this;
       for (let parentNode = folderNode;
         parentNode;
         parentNode = nodeMap[parentNode.item.parentId]
       ) {
         if (sourceIds.includes(parentNode.item.id)) {
-          commit('setDragTargetId');
+          this.setDragTargetId();
           return;
         }
       }
 
-      commit('setDragTargetId', node.item.id);
-      dispatch('openDragTarget');
+      this.setDragTargetId(node.item.id);
+      this.openDragTarget();
     },
   },
-};
+});
