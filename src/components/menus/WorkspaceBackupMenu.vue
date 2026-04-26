@@ -20,6 +20,7 @@
 import FileSaver from 'file-saver';
 import MenuEntry from './common/MenuEntry';
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useNotificationStore } from '../../stores/notification';
 import backupSvc from '../../services/backupSvc';
 import localDbSvc from '../../services/localDbSvc';
@@ -29,7 +30,7 @@ export default {
     MenuEntry,
   },
   computed: {
-    workspaceId: () => store.getters['workspace/currentWorkspace'].id,
+    workspaceId: () => useWorkspaceStore().currentWorkspace.id,
   },
   methods: {
     onImportBackup(evt) {

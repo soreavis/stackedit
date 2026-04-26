@@ -69,6 +69,7 @@ import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia'
 import ModalInner from './common/ModalInner';
 import workspaceSvc from '../../services/workspaceSvc';
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
@@ -87,7 +88,7 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
-    ...mapGetters('workspace', [
+    ...mapPiniaState(useWorkspaceStore, [
       'workspacesById',
       'mainWorkspace',
       'currentWorkspace',
@@ -105,7 +106,7 @@ export default {
       const workspace = this.workspacesById[this.editedId];
       if (workspace) {
         if (!cancel && this.editingName && this.editingName !== workspace.name) {
-          store.dispatch('workspace/patchWorkspacesById', {
+          useWorkspaceStore().patchWorkspacesById({
             [this.editedId]: {
               ...workspace,
               name: this.editingName,

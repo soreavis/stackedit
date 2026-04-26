@@ -3,6 +3,8 @@ import emptyFile from '../data/empties/emptyFile';
 import emptyFolder from '../data/empties/emptyFolder';
 import { useFolderStore } from '../stores/folder';
 import { useFileStore } from '../stores/file';
+import { useSyncLocationStore } from '../stores/syncLocation';
+import { usePublishLocationStore } from '../stores/publishLocation';
 
 const setter = propertyName => (state, value) => {
   state[propertyName] = value;
@@ -176,8 +178,8 @@ export default {
       useFolderStore().items.forEach((item) => {
         nodeMap[item.id] = new Node(item, [], true);
       });
-      const syncLocationsByFileId = rootGetters['syncLocation/filteredGroupedByFileId'];
-      const publishLocationsByFileId = rootGetters['publishLocation/filteredGroupedByFileId'];
+      const syncLocationsByFileId = useSyncLocationStore().filteredGroupedByFileId;
+      const publishLocationsByFileId = usePublishLocationStore().filteredGroupedByFileId;
       useFileStore().items.forEach((item) => {
         const locations = [
           ...syncLocationsByFileId[item.id] || [],

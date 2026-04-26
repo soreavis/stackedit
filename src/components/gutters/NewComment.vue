@@ -22,6 +22,7 @@
 
 <script>
 import { mapGetters, mapMutations, mapActions } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
 import Prism from 'prismjs';
 import UserImage from '../UserImage';
 import cledit from '../../services/editor/cledit';
@@ -30,6 +31,7 @@ import markdownConversionSvc from '../../services/markdownConversionSvc';
 import utils from '../../services/utils';
 import userSvc from '../../services/userSvc';
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useContentStore } from '../../stores/content';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
@@ -39,7 +41,7 @@ export default {
     UserImage,
   },
   computed: {
-    ...mapGetters('workspace', [
+    ...mapPiniaState(useWorkspaceStore, [
       'loginToken',
     ]),
     userId() {

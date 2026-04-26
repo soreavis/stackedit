@@ -51,6 +51,7 @@ import { mapGetters } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
 import store from '../../store';
+import { useSyncLocationStore } from '../../stores/syncLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
@@ -64,7 +65,7 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
-    ...mapGetters('syncLocation', {
+    ...mapPiniaState(useSyncLocationStore, {
       syncLocations: 'currentWithWorkspaceSyncLocation',
     }),
     currentFileName() {
@@ -79,7 +80,7 @@ export default {
       if (location.id === 'main') {
         this.info('This location can not be removed.');
       } else {
-        store.commit('syncLocation/deleteItem', location.id);
+        useSyncLocationStore().deleteItem(location.id);
         badgeSvc.addBadge('removeSyncLocation');
       }
     },

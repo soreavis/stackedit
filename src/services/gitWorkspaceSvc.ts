@@ -1,4 +1,5 @@
 import store from '../store';
+import { useWorkspaceStore } from '../stores/workspace';
 import utils from '../services/utils';
 
 interface TreeEntry {
@@ -31,7 +32,7 @@ const endsWith = (str: string, suffix: string): boolean => str.slice(-suffix.len
 export default {
   shaByPath: Object.create(null) as Record<string, string>,
   makeChanges(tree: TreeEntry[]): Change[] {
-    const workspacePath: string = store.getters['workspace/currentWorkspace'].path || '';
+    const workspacePath: string = useWorkspaceStore().currentWorkspace.path || '';
 
     // Store all blobs sha
     this.shaByPath = Object.create(null);
