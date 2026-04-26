@@ -7,20 +7,55 @@ import { useSyncLocationStore } from './syncLocation';
 import { usePublishLocationStore } from './publishLocation';
 import { useDataStore } from './data';
 
-function debounceAction(action, wait) {
-  let timeoutId;
-  return function debounced(...args) {
+interface ExplorerItem {
+  id: string;
+  name?: string;
+  type?: string;
+  parentId?: string | null;
+  [key: string]: unknown;
+}
+
+interface ExplorerNodeShape {
+  item: ExplorerItem;
+  locations: unknown[];
+  isFolder: boolean;
+  folders?: ExplorerNodeShape[];
+  files?: ExplorerNodeShape[];
+  isNil?: boolean;
+  isRoot?: boolean;
+  isTrash?: boolean;
+  isTemp?: boolean;
+  isRecent?: boolean;
+  noDrag?: boolean;
+  noDrop?: boolean;
+  parentNode?: ExplorerNodeShape;
+  fileCount?: number;
+  recentLabel?: string;
+  sortChildren(comparator: (a: ExplorerNodeShape, b: ExplorerNodeShape) => number): void;
+}
+
+type LastOpenedMap = Record<string, number>;
+type LastCreatedMap = Record<string, { created: number }>;
+
+function debounceAction<This, Args extends unknown[]>(action: (this: This, ...args: Args) => void, wait: number) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  return function debounced(this: This, ...args: Args): void {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => action.apply(this, args), wait);
   };
 }
 
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
-const byName = (a, b) => collator.compare(a.item.name, b.item.name);
+const byName = (a: ExplorerNodeShape, b: ExplorerNodeShape): number => collator.compare(a.item.name as string, b.item.name as string);
 
-function makeComparator(mode, lastOpened, lastCreated, pinnedFolderIds) {
-  const byActivity = (a, b) => {
-    const getTs = (n) => {
+function makeComparator(
+  mode: string,
+  lastOpened: LastOpenedMap,
+  lastCreated: LastCreatedMap,
+  pinnedFolderIds: Record<string, boolean>,
+): (a: ExplorerNodeShape, b: ExplorerNodeShape) => number {
+  const byActivity = (a: ExplorerNodeShape, b: ExplorerNodeShape): number => {
+    const getTs = (n: ExplorerNodeShape): number => {
       if (mode === 'modified') {
         return (lastOpened[n.item.id] || 0)
           || ((lastCreated[n.item.id] && lastCreated[n.item.id].created) || 0);
@@ -35,7 +70,7 @@ function makeComparator(mode, lastOpened, lastCreated, pinnedFolderIds) {
     return byName(a, b);
   };
   const base = mode === 'name' ? byName : byActivity;
-  return (a, b) => {
+  return (a: ExplorerNodeShape, b: ExplorerNodeShape) => {
     if (a.isFolder && b.isFolder) {
       const pa = pinnedFolderIds[a.item.id] ? 0 : 1;
       const pb = pinnedFolderIds[b.item.id] ? 0 : 1;
@@ -45,8 +80,24 @@ function makeComparator(mode, lastOpened, lastCreated, pinnedFolderIds) {
   };
 }
 
-class Node {
-  constructor(item, locations = [], isFolder = false) {
+class Node implements ExplorerNodeShape {
+  item: ExplorerItem;
+  locations: unknown[];
+  isFolder: boolean;
+  folders?: ExplorerNodeShape[];
+  files?: ExplorerNodeShape[];
+  isNil?: boolean;
+  isRoot?: boolean;
+  isTrash?: boolean;
+  isTemp?: boolean;
+  isRecent?: boolean;
+  noDrag?: boolean;
+  noDrop?: boolean;
+  parentNode?: ExplorerNodeShape;
+  fileCount?: number;
+  recentLabel?: string;
+
+  constructor(item: ExplorerItem, locations: unknown[] = [], isFolder = false) {
     this.item = item;
     this.locations = locations;
     this.isFolder = isFolder;
@@ -56,36 +107,55 @@ class Node {
     }
   }
 
-  sortChildren(comparator) {
+  sortChildren(comparator: (a: ExplorerNodeShape, b: ExplorerNodeShape) => number): void {
     if (this.isFolder) {
-      this.folders.sort(comparator);
-      this.files.sort(comparator);
-      this.folders.forEach(child => child.sortChildren(comparator));
+      (this.folders as ExplorerNodeShape[]).sort(comparator);
+      (this.files as ExplorerNodeShape[]).sort(comparator);
+      (this.folders as ExplorerNodeShape[]).forEach(child => child.sortChildren(comparator));
     }
   }
 }
 
-const nilFileNode = new Node(emptyFile());
+const nilFileNode = new Node(emptyFile() as unknown as ExplorerItem);
 nilFileNode.isNil = true;
-const fakeFileNode = new Node(emptyFile());
+const fakeFileNode = new Node(emptyFile() as unknown as ExplorerItem);
 fakeFileNode.item.id = 'fake';
 fakeFileNode.noDrag = true;
 
-function getParent({ item, isNil }, { nodeMap, rootNode }) {
-  if (isNil) {
-    return nilFileNode;
-  }
-  return nodeMap[item.parentId] || rootNode;
+interface NodeMapContext {
+  nodeMap: Record<string, ExplorerNodeShape>;
+  rootNode: ExplorerNodeShape;
 }
 
-function getFolder(node, getters) {
-  return node.item.type === 'folder' ?
-    node :
-    getParent(node, getters);
+function getParent(node: ExplorerNodeShape, ctx: NodeMapContext): ExplorerNodeShape {
+  if (node.isNil) {
+    return nilFileNode;
+  }
+  return ctx.nodeMap[node.item.parentId as string] || ctx.rootNode;
+}
+
+function getFolder(node: ExplorerNodeShape, ctx: NodeMapContext): ExplorerNodeShape {
+  return node.item.type === 'folder'
+    ? node
+    : getParent(node, ctx);
+}
+
+interface ExplorerState {
+  selectedId: string | null;
+  selectedIds: Record<string, boolean>;
+  editingId: string | null;
+  dragSourceId: string | null;
+  dragSourceIds: string[];
+  dragTargetId: string | null;
+  newChildNode: ExplorerNodeShape;
+  openNodes: Record<string, boolean>;
+  searchQuery: string;
+  userClosedFile: boolean;
+  recentSnapshot: { id: string; ts: number }[] | null;
 }
 
 export const useExplorerStore = defineStore('explorer', {
-  state: () => ({
+  state: (): ExplorerState => ({
     selectedId: null,
     selectedIds: {},
     editingId: null,
@@ -99,18 +169,18 @@ export const useExplorerStore = defineStore('explorer', {
     recentSnapshot: null,
   }),
   getters: {
-    nodeStructure(state) {
-      const rootNode = new Node(emptyFolder(), [], true);
+    nodeStructure(state): NodeMapContext {
+      const rootNode = new Node(emptyFolder() as unknown as ExplorerItem, [], true);
       rootNode.isRoot = true;
 
-      const trashFolderNode = new Node(emptyFolder(), [], true);
+      const trashFolderNode = new Node(emptyFolder() as unknown as ExplorerItem, [], true);
       trashFolderNode.item.id = 'trash';
       trashFolderNode.item.name = 'Trash';
       trashFolderNode.noDrag = true;
       trashFolderNode.isTrash = true;
       trashFolderNode.parentNode = rootNode;
 
-      const tempFolderNode = new Node(emptyFolder(), [], true);
+      const tempFolderNode = new Node(emptyFolder() as unknown as ExplorerItem, [], true);
       tempFolderNode.item.id = 'temp';
       tempFolderNode.item.name = 'Temp';
       tempFolderNode.noDrag = true;
@@ -118,16 +188,16 @@ export const useExplorerStore = defineStore('explorer', {
       tempFolderNode.isTemp = true;
       tempFolderNode.parentNode = rootNode;
 
-      const nodeMap = {
+      const nodeMap: Record<string, ExplorerNodeShape> = {
         trash: trashFolderNode,
         temp: tempFolderNode,
       };
-      useFolderStore().items.forEach((item) => {
+      (useFolderStore().items as ExplorerItem[]).forEach((item) => {
         nodeMap[item.id] = new Node(item, [], true);
       });
-      const syncLocationsByFileId = useSyncLocationStore().filteredGroupedByFileId;
-      const publishLocationsByFileId = usePublishLocationStore().filteredGroupedByFileId;
-      useFileStore().items.forEach((item) => {
+      const syncLocationsByFileId = (useSyncLocationStore() as any).filteredGroupedByFileId as Record<string, unknown[]>;
+      const publishLocationsByFileId = (usePublishLocationStore() as any).filteredGroupedByFileId as Record<string, unknown[]>;
+      (useFileStore().items as ExplorerItem[]).forEach((item) => {
         const locations = [
           ...syncLocationsByFileId[item.id] || [],
           ...publishLocationsByFileId[item.id] || [],
@@ -136,7 +206,7 @@ export const useExplorerStore = defineStore('explorer', {
       });
 
       Object.entries(nodeMap).forEach(([, node]) => {
-        let parentNode = nodeMap[node.item.parentId];
+        let parentNode = nodeMap[node.item.parentId as string];
         if (!parentNode || !parentNode.isFolder) {
           if (node.isTrash || node.isTemp) {
             return;
@@ -144,22 +214,22 @@ export const useExplorerStore = defineStore('explorer', {
           parentNode = rootNode;
         }
         if (node.isFolder) {
-          parentNode.folders.push(node);
+          (parentNode.folders as ExplorerNodeShape[]).push(node);
         } else {
-          parentNode.files.push(node);
+          (parentNode.files as ExplorerNodeShape[]).push(node);
         }
         node.parentNode = parentNode;
       });
 
-      const localSettings = useDataStore().localSettings || {};
-      const sortMode = localSettings.explorerSort || 'name';
-      const pinnedFolderIds = localSettings.pinnedFolderIds || {};
-      const lastOpened = useDataStore().lastOpened || {};
-      const lastCreated = useDataStore().lastCreated || {};
+      const localSettings = ((useDataStore() as any).localSettings || {}) as Record<string, unknown>;
+      const sortMode = (localSettings.explorerSort as string) || 'name';
+      const pinnedFolderIds = (localSettings.pinnedFolderIds as Record<string, boolean>) || {};
+      const lastOpened = ((useDataStore() as any).lastOpened || {}) as LastOpenedMap;
+      const lastCreated = ((useDataStore() as any).lastCreated || {}) as LastCreatedMap;
       const comparator = makeComparator(sortMode, lastOpened, lastCreated, pinnedFolderIds);
       rootNode.sortChildren(comparator);
 
-      const countFiles = (node) => {
+      const countFiles = (node: ExplorerNodeShape): number => {
         if (!node.isFolder) return 1;
         let total = (node.files || [])
           .filter(f => f.item.id !== 'fake')
@@ -170,7 +240,7 @@ export const useExplorerStore = defineStore('explorer', {
       };
       countFiles(rootNode);
 
-      const recentFolderNode = new Node(emptyFolder(), [], true);
+      const recentFolderNode = new Node(emptyFolder() as unknown as ExplorerItem, [], true);
       recentFolderNode.item.id = 'recent';
       recentFolderNode.item.name = 'Recent';
       recentFolderNode.noDrag = true;
@@ -187,7 +257,7 @@ export const useExplorerStore = defineStore('explorer', {
         .filter(id => nodeMap[id] && !nodeMap[id].isFolder && nodeMap[id].item.parentId !== 'trash')
         .slice(0, 10);
       const tsById = Object.fromEntries(snapshot.map(e => [e.id, e.ts]));
-      const formatRelative = (ts) => {
+      const formatRelative = (ts: number | undefined): string => {
         if (!ts) return '';
         const diff = Date.now() - ts;
         const min = 60000;
@@ -207,56 +277,56 @@ export const useExplorerStore = defineStore('explorer', {
       });
       recentFolderNode.fileCount = recentFolderNode.files.length;
 
-      rootNode.folders.unshift(tempFolderNode);
-      tempFolderNode.files.forEach((node) => {
+      (rootNode.folders as ExplorerNodeShape[]).unshift(tempFolderNode);
+      (tempFolderNode.files as ExplorerNodeShape[]).forEach((node) => {
         node.noDrop = true;
       });
-      rootNode.folders.unshift(trashFolderNode);
+      (rootNode.folders as ExplorerNodeShape[]).unshift(trashFolderNode);
       if (recentFolderNode.files.length) {
-        rootNode.folders.unshift(recentFolderNode);
+        (rootNode.folders as ExplorerNodeShape[]).unshift(recentFolderNode);
       }
 
-      rootNode.files.push(fakeFileNode);
+      (rootNode.files as ExplorerNodeShape[]).push(fakeFileNode);
       return {
         nodeMap,
         rootNode,
       };
     },
-    nodeMap() { return this.nodeStructure.nodeMap; },
-    rootNode() { return this.nodeStructure.rootNode; },
-    newChildNodeParent(state) {
+    nodeMap(): Record<string, ExplorerNodeShape> { return this.nodeStructure.nodeMap; },
+    rootNode(): ExplorerNodeShape { return this.nodeStructure.rootNode; },
+    newChildNodeParent(state): ExplorerNodeShape {
       return getParent(state.newChildNode, {
         nodeMap: this.nodeMap,
         rootNode: this.rootNode,
       });
     },
-    selectedNode() {
-      return this.nodeMap[this.selectedId] || nilFileNode;
+    selectedNode(): ExplorerNodeShape {
+      return this.nodeMap[this.selectedId as string] || nilFileNode;
     },
-    selectedNodeFolder() {
+    selectedNodeFolder(): ExplorerNodeShape {
       return getFolder(this.selectedNode, {
         nodeMap: this.nodeMap,
         rootNode: this.rootNode,
       });
     },
-    selectedNodes() {
+    selectedNodes(): ExplorerNodeShape[] {
       return Object.keys(this.selectedIds)
         .map(id => this.nodeMap[id])
-        .filter(node => node && !node.isNil);
+        .filter((node): node is ExplorerNodeShape => !!node && !node.isNil);
     },
-    searchMatchIds() {
+    searchMatchIds(): Set<string> | null {
       const q = (this.searchQuery || '').trim().toLowerCase();
       if (!q) return null;
-      const matches = new Set();
-      const visit = (node) => {
+      const matches = new Set<string>();
+      const visit = (node: ExplorerNodeShape | undefined): boolean => {
         if (!node || !node.item) return false;
         let any = false;
-        if (node.item.name && node.item.name.toLowerCase().includes(q)) {
+        if (node.item.name && (node.item.name as string).toLowerCase().includes(q)) {
           matches.add(node.item.id);
           any = true;
         }
         if (node.isFolder) {
-          node.folders.forEach((child) => {
+          (node.folders as ExplorerNodeShape[]).forEach((child) => {
             if (visit(child)) any = true;
           });
           (node.files || []).forEach((child) => {
@@ -270,17 +340,17 @@ export const useExplorerStore = defineStore('explorer', {
       visit(this.rootNode);
       return matches;
     },
-    editingNode() {
-      return this.nodeMap[this.editingId] || nilFileNode;
+    editingNode(): ExplorerNodeShape {
+      return this.nodeMap[this.editingId as string] || nilFileNode;
     },
-    dragSourceNode() {
-      return this.nodeMap[this.dragSourceId] || nilFileNode;
+    dragSourceNode(): ExplorerNodeShape {
+      return this.nodeMap[this.dragSourceId as string] || nilFileNode;
     },
-    dragTargetNode() {
+    dragTargetNode(): ExplorerNodeShape {
       if (this.dragTargetId === 'fake') return fakeFileNode;
-      return this.nodeMap[this.dragTargetId] || nilFileNode;
+      return this.nodeMap[this.dragTargetId as string] || nilFileNode;
     },
-    dragTargetNodeFolder() {
+    dragTargetNodeFolder(): ExplorerNodeShape {
       if (this.dragTargetId === 'fake') return this.rootNode;
       return getFolder(this.dragTargetNode, {
         nodeMap: this.nodeMap,
@@ -289,16 +359,16 @@ export const useExplorerStore = defineStore('explorer', {
     },
   },
   actions: {
-    setSelectedId(value) { this.selectedId = value; },
-    setSelectedIds(ids) {
-      const map = {};
+    setSelectedId(value: string | null): void { this.selectedId = value; },
+    setSelectedIds(ids: string[] | null | undefined): void {
+      const map: Record<string, boolean> = {};
       (ids || []).forEach((id) => { if (id) map[id] = true; });
       this.selectedIds = map;
       if (!this.selectedId || !map[this.selectedId]) {
         this.selectedId = ids && ids.length ? ids[ids.length - 1] : null;
       }
     },
-    toggleSelectedId(id) {
+    toggleSelectedId(id: string | null | undefined): void {
       if (!id) return;
       const next = { ...this.selectedIds };
       if (next[id]) {
@@ -313,26 +383,29 @@ export const useExplorerStore = defineStore('explorer', {
       }
       this.selectedIds = next;
     },
-    setEditingId(value) { this.editingId = value; },
-    setDragSourceId(value) { this.dragSourceId = value; },
-    setDragSourceIds(value) { this.dragSourceIds = value; },
-    setDragTargetId(value) { this.dragTargetId = value; },
-    setSearchQuery(value) { this.searchQuery = value; },
-    setUserClosedFile(value) { this.userClosedFile = value; },
-    setRecentSnapshot(value) { this.recentSnapshot = value; },
-    setNewItem(item) {
-      this.newChildNode = item ? new Node(item, [], item.type === 'folder') : nilFileNode;
+    setEditingId(value: string | null): void { this.editingId = value; },
+    setDragSourceId(value: string | null): void { this.dragSourceId = value; },
+    setDragSourceIds(value: string[]): void { this.dragSourceIds = value; },
+    setDragTargetId(value?: string | null): void { this.dragTargetId = value ?? null; },
+    setSearchQuery(value: string): void { this.searchQuery = value; },
+    setUserClosedFile(value: boolean): void { this.userClosedFile = value; },
+    setRecentSnapshot(value: { id: string; ts: number }[] | null): void { this.recentSnapshot = value; },
+    setNewItem(item: Partial<ExplorerItem> | null): void {
+      this.newChildNode = item
+        ? new Node(item as ExplorerItem, [], item.type === 'folder')
+        : nilFileNode;
     },
-    setNewItemName(name) {
+    setNewItemName(name: string): void {
       this.newChildNode.item.name = name;
     },
-    toggleOpenNode(id) {
+    toggleOpenNode(id: string): void {
       this.openNodes = { ...this.openNodes, [id]: !this.openNodes[id] };
     },
-    setOpenNodes(openNodes) {
+    setOpenNodes(openNodes: Record<string, boolean> | null | undefined): void {
       this.openNodes = openNodes || {};
     },
-    openNode(id) {
+    openNode(id: string | null | undefined): void {
+      if (!id) return;
       const node = this.nodeMap[id];
       if (node) {
         if (node.isFolder && !this.openNodes[id]) {
@@ -341,10 +414,10 @@ export const useExplorerStore = defineStore('explorer', {
         this.openNode(node.item.parentId);
       }
     },
-    openDragTarget: debounceAction(function open() {
+    openDragTarget: debounceAction(function open(this: { openNode: (id: string | null) => void; dragTargetId: string | null }) {
       this.openNode(this.dragTargetId);
     }, 1000),
-    setDragTarget(node) {
+    setDragTarget(node: ExplorerNodeShape | null | undefined): void {
       if (!node) {
         this.setDragTargetId();
         return;
@@ -361,9 +434,9 @@ export const useExplorerStore = defineStore('explorer', {
         ? this.dragSourceIds
         : [this.dragSourceNode.item.id];
       const { nodeMap } = this;
-      for (let parentNode = folderNode;
+      for (let parentNode: ExplorerNodeShape | undefined = folderNode;
         parentNode;
-        parentNode = nodeMap[parentNode.item.parentId]
+        parentNode = nodeMap[parentNode.item.parentId as string]
       ) {
         if (sourceIds.includes(parentNode.item.id)) {
           this.setDragTargetId();

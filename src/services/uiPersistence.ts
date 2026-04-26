@@ -32,7 +32,7 @@ function writeJson(key: string, value: unknown): void {
 function restoreOpenNodes(): void {
   const saved = readJson(OPEN_NODES_KEY);
   if (saved && typeof saved === 'object') {
-    useExplorerStore().setOpenNodes(saved);
+    useExplorerStore().setOpenNodes(saved as Record<string, boolean>);
   }
 }
 
