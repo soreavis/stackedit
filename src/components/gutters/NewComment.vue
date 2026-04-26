@@ -22,11 +22,7 @@
 
 <script>
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import Prism from 'prismjs';
 import UserImage from '../UserImage';
-import cledit from '../../services/editor/cledit';
-import editorSvc from '../../services/editorSvc';
-import markdownConversionSvc from '../../services/markdownConversionSvc';
 import utils from '../../services/utils';
 import userSvc from '../../services/userSvc';
 import { useWorkspaceStore } from '../../stores/workspace';
@@ -91,21 +87,17 @@ export default {
       }
     },
   },
-  mounted() {
+  async mounted() {
     const preElt = this.$el.querySelector('pre.markdown-highlighting');
     const scrollerElt = this.$el.querySelector('.comment__text-inner');
-    const clEditor = cledit(preElt, scrollerElt, true);
-    clEditor.init({
-      sectionHighlighter: section => Prism.highlight(
-        section.text,
-        editorSvc.prismGrammars[section.data],
-      ),
-      sectionParser: text => markdownConversionSvc
-        .parseSections(editorSvc.converter, text).sections,
+    // Lazy-load the CM6 small-editor builder so flag-off main bundle
+    // stays small. This component mounts after the app is ready.
+    const { mountSmallEditor } = await import('../../services/editor/cm6/cm6SmallEditor');
+    const clEditor = mountSmallEditor(preElt, {
       content: useDiscussionStore().newCommentText,
       selectionStart: useDiscussionStore().newCommentSelection.start,
       selectionEnd: useDiscussionStore().newCommentSelection.end,
-      getCursorFocusRatio: () => 0.2,
+      language: 'markdown',
     });
     clEditor.on('focus', () => this.setNewCommentFocus(true));
 
