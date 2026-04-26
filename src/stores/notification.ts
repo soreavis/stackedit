@@ -81,7 +81,7 @@ export const useNotificationStore = defineStore('notification', {
         } else if (e.status !== undefined) {
           const location = useQueueStore().currentLocation as { providerId?: string };
           if (location.providerId) {
-            const provider = (providerRegistry as { providersById: Record<string, { name: string }> }).providersById[location.providerId];
+            const provider = (providerRegistry as unknown as { providersById: Record<string, { name: string }> }).providersById[location.providerId];
             item.content = `HTTP error ${e.status} on ${provider.name} location.`;
           } else {
             item.content = `HTTP error ${e.status}.`;
