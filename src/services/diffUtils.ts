@@ -1,24 +1,78 @@
-// diff-match-patch wrapper + content-merge orchestrator. Diff tuples
-// and content/discussion shapes are dynamic — typed loosely with `any`.
+// diff-match-patch wrapper + content-merge orchestrator. Discussion
+// offsets are encoded into a marker character stream (private-use
+// codepoints from U+E000) so a text diff can preserve their positions
+// across server/client merges.
 import DiffMatchPatch from 'diff-match-patch';
 import utils from './utils';
 
-const diffMatchPatch: any = new DiffMatchPatch();
+// diff-match-patch shapes — the npm types are awkward; cast at the
+// boundary.
+type DiffOp = -1 | 0 | 1;
+type DiffTuple = [DiffOp, string];
+interface DiffMatchPatchInstance {
+  Match_Distance: number;
+  diff_main(a: string, b: string): DiffTuple[];
+  diff_cleanupSemantic(diffs: DiffTuple[]): void;
+  patch_make(text: string, diffs: DiffTuple[]): unknown[];
+  patch_apply(patches: unknown[], text: string): [string, boolean[]];
+}
+
+const diffMatchPatch = new DiffMatchPatch() as unknown as DiffMatchPatchInstance;
 diffMatchPatch.Match_Distance = 10000;
 
-function makePatchableText(content: any, markerKeys: any[], markerIdxMap: any): any {
+const DIFF_EQUAL = (DiffMatchPatch as { DIFF_EQUAL: DiffOp }).DIFF_EQUAL;
+const DIFF_INSERT = (DiffMatchPatch as { DIFF_INSERT: DiffOp }).DIFF_INSERT;
+
+// Discussion shape used by the merge logic. Offsets are nullable in
+// practice — `restoreDiscussionOffsets` sanitizes them after each
+// reconstruction.
+export interface DiscussionLike {
+  start?: number;
+  end?: number;
+  text?: string;
+  [key: string]: unknown;
+}
+
+export interface ContentLike {
+  text: string;
+  properties?: string;
+  discussions?: Record<string, unknown>;
+  comments?: Record<string, unknown>;
+  history?: unknown[];
+  [key: string]: unknown;
+}
+
+interface MarkerKey {
+  id: string;
+  offsetName: 'start' | 'end';
+}
+
+interface Marker {
+  idx: number;
+  offset: number;
+}
+
+type MarkerIdxMap = Record<string, number>;
+
+export function makePatchableText(
+  content: ContentLike | null | undefined,
+  markerKeys: MarkerKey[],
+  markerIdxMap: MarkerIdxMap,
+): string | null {
   if (!content || !content.discussions) {
     return null;
   }
-  const markers: any[] = [];
+  const markers: Marker[] = [];
   // Sort keys to have predictable marker positions in case of same offset
-  const discussionKeys: string[] = Object.keys(content.discussions).sort();
-  discussionKeys.forEach((discussionId: string) => {
-    const discussion = content.discussions[discussionId];
+  const discussionKeys = Object.keys(content.discussions).sort();
+  const discussions = content.discussions as Record<string, DiscussionLike>;
+  discussionKeys.forEach((discussionId) => {
+    const discussion = discussions[discussionId];
 
-    function addMarker(offsetName: string): void {
+    function addMarker(offsetName: 'start' | 'end'): void {
       const markerKey = discussionId + offsetName;
-      if (discussion[offsetName] !== undefined) {
+      const offset = discussion[offsetName];
+      if (offset !== undefined) {
         let idx = markerIdxMap[markerKey];
         if (idx === undefined) {
           idx = markerKeys.length;
@@ -30,7 +84,7 @@ function makePatchableText(content: any, markerKeys: any[], markerIdxMap: any): 
         }
         markers.push({
           idx,
-          offset: discussion[offsetName],
+          offset: offset as number,
         });
       }
     }
@@ -42,8 +96,8 @@ function makePatchableText(content: any, markerKeys: any[], markerIdxMap: any): 
   let lastOffset = 0;
   let result = '';
   markers
-    .sort((marker1: any, marker2: any) => marker1.offset - marker2.offset)
-    .forEach((marker: any) => {
+    .sort((marker1, marker2) => marker1.offset - marker2.offset)
+    .forEach((marker) => {
       result +=
         content.text.slice(lastOffset, marker.offset) +
         String.fromCharCode(0xe000 + marker.idx); // Use a character from the private use area
@@ -52,12 +106,14 @@ function makePatchableText(content: any, markerKeys: any[], markerIdxMap: any): 
   return result + content.text.slice(lastOffset);
 }
 
-function stripDiscussionOffsets(objectMap: any): any {
+function stripDiscussionOffsets<T extends Record<string, { text?: string; [k: string]: unknown }>>(
+  objectMap: T | null | undefined,
+): Record<string, { text?: string }> | null | undefined {
   if (objectMap == null) {
     return objectMap;
   }
-  const result: any = {};
-  Object.keys(objectMap).forEach((id: string) => {
+  const result: Record<string, { text?: string }> = {};
+  Object.keys(objectMap).forEach((id) => {
     result[id] = {
       text: objectMap[id].text,
     };
@@ -65,16 +121,19 @@ function stripDiscussionOffsets(objectMap: any): any {
   return result;
 }
 
-function restoreDiscussionOffsets(content: any, markerKeys: any[]): void {
+export function restoreDiscussionOffsets(
+  content: ContentLike,
+  markerKeys: MarkerKey[],
+): void {
   if (markerKeys.length) {
     // Go through markers
     let count = 0;
     content.text = content.text.replace(
-      new RegExp(`[\ue000-${String.fromCharCode((0xe000 + markerKeys.length) - 1)}]`, 'g'),
+      new RegExp(`[-${String.fromCharCode((0xe000 + markerKeys.length) - 1)}]`, 'g'),
       (match: string, offset: number) => {
         const idx = match.charCodeAt(0) - 0xe000;
         const markerKey = markerKeys[idx];
-        const discussion = content.discussions[markerKey.id];
+        const discussion = content.discussions && (content.discussions as Record<string, DiscussionLike>)[markerKey.id];
         if (discussion) {
           discussion[markerKey.offsetName] = offset - count;
         }
@@ -83,34 +142,37 @@ function restoreDiscussionOffsets(content: any, markerKeys: any[]): void {
       },
     );
     // Sanitize offsets
-    Object.keys(content.discussions).forEach((discussionId: string) => {
-      const discussion = content.discussions[discussionId];
-      if (discussion.start === undefined) {
-        discussion.start = discussion.end || 0;
-      }
-      if (discussion.end === undefined || discussion.end < discussion.start) {
-        discussion.end = discussion.start;
-      }
-    });
+    if (content.discussions) {
+      const discussions = content.discussions as Record<string, DiscussionLike>;
+      Object.keys(discussions).forEach((discussionId) => {
+        const discussion = discussions[discussionId];
+        if (discussion.start === undefined) {
+          discussion.start = discussion.end || 0;
+        }
+        if (discussion.end === undefined || (discussion.start !== undefined && discussion.end < discussion.start)) {
+          discussion.end = discussion.start;
+        }
+      });
+    }
   }
 }
 
-function mergeText(serverText: any, clientText: any, lastMergedText: any): any {
+function mergeText(serverText: string, clientText: string, lastMergedText: string | null): string {
   const serverClientDiffs = diffMatchPatch.diff_main(serverText, clientText);
   diffMatchPatch.diff_cleanupSemantic(serverClientDiffs);
   // Fusion text is a mix of both server and client contents
-  const fusionText = serverClientDiffs.map((diff: any) => diff[1]).join('');
+  const fusionText = serverClientDiffs.map(diff => diff[1]).join('');
   if (!lastMergedText) {
     return fusionText;
   }
   // Let's try to find out what text has to be removed from fusion
   const intersectionText = serverClientDiffs
     // Keep only equalities
-    .filter((diff: any) => diff[0] === (DiffMatchPatch as any).DIFF_EQUAL)
-    .map((diff: any) => diff[1]).join('');
+    .filter(diff => diff[0] === DIFF_EQUAL)
+    .map(diff => diff[1]).join('');
   const lastMergedTextDiffs = diffMatchPatch.diff_main(lastMergedText, intersectionText)
     // Keep only equalities and deletions
-    .filter((diff: any) => diff[0] !== (DiffMatchPatch as any).DIFF_INSERT);
+    .filter(diff => diff[0] !== DIFF_INSERT);
   diffMatchPatch.diff_cleanupSemantic(lastMergedTextDiffs);
   // Make a patch with deletions only
   const patches = diffMatchPatch.patch_make(lastMergedText, lastMergedTextDiffs);
@@ -118,7 +180,7 @@ function mergeText(serverText: any, clientText: any, lastMergedText: any): any {
   return diffMatchPatch.patch_apply(patches, fusionText)[0];
 }
 
-function mergeValues(serverValue: any, clientValue: any, lastMergedValue: any): any {
+function mergeValues<T>(serverValue: T, clientValue: T, lastMergedValue: T): T {
   if (!lastMergedValue) {
     return serverValue || clientValue; // Take the server value in priority
   }
@@ -140,38 +202,50 @@ function mergeValues(serverValue: any, clientValue: any, lastMergedValue: any): 
   return serverValue; // Take the server value
 }
 
-function mergeObjects(serverObject: any, clientObject: any, lastMergedObject: any = {}): any {
-  const mergedObject: any = {};
+export function mergeObjects(
+  serverObject: Record<string, unknown> | null | undefined,
+  clientObject: Record<string, unknown> | null | undefined,
+  lastMergedObject: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const mergedObject: Record<string, unknown> = {};
   Object.keys({
     ...clientObject,
     ...serverObject,
-  }).forEach((key: string) => {
-    const mergedValue = mergeValues(serverObject[key], clientObject[key], lastMergedObject[key]);
+  }).forEach((key) => {
+    const mergedValue = mergeValues(
+      serverObject?.[key],
+      clientObject?.[key],
+      lastMergedObject[key],
+    );
     if (mergedValue != null) {
       mergedObject[key] = mergedValue;
     }
   });
-  return utils.deepCopy(mergedObject);
+  return utils.deepCopy(mergedObject) as Record<string, unknown>;
 }
 
-function mergeContent(serverContent: any, clientContent: any, lastMergedContent: any = {}): any {
-  const markerKeys: any[] = [];
-  const markerIdxMap: any = Object.create(null);
+export function mergeContent(
+  serverContent: ContentLike,
+  clientContent: ContentLike,
+  lastMergedContent: ContentLike = { text: '' },
+): ContentLike {
+  const markerKeys: MarkerKey[] = [];
+  const markerIdxMap: MarkerIdxMap = Object.create(null);
   const lastMergedText = makePatchableText(lastMergedContent, markerKeys, markerIdxMap);
   const serverText = makePatchableText(serverContent, markerKeys, markerIdxMap);
   const clientText = makePatchableText(clientContent, markerKeys, markerIdxMap);
   const isServerTextChanges = lastMergedText !== serverText;
   const isClientTextChanges = lastMergedText !== clientText;
   const isTextSynchronized = serverText === clientText;
-  let text = clientText;
+  let text = clientText || '';
   if (!isTextSynchronized && isServerTextChanges) {
-    text = serverText;
+    text = serverText || '';
     if (isClientTextChanges) {
-      text = mergeText(serverText, clientText, lastMergedText);
+      text = mergeText(serverText || '', clientText || '', lastMergedText);
     }
   }
 
-  const result = {
+  const result: ContentLike = {
     text,
     properties: mergeValues(
       serverContent.properties,
@@ -179,9 +253,9 @@ function mergeContent(serverContent: any, clientContent: any, lastMergedContent:
       lastMergedContent.properties,
     ),
     discussions: mergeObjects(
-      stripDiscussionOffsets(serverContent.discussions),
-      stripDiscussionOffsets(clientContent.discussions),
-      stripDiscussionOffsets(lastMergedContent.discussions),
+      stripDiscussionOffsets(serverContent.discussions as Record<string, DiscussionLike>) as Record<string, unknown>,
+      stripDiscussionOffsets(clientContent.discussions as Record<string, DiscussionLike>) as Record<string, unknown>,
+      stripDiscussionOffsets(lastMergedContent.discussions as Record<string, DiscussionLike>) as Record<string, unknown>,
     ),
     comments: mergeObjects(
       serverContent.comments,
