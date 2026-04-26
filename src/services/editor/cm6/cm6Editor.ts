@@ -22,6 +22,7 @@ import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { markdown } from '@codemirror/lang-markdown';
 import { stackeditHighlight } from './cm6Highlighter';
 import { markerField } from './cm6Marker';
+import { classRangeField } from './cm6Decorations';
 
 export { isCm6FlagEnabled } from './cm6Flag';
 export { parseSectionsForCm6 } from './cm6SectionParser';
@@ -100,6 +101,17 @@ export type {
   Cm6ClEditorBridge,
   BridgeInitOptions,
 } from './cm6ClEditorBridge';
+export {
+  classRangeField,
+  addClassRangeEffect,
+  removeClassRangeEffect,
+  updateClassRangeEffect,
+  addClassRange,
+  removeClassRange,
+  updateClassRange,
+  getClassRangeEntries,
+} from './cm6Decorations';
+export type { ClassRangeEntry } from './cm6Decorations';
 
 export interface Cm6Handle {
   view: EditorView;
@@ -126,6 +138,7 @@ function baseExtensions(): Extension[] {
     stackeditHighlight(),
     markdown(),
     markerField,
+    classRangeField,
     keymap.of([
       ...defaultKeymap,
       ...historyKeymap,
