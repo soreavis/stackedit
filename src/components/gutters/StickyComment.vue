@@ -6,11 +6,12 @@
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex';
+import { mapState } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import Comment from './Comment';
 import NewComment from './NewComment';
 import { useLayoutStore } from '../../stores/layout';
+import { useDiscussionStore } from '../../stores/discussion';
 
 export default {
   components: {
@@ -24,10 +25,10 @@ export default {
     ...mapPiniaState(useLayoutStore, [
       'constants',
     ]),
-    ...mapState('discussion', [
+    ...mapPiniaState(useDiscussionStore, [
       'isCommenting',
     ]),
-    ...mapGetters('discussion', [
+    ...mapPiniaState(useDiscussionStore, [
       'currentDiscussionLastComment',
     ]),
   },

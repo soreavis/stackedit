@@ -13,8 +13,10 @@ import styledHtmlWithTocTemplate from '../data/templates/styledHtmlWithTocTempla
 import jekyllSiteTemplate from '../data/templates/jekyllSiteTemplate.html?raw';
 import constants from '../data/constants';
 import features from '../data/features';
-import vuexStore from '../store';
 import badgeSvc from '../services/badgeSvc';
+import vuexStore from '../store';
+import { useLayoutStore } from './layout';
+import { useDiscussionStore } from './discussion';
 
 const itemTemplate = (id, data = {}) => ({
   id,
@@ -206,16 +208,16 @@ export const useDataStore = defineStore('data', {
       this.setSideBarPanel();
       this.toggleLayoutSetting('showSideBar', value, 'toggleSideBar');
       if (this.layoutSettings.showSideBar
-        && notEnoughSpace(vuexStore.getters['layout/constants'],
-          vuexStore.getters['discussion/currentDiscussion'])) {
+        && notEnoughSpace(useLayoutStore().constants,
+          useDiscussionStore().currentDiscussion)) {
         this.patchLayoutSettings({ showExplorer: false });
       }
     },
     toggleExplorer(value) {
       this.toggleLayoutSetting('showExplorer', value, 'toggleExplorer');
       if (this.layoutSettings.showExplorer
-        && notEnoughSpace(vuexStore.getters['layout/constants'],
-          vuexStore.getters['discussion/currentDiscussion'])) {
+        && notEnoughSpace(useLayoutStore().constants,
+          useDiscussionStore().currentDiscussion)) {
         this.patchLayoutSettings({ showSideBar: false });
       }
     },

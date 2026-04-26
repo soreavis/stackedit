@@ -17,10 +17,10 @@ import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia'
 import CommentList from './gutters/CommentList';
 import EditorNewDiscussionButton from './gutters/EditorNewDiscussionButton';
 import editorSvc from '../services/editorSvc';
-import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
+import { useDiscussionStore } from '../stores/discussion';
 
 export default {
   components: {
@@ -80,11 +80,11 @@ export default {
     editorElt.addEventListener('mouseover', onDiscussionEvt(classToggler(true)));
     editorElt.addEventListener('mouseout', onDiscussionEvt(classToggler(false)));
     editorElt.addEventListener('click', onDiscussionEvt((discussionId) => {
-      store.commit('discussion/setCurrentDiscussionId', discussionId);
+      useDiscussionStore().setCurrentDiscussionId(discussionId);
     }));
 
     this.$watch(
-      () => store.state.discussion.currentDiscussionId,
+      () => useDiscussionStore().currentDiscussionId,
       (discussionId, oldDiscussionId) => {
         if (oldDiscussionId) {
           editorElt.querySelectorAll(`.discussion-editor-highlighting--${oldDiscussionId}`)
