@@ -1,6 +1,7 @@
 import moduleTemplate from './moduleTemplate';
 import providerRegistry from '../services/providers/common/providerRegistry';
 import utils from '../services/utils';
+import { useFileStore } from '../stores/file';
 
 const addToGroup = (groups, item) => {
   const list = groups[item.fileId];
@@ -50,7 +51,7 @@ export default (empty) => {
       return groups;
     },
     current: (state, { filteredGroupedByFileId }, rootState, rootGetters) => {
-      const locations = filteredGroupedByFileId[rootGetters['file/current'].id] || [];
+      const locations = filteredGroupedByFileId[useFileStore().current.id] || [];
       return locations.map((location) => {
         const provider = providerRegistry.providersById[location.providerId];
         return {
@@ -61,7 +62,7 @@ export default (empty) => {
       });
     },
     currentWithWorkspaceSyncLocation: (state, { current }, rootState, rootGetters) => {
-      const fileId = rootGetters['file/current'].id;
+      const fileId = useFileStore().current.id;
       const fileSyncData = rootGetters['data/syncDataByItemId'][fileId];
       const contentSyncData = rootGetters['data/syncDataByItemId'][`${fileId}/content`];
       if (!fileSyncData || !contentSyncData) {

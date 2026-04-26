@@ -1,4 +1,5 @@
 import pagedownButtons from '../data/pagedownButtons';
+import { useFileStore } from '../stores/file';
 
 let buttonCount = 2; // 2 for undo/redo
 let spacerCount = 0;
@@ -73,7 +74,7 @@ function computeStyles(state, getters, layoutSettings = getters['data/layoutSett
 
   let doublePanelWidth = styles.innerWidth - constants.buttonBarWidth;
   // No commenting for temp files
-  const showGutter = !getters['file/isCurrentTemp'] && !!getters['discussion/currentDiscussion'];
+  const showGutter = !useFileStore().isCurrentTemp && !!getters['discussion/currentDiscussion'];
   if (showGutter) {
     doublePanelWidth -= constants.gutterWidth;
   }

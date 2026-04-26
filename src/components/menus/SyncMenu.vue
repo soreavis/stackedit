@@ -97,6 +97,7 @@
 
 <script>
 import { mapState, mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
 import MenuEntry from './common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import dropboxHelper from '../../services/providers/helpers/dropboxHelper';
@@ -108,6 +109,7 @@ import githubProvider from '../../services/providers/githubProvider';
 import gitlabProvider from '../../services/providers/gitlabProvider';
 import syncSvc from '../../services/syncSvc';
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
@@ -132,7 +134,7 @@ export default {
     ...mapGetters('workspace', [
       'syncToken',
     ]),
-    ...mapGetters('file', [
+    ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
     ...mapGetters('syncLocation', {
@@ -142,7 +144,7 @@ export default {
       return Object.keys(this.syncLocations).length;
     },
     currentFileName() {
-      return `"${store.getters['file/current'].name}"`;
+      return `"${useFileStore().current.name}"`;
     },
     dropboxTokens() {
       return tokensToArray(store.getters['data/dropboxTokensBySub']);

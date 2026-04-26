@@ -124,6 +124,7 @@ import wordpressHelper from '../../services/providers/helpers/wordpressHelper';
 import zendeskHelper from '../../services/providers/helpers/zendeskHelper';
 import publishSvc from '../../services/publishSvc';
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 
 const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
@@ -158,7 +159,7 @@ export default {
       return Object.keys(this.publishLocations).length;
     },
     currentFileName() {
-      return `"${store.getters['file/current'].name}"`;
+      return `"${useFileStore().current.name}"`;
     },
     bloggerTokens() {
       return tokensToArray(store.getters['data/googleTokensBySub'], token => token.isBlogger);
