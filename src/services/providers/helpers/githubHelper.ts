@@ -1,17 +1,14 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for GitHub. Method params + response payloads
+// kept loose (`any`) — vendor APIs return dynamic shapes.
 import utils from '../../utils';
 import networkSvc from '../../networkSvc';
 import userSvc from '../../userSvc';
 import badgeSvc from '../../badgeSvc';
 import { useDataStore } from '../../../stores/data';
 
-const getScopes = token => [token.repoFullAccess ? 'repo' : 'public_repo', 'gist'];
+const getScopes = (token: any): any[] => [token.repoFullAccess ? 'repo' : 'public_repo', 'gist'];
 
-const request = (token, options) => networkSvc.request({
+const request = (token: any, options: any): Promise<any> => (networkSvc as any).request({
   ...options,
   headers: {
     ...options.headers || {},
@@ -23,14 +20,14 @@ const request = (token, options) => networkSvc.request({
   },
 });
 
-const repoRequest = (token, owner, repo, options) => request(token, {
+const repoRequest = (token: any, owner: any, repo: any, options: any): Promise<any> => request(token, {
   ...options,
   url: `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${options.url}`,
 })
-  .then(res => res.body);
+  .then((res: any) => res.body);
 
-const getCommitMessage = (name, path) => {
-  const message = useDataStore().computedSettings.git[name];
+const getCommitMessage = (name: any, path: any): any => {
+  const message = (useDataStore().computedSettings as any).git[name];
   return message.replace(/{{path}}/g, path);
 };
 
@@ -39,9 +36,9 @@ const getCommitMessage = (name, path) => {
  * Using an undocumented endpoint...
  */
 const subPrefix = 'gh';
-userSvc.setInfoResolver('github', subPrefix, async (sub) => {
+(userSvc as any).setInfoResolver('github', subPrefix, async (sub: any) => {
   try {
-    const user = (await networkSvc.request({
+    const user = (await (networkSvc as any).request({
       url: `https://api.github.com/user/${sub}`,
       params: {
         t: Date.now(), // Prevent from caching
@@ -53,7 +50,7 @@ userSvc.setInfoResolver('github', subPrefix, async (sub) => {
       name: user.login,
       imageUrl: user.avatar_url || '',
     };
-  } catch (err) {
+  } catch (err: any) {
     if (err.status !== 404) {
       throw new Error('RETRY');
     }
@@ -67,11 +64,11 @@ export default {
   /**
    * https://developer.github.com/apps/building-oauth-apps/authorization-options-for-oauth-apps/
    */
-  async startOauth2(scopes, sub = null, silent = false) {
-    const clientId = useDataStore().serverConf.githubClientId;
+  async startOauth2(scopes: any[], sub: any = null, silent: boolean = false): Promise<any> {
+    const clientId = (useDataStore().serverConf as any).githubClientId;
 
     // Get an OAuth2 code (PKCE-protected)
-    const { code, codeVerifier } = await networkSvc.startOauth2(
+    const { code, codeVerifier } = await (networkSvc as any).startOauth2(
       'https://github.com/login/oauth/authorize',
       {
         client_id: clientId,
@@ -82,7 +79,7 @@ export default {
     );
 
     // Exchange code with token
-    const accessToken = (await networkSvc.request({
+    const accessToken = (await (networkSvc as any).request({
       method: 'GET',
       url: 'oauth2/githubToken',
       params: {
@@ -93,14 +90,14 @@ export default {
     })).body;
 
     // Call the user info endpoint
-    const user = (await networkSvc.request({
+    const user = (await (networkSvc as any).request({
       method: 'GET',
       url: 'https://api.github.com/user',
       headers: {
         Authorization: `token ${accessToken}`,
       },
     })).body;
-    userSvc.addUserInfo({
+    (userSvc as any).addUserInfo({
       id: `${subPrefix}:${user.id}`,
       name: user.login,
       imageUrl: user.avatar_url || '',
@@ -124,9 +121,9 @@ export default {
     useDataStore().addGithubToken(token);
     return token;
   },
-  async addAccount(repoFullAccess = false) {
+  async addAccount(repoFullAccess: any = false): Promise<any> {
     const token = await this.startOauth2(getScopes({ repoFullAccess }));
-    badgeSvc.addBadge('addGitHubAccount');
+    (badgeSvc as any).addBadge('addGitHubAccount');
     return token;
   },
 
@@ -139,7 +136,7 @@ export default {
     owner,
     repo,
     branch,
-  }) {
+  }: any): Promise<any> {
     const { commit } = await repoRequest(token, owner, repo, {
       url: `commits/${encodeURIComponent(branch)}`,
     });
@@ -161,7 +158,7 @@ export default {
     repo,
     sha,
     path,
-  }) {
+  }: any): Promise<any> {
     return repoRequest(token, owner, repo, {
       url: 'commits',
       params: { sha, path },
@@ -180,13 +177,13 @@ export default {
     path,
     content,
     sha,
-  }) {
+  }: any): Promise<any> {
     return repoRequest(token, owner, repo, {
       method: 'PUT',
       url: `contents/${encodeURIComponent(path)}`,
       body: {
         message: getCommitMessage(sha ? 'updateFileMessage' : 'createFileMessage', path),
-        content: utils.encodeBase64(content),
+        content: (utils as any).encodeBase64(content),
         sha,
         branch,
       },
@@ -203,7 +200,7 @@ export default {
     branch,
     path,
     sha,
-  }) {
+  }: any): Promise<any> {
     return repoRequest(token, owner, repo, {
       method: 'DELETE',
       url: `contents/${encodeURIComponent(path)}`,
@@ -224,14 +221,14 @@ export default {
     repo,
     branch,
     path,
-  }) {
+  }: any): Promise<any> {
     const { sha, content } = await repoRequest(token, owner, repo, {
       url: `contents/${encodeURIComponent(path)}`,
       params: { ref: branch },
     });
     return {
       sha,
-      data: utils.decodeBase64(content),
+      data: (utils as any).decodeBase64(content),
     };
   },
 
@@ -246,7 +243,7 @@ export default {
     content,
     isPublic,
     gistId,
-  }) {
+  }: any): Promise<any> {
     const { body } = await request(token, gistId ? {
       method: 'PATCH',
       url: `https://api.github.com/gists/${gistId}`,
@@ -281,7 +278,7 @@ export default {
     token,
     gistId,
     filename,
-  }) {
+  }: any): Promise<any> {
     const result = (await request(token, {
       url: `https://api.github.com/gists/${gistId}`,
     })).body.files[filename];
@@ -297,7 +294,7 @@ export default {
   async getGistCommits({
     token,
     gistId,
-  }) {
+  }: any): Promise<any> {
     const { body } = await request(token, {
       url: `https://api.github.com/gists/${gistId}/commits`,
     });
@@ -312,7 +309,7 @@ export default {
     gistId,
     filename,
     sha,
-  }) {
+  }: any): Promise<any> {
     const result = (await request(token, {
       url: `https://api.github.com/gists/${gistId}/${sha}`,
     })).body.files[filename];

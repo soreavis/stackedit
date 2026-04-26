@@ -1,29 +1,26 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for Zendesk. Method params + response payloads
+// kept loose (`any`) — vendor APIs return dynamic shapes.
 import networkSvc from '../../networkSvc';
 import badgeSvc from '../../badgeSvc';
 import { useDataStore } from '../../../stores/data';
 
-const request = (token, options) => networkSvc.request({
+const request = (token: any, options: any): Promise<any> => (networkSvc as any).request({
   ...options,
   headers: {
     ...options.headers || {},
     Authorization: `Bearer ${token.accessToken}`,
   },
 })
-  .then(res => res.body);
+  .then((res: any) => res.body);
 
 
 export default {
   /**
    * https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
    */
-  async startOauth2(subdomain, clientId, sub = null, silent = false) {
+  async startOauth2(subdomain: any, clientId: any, sub: any = null, silent: boolean = false): Promise<any> {
     // Get an OAuth2 code
-    const { accessToken } = await networkSvc.startOauth2(
+    const { accessToken } = await (networkSvc as any).startOauth2(
       `https://${subdomain}.zendesk.com/oauth/authorizations/new`,
       {
         client_id: clientId,
@@ -56,9 +53,9 @@ export default {
     useDataStore().addZendeskToken(token);
     return token;
   },
-  async addAccount(subdomain, clientId) {
+  async addAccount(subdomain: any, clientId: any): Promise<any> {
     const token = await this.startOauth2(subdomain, clientId);
-    badgeSvc.addBadge('addZendeskAccount');
+    (badgeSvc as any).addBadge('addZendeskAccount');
     return token;
   },
 
@@ -74,8 +71,8 @@ export default {
     labels,
     locale,
     isDraft,
-  }) {
-    const article = {
+  }: any): Promise<any> {
+    const article: any = {
       title,
       body: content,
       locale,

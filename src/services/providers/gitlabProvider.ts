@@ -1,8 +1,6 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for GitLab repo sync. Method params + response
+// payloads kept loose (`any`) — the GitLab v4 API returns dynamic
+// shapes per endpoint that aren't worth typing in this batch.
 import { useNotificationStore } from '../../stores/notification';
 import gitlabHelper from './helpers/gitlabHelper';
 import Provider from './common/Provider';
@@ -10,13 +8,14 @@ import utils from '../utils';
 import workspaceSvc from '../workspaceSvc';
 import userSvc from '../userSvc';
 import { useDataStore } from '../../stores/data';
+import { useFileStore } from '../../stores/file';
 
-const savedSha = {};
+const savedSha: Record<string, string> = {};
 
 export default new Provider({
   id: 'gitlab',
   name: 'GitLab',
-  getToken({ sub }) {
+  getToken({ sub }: any): any {
     return useDataStore().gitlabTokensBySub[sub];
   },
   getLocationUrl({
@@ -24,37 +23,38 @@ export default new Provider({
     projectPath,
     branch,
     path,
-  }) {
-    const token = this.getToken({ sub });
-    return `${token.serverUrl}/${projectPath}/blob/${encodeURIComponent(branch)}/${utils.encodeUrlPath(path)}`;
+  }: any): string {
+    const token = (this as any).getToken({ sub });
+    return `${token.serverUrl}/${projectPath}/blob/${encodeURIComponent(branch)}/${(utils as any).encodeUrlPath(path)}`;
   },
-  getLocationDescription({ path }) {
+  getLocationDescription({ path }: any): string {
     return path;
   },
-  async downloadContent(token, syncLocation) {
-    const { sha, data } = await gitlabHelper.downloadFile({
+  async downloadContent(token: any, syncLocation: any): Promise<any> {
+    const { sha, data } = await (gitlabHelper as any).downloadFile({
       ...syncLocation,
       token,
     });
     savedSha[syncLocation.id] = sha;
     return Provider.parseContent(data, `${syncLocation.fileId}/content`);
   },
-  async uploadContent(token, content, syncLocation) {
+  async uploadContent(token: any, content: any, syncLocation: any): Promise<any> {
+    const self = this as any;
     const updatedSyncLocation = {
       ...syncLocation,
-      projectId: await gitlabHelper.getProjectId(token, syncLocation),
+      projectId: await (gitlabHelper as any).getProjectId(token, syncLocation),
     };
     if (!savedSha[updatedSyncLocation.id]) {
       try {
         // Get the last sha
-        await this.downloadContent(token, updatedSyncLocation);
+        await self.downloadContent(token, updatedSyncLocation);
       } catch (e) {
         // Ignore error
       }
     }
     const sha = savedSha[updatedSyncLocation.id];
     delete savedSha[updatedSyncLocation.id];
-    await gitlabHelper.uploadFile({
+    await (gitlabHelper as any).uploadFile({
       ...updatedSyncLocation,
       token,
       content: Provider.serializeContent(content),
@@ -62,20 +62,21 @@ export default new Provider({
     });
     return updatedSyncLocation;
   },
-  async publish(token, html, metadata, publishLocation) {
+  async publish(token: any, html: string, metadata: any, publishLocation: any): Promise<any> {
+    const self = this as any;
     const updatedPublishLocation = {
       ...publishLocation,
-      projectId: await gitlabHelper.getProjectId(token, publishLocation),
+      projectId: await (gitlabHelper as any).getProjectId(token, publishLocation),
     };
     try {
       // Get the last sha
-      await this.downloadContent(token, updatedPublishLocation);
+      await self.downloadContent(token, updatedPublishLocation);
     } catch (e) {
       // Ignore error
     }
     const sha = savedSha[updatedPublishLocation.id];
     delete savedSha[updatedPublishLocation.id];
-    await gitlabHelper.uploadFile({
+    await (gitlabHelper as any).uploadFile({
       ...updatedPublishLocation,
       token,
       content: html,
@@ -83,10 +84,11 @@ export default new Provider({
     });
     return updatedPublishLocation;
   },
-  async openFile(token, syncLocation) {
+  async openFile(token: any, syncLocation: any): Promise<void> {
+    const self = this as any;
     const updatedSyncLocation = {
       ...syncLocation,
-      projectId: await gitlabHelper.getProjectId(token, syncLocation),
+      projectId: await (gitlabHelper as any).getProjectId(token, syncLocation),
     };
 
     // Check if the file exists and open it
@@ -94,7 +96,7 @@ export default new Provider({
       // Download content from GitLab
       let content;
       try {
-        content = await this.downloadContent(token, updatedSyncLocation);
+        content = await self.downloadContent(token, updatedSyncLocation);
       } catch (e) {
         useNotificationStore().error(`Could not open file ${updatedSyncLocation.path}.`);
         return;
@@ -110,7 +112,7 @@ export default new Provider({
       if (dotPos > 0 && slashPos < name.length) {
         name = name.slice(0, dotPos);
       }
-      const item = await workspaceSvc.createFile({
+      const item = await (workspaceSvc as any).createFile({
         name,
         parentId: useFileStore().current.parentId,
         text: content.text,
@@ -119,32 +121,32 @@ export default new Provider({
         comments: content.comments,
       }, true);
       useFileStore().setCurrentId(item.id);
-      workspaceSvc.addSyncLocation({
+      (workspaceSvc as any).addSyncLocation({
         ...updatedSyncLocation,
         fileId: item.id,
       });
       useNotificationStore().info(`${useFileStore().current.name} was imported from GitLab.`);
     }
   },
-  makeLocation(token, projectPath, branch, path) {
+  makeLocation(token: any, projectPath: string, branch: string, path: string): any {
     return {
-      providerId: this.id,
+      providerId: (this as any).id,
       sub: token.sub,
       projectPath,
       branch,
       path,
     };
   },
-  async listFileRevisions({ token, syncLocation }) {
-    const entries = await gitlabHelper.getCommits({
+  async listFileRevisions({ token, syncLocation }: any): Promise<any[]> {
+    const entries = await (gitlabHelper as any).getCommits({
       ...syncLocation,
       token,
     });
 
-    return entries.map((entry) => {
+    return entries.map((entry: any) => {
       const email = entry.author_email || entry.committer_email;
-      const sub = `${gitlabHelper.subPrefix}:${token.serverUrl}/${email}`;
-      userSvc.addUserInfo({
+      const sub = `${(gitlabHelper as any).subPrefix}:${token.serverUrl}/${email}`;
+      (userSvc as any).addUserInfo({
         id: sub,
         name: entry.author_name || entry.committer_name,
         imageUrl: '',
@@ -157,7 +159,7 @@ export default new Provider({
       };
     });
   },
-  async loadFileRevision() {
+  async loadFileRevision(): Promise<boolean> {
     // Revision are already loaded
     return false;
   },
@@ -166,8 +168,8 @@ export default new Provider({
     contentId,
     syncLocation,
     revisionId,
-  }) {
-    const { data } = await gitlabHelper.downloadFile({
+  }: any): Promise<any> {
+    const { data } = await (gitlabHelper as any).downloadFile({
       ...syncLocation,
       token,
       branch: revisionId,
