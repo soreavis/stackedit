@@ -22,14 +22,15 @@
 </template>
 
 <script>
-import { mapMutations } from 'vuex';
+
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import UserImage from '../UserImage';
 import UserName from '../UserName';
 import editorSvc from '../../services/editorSvc';
 import htmlSanitizer from '../../libs/htmlSanitizer';
-import store from '../../store';
 import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
+import { useDiscussionStore } from '../../stores/discussion';
 
 export default {
   components: {
@@ -39,21 +40,21 @@ export default {
   props: ['comment'],
   computed: {
     showReply() {
-      return this.comment === store.getters['discussion/currentDiscussionLastComment'] &&
-        !store.state.discussion.isCommenting;
+      return this.comment === useDiscussionStore().currentDiscussionLastComment &&
+        !useDiscussionStore().isCommenting;
     },
     text() {
       return htmlSanitizer.sanitizeHtml(editorSvc.converter.render(this.comment.text));
     },
   },
   methods: {
-    ...mapMutations('discussion', [
+    ...mapPiniaActions(useDiscussionStore, [
       'setIsCommenting',
     ]),
     async removeComment() {
       try {
         await useModalStore().open('commentDeletion');
-        store.dispatch('discussion/cleanCurrentFile', { filterComment: this.comment });
+        useDiscussionStore().cleanCurrentFile({ filterComment: this.comment });
         badgeSvc.addBadge('removeComment');
       } catch (e) {
         // Cancel
@@ -63,7 +64,7 @@ export default {
   mounted() {
     const isSticky = this.$el.parentNode.classList.contains('sticky-comment');
     if (isSticky) {
-      const commentId = store.getters['discussion/currentDiscussionLastCommentId'];
+      const commentId = useDiscussionStore().currentDiscussionLastCommentId;
       const scrollerElt = this.$el.querySelector('.comment__text-inner');
 
       let scrollerMirrorElt;

@@ -1,3 +1,4 @@
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import utils from './utils';
 import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
@@ -9,6 +10,8 @@ import workspaceSvc from './workspaceSvc';
 import draftFilesSvc from './draftFilesSvc';
 import constants from '../data/constants';
 import { useDataStore } from '../stores/data';
+import { useDiscussionStore } from '../stores/discussion';
+import { useExplorerStore } from '../stores/explorer';
 
 interface DbItem {
   id: string;
@@ -445,7 +448,7 @@ const localDbSvc: LocalDbSvc = {
         const currentFile = useFileStore().current;
         // If current file has no ID, get the most recent file
         if (!currentFile.id) {
-          if (store.state.explorer.userClosedFile) {
+          if (useExplorerStore().userClosedFile) {
             // User deliberately closed — don't auto-recover.
             return;
           }
@@ -466,9 +469,9 @@ const localDbSvc: LocalDbSvc = {
             useFileStore().setCurrentId(newFile.id);
           }
         } else {
-          if (store.state.explorer.userClosedFile) {
+          if (useExplorerStore().userClosedFile) {
             // Any transition to a real file clears the close flag.
-            store.commit('explorer/setUserClosedFile', false);
+            useExplorerStore().setUserClosedFile(false);
           }
           try {
             // Load contentState from DB
@@ -487,9 +490,8 @@ const localDbSvc: LocalDbSvc = {
             // Set last opened file
             useDataStore().setLastOpenedId(currentFile.id);
             // Cancel new discussion and open the gutter if file contains discussions
-            store.commit(
-              'discussion/setCurrentDiscussionId',
-              store.getters['discussion/nextDiscussionId'],
+            useDiscussionStore().setCurrentDiscussionId(
+              useDiscussionStore().nextDiscussionId,
             );
           } catch (err) {
             console.error(err);

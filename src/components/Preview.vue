@@ -21,10 +21,10 @@ import { mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import CommentList from './gutters/CommentList';
 import PreviewNewDiscussionButton from './gutters/PreviewNewDiscussionButton';
-import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
+import { useDiscussionStore } from '../stores/discussion';
 
 const appUri = `${window.location.protocol}//${window.location.host}`;
 
@@ -88,11 +88,11 @@ export default {
     previewElt.addEventListener('mouseover', onDiscussionEvt(classToggler(true)));
     previewElt.addEventListener('mouseout', onDiscussionEvt(classToggler(false)));
     previewElt.addEventListener('click', onDiscussionEvt((discussionId) => {
-      store.commit('discussion/setCurrentDiscussionId', discussionId);
+      useDiscussionStore().setCurrentDiscussionId(discussionId);
     }));
 
     this.$watch(
-      () => store.state.discussion.currentDiscussionId,
+      () => useDiscussionStore().currentDiscussionId,
       (discussionId, oldDiscussionId) => {
         if (oldDiscussionId) {
           previewElt.querySelectorAll(`.discussion-preview-highlighting--${oldDiscussionId}`)

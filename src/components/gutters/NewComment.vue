@@ -21,8 +21,8 @@
 </template>
 
 <script>
-import { mapMutations, mapActions } from 'vuex';
-import { mapState as mapPiniaState } from 'pinia';
+import { mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import Prism from 'prismjs';
 import UserImage from '../UserImage';
 import cledit from '../../services/editor/cledit';
@@ -30,11 +30,11 @@ import editorSvc from '../../services/editorSvc';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
 import utils from '../../services/utils';
 import userSvc from '../../services/userSvc';
-import store from '../../store';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useContentStore } from '../../stores/content';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
+import { useDiscussionStore } from '../../stores/discussion';
 
 export default {
   components: {
@@ -49,20 +49,20 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('discussion', [
+    ...mapPiniaActions(useDiscussionStore, [
       'setNewCommentFocus',
     ]),
-    ...mapActions('discussion', [
+    ...mapPiniaActions(useDiscussionStore, [
       'cancelNewComment',
     ]),
     addComment() {
-      const text = store.state.discussion.newCommentText.trim();
+      const text = useDiscussionStore().newCommentText.trim();
       if (text.length) {
         if (text.length > 2000) {
           useNotificationStore().error('Comment is too long.');
         } else {
           // Create comment
-          const discussionId = store.state.discussion.currentDiscussionId;
+          const discussionId = useDiscussionStore().currentDiscussionId;
           const comment = {
             discussionId,
             sub: this.userId,
@@ -75,19 +75,19 @@ export default {
               [utils.uid()]: comment,
             },
           };
-          if (discussionId === store.state.discussion.newDiscussionId) {
+          if (discussionId === useDiscussionStore().newDiscussionId) {
             // Create discussion
             patch.discussions = {
               ...useContentStore().current.discussions,
-              [discussionId]: store.getters['discussion/newDiscussion'],
+              [discussionId]: useDiscussionStore().newDiscussionFromCurrent,
             };
             badgeSvc.addBadge('createDiscussion');
           } else {
             badgeSvc.addBadge('addComment');
           }
           useContentStore().patchCurrent(patch);
-          store.commit('discussion/setNewCommentText');
-          store.commit('discussion/setIsCommenting');
+          useDiscussionStore().setNewCommentText();
+          useDiscussionStore().setIsCommenting();
         }
       }
     },
@@ -103,29 +103,29 @@ export default {
       ),
       sectionParser: text => markdownConversionSvc
         .parseSections(editorSvc.converter, text).sections,
-      content: store.state.discussion.newCommentText,
-      selectionStart: store.state.discussion.newCommentSelection.start,
-      selectionEnd: store.state.discussion.newCommentSelection.end,
+      content: useDiscussionStore().newCommentText,
+      selectionStart: useDiscussionStore().newCommentSelection.start,
+      selectionEnd: useDiscussionStore().newCommentSelection.end,
       getCursorFocusRatio: () => 0.2,
     });
     clEditor.on('focus', () => this.setNewCommentFocus(true));
 
     // Save typed content and selection
     clEditor.on('contentChanged', value =>
-      store.commit('discussion/setNewCommentText', value));
+      useDiscussionStore().setNewCommentText(value));
     clEditor.selectionMgr.on('selectionChanged', (start, end) =>
-      store.commit('discussion/setNewCommentSelection', {
+      useDiscussionStore().setNewCommentSelection({
         start, end,
       }));
 
     const isSticky = this.$el.parentNode.classList.contains('sticky-comment');
-    const isVisible = () => isSticky || store.state.discussion.stickyComment === null;
+    const isVisible = () => isSticky || useDiscussionStore().stickyComment === null;
 
     this.$watch(
-      () => store.state.discussion.currentDiscussionId,
+      () => useDiscussionStore().currentDiscussionId,
       () => {
         this.$nextTick(() => {
-          if (isVisible() && store.state.discussion.newCommentFocus) {
+          if (isVisible() && useDiscussionStore().newCommentFocus) {
             clEditor.focus();
           }
         });
@@ -153,11 +153,11 @@ export default {
         (visible) => {
           clEditor.toggleEditable(visible);
           if (visible) {
-            const text = store.state.discussion.newCommentText;
+            const text = useDiscussionStore().newCommentText;
             clEditor.setContent(text);
-            const selection = store.state.discussion.newCommentSelection;
+            const selection = useDiscussionStore().newCommentSelection;
             clEditor.selectionMgr.setSelectionStartEnd(selection.start, selection.end);
-            if (store.state.discussion.newCommentFocus) {
+            if (useDiscussionStore().newCommentFocus) {
               clEditor.focus();
             }
           }
@@ -165,7 +165,7 @@ export default {
         { immediate: true },
       );
       this.$watch(
-        () => store.state.discussion.newCommentText,
+        () => useDiscussionStore().newCommentText,
         newCommentText => clEditor.setContent(newCommentText),
       );
     }

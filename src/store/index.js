@@ -2,8 +2,6 @@ import createLogger from 'vuex/dist/logger';
 import Vue from 'vue';
 import Vuex from 'vuex';
 import utils from '../services/utils';
-import discussion from './discussion';
-import explorer from './explorer';
 import { useNotificationStore } from '../stores/notification';
 import { useFolderStore } from '../stores/folder';
 import { useSyncedContentStore } from '../stores/syncedContent';
@@ -14,6 +12,7 @@ import { usePublishLocationStore } from '../stores/publishLocation';
 import { useSyncLocationStore } from '../stores/syncLocation';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useDataStore } from '../stores/data';
+import { useExplorerStore } from '../stores/explorer';
 import constants from '../data/constants';
 
 Vue.use(Vuex);
@@ -21,10 +20,6 @@ Vue.use(Vuex);
 const debug = NODE_ENV !== 'production';
 
 const store = new Vuex.Store({
-  modules: {
-    discussion,
-    explorer,
-  },
   state: {
     light: false,
     offline: false,
@@ -69,7 +64,7 @@ const store = new Vuex.Store({
       });
       return result;
     },
-    pathsByItemId: (state, getters) => {
+    pathsByItemId: () => {
       const result = {};
       const processNode = (node, parentPath = '') => {
         let path = parentPath;
@@ -89,7 +84,7 @@ const store = new Vuex.Store({
         }
       };
 
-      processNode(getters['explorer/rootNode']);
+      processNode(useExplorerStore().rootNode);
       return result;
     },
     itemsByPath: (state, { allItemsById, pathsByItemId }) => {

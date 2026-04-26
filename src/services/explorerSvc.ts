@@ -1,3 +1,4 @@
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useFolderStore } from '../stores/folder';
@@ -5,6 +6,7 @@ import { useModalStore } from '../stores/modal';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
 import { useDataStore } from '../stores/data';
+import { useExplorerStore } from '../stores/explorer';
 
 // ExplorerNode is the tree-shaped wrapper that the `explorer/nodeStructure`
 // getter produces. Real shape is rich (folders/files arrays, isRoot/isTrash/
@@ -34,8 +36,8 @@ function isUnder(node: ExplorerNode, sentinelId: string, nodeMap: Record<string,
 // file-watcher would walk up and pop a collapsed folder open, which the
 // user finds disorienting when they've just removed something.
 function pickVisibleReplacement(): string | null {
-  const { nodeMap } = store.getters['explorer/nodeStructure'];
-  const openNodes = store.state.explorer.openNodes;
+  const nodeMap: Record<string, ExplorerNode> = useExplorerStore().nodeStructure.nodeMap as any;
+  const openNodes: Record<string, boolean> = useExplorerStore().openNodes as any;
   const ids: string[] = useDataStore().lastOpenedIds;
   for (let i = 0; i < ids.length; i += 1) {
     const id = ids[i];
@@ -62,7 +64,7 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
   const nodes = selectedNodes.filter(n => !n.isTrash && !n.isTemp && !n.isNil);
   if (!nodes.length) return;
 
-  const { nodeMap }: { nodeMap: Record<string, ExplorerNode> } = store.getters['explorer/nodeStructure'];
+  const nodeMap: Record<string, ExplorerNode> = useExplorerStore().nodeStructure.nodeMap as any;
 
   // If a folder is selected alongside one of its descendants, drop the
   // descendant — the folder's recursive delete will cover it anyway.
@@ -134,7 +136,7 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
   else badgeSvc.addBadge('removeFile');
 
   // Clear selection after bulk delete.
-  store.commit('explorer/setSelectedIds', []);
+  useExplorerStore().setSelectedIds([]);
 
   if (doClose) {
     useFileStore().setCurrentId(pickVisibleReplacement());
@@ -143,13 +145,13 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
 
 export default {
   newItem(isFolder = false): void {
-    const selectedNode: ExplorerNode = store.getters['explorer/selectedNode'];
-    let parentId: string | null = store.getters['explorer/selectedNodeFolder'].item.id;
+    const selectedNode: ExplorerNode = useExplorerStore().selectedNode;
+    let parentId: string | null = useExplorerStore().selectedNodeFolder.item.id;
     // If the selected folder is collapsed, create at the root instead
     // of burying the new item inside a closed branch.
     if (selectedNode.isFolder
       && !selectedNode.isRoot
-      && !store.state.explorer.openNodes[selectedNode.item.id]
+      && !(useExplorerStore().openNodes as Record<string, boolean>)[selectedNode.item.id]
     ) {
       parentId = null;
     }
@@ -158,19 +160,19 @@ export default {
     ) {
       parentId = null;
     }
-    store.dispatch('explorer/openNode', parentId);
-    store.commit('explorer/setNewItem', {
+    useExplorerStore().openNode(parentId);
+    useExplorerStore().setNewItem({
       type: isFolder ? 'folder' : 'file',
       parentId,
     });
   },
   async deleteItem(): Promise<void> {
-    const selectedNodes: ExplorerNode[] = store.getters['explorer/selectedNodes'];
+    const selectedNodes: ExplorerNode[] = useExplorerStore().selectedNodes;
     if (selectedNodes.length > 1) {
       await bulkDelete(selectedNodes);
       return;
     }
-    const selectedNode: ExplorerNode = store.getters['explorer/selectedNode'];
+    const selectedNode: ExplorerNode = useExplorerStore().selectedNode;
     if (selectedNode.isNil) {
       return;
     }
@@ -217,7 +219,7 @@ export default {
       }
     };
 
-    if (selectedNode === store.getters['explorer/selectedNode']) {
+    if (selectedNode === useExplorerStore().selectedNode) {
       const currentFileId = useFileStore().current.id;
       let doClose = selectedNode.item.id === currentFileId;
       if (selectedNode.isFolder) {

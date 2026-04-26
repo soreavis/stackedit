@@ -1,3 +1,4 @@
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 // Persist a small amount of UI state (open folders + current file id)
 // across page reloads via localStorage so the user lands back where they
 // left off. Intentionally NOT using IndexedDB — this is session/UI state,
@@ -6,6 +7,7 @@
 import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useDataStore } from '../stores/data';
+import { useExplorerStore } from '../stores/explorer';
 
 const OPEN_NODES_KEY = 'stackedit.ui.openNodes';
 const CURRENT_ID_KEY = 'stackedit.ui.currentId';
@@ -32,7 +34,7 @@ function writeJson(key: string, value: unknown): void {
 function restoreOpenNodes(): void {
   const saved = readJson(OPEN_NODES_KEY);
   if (saved && typeof saved === 'object') {
-    store.commit('explorer/setOpenNodes', saved);
+    useExplorerStore().setOpenNodes(saved);
   }
 }
 
@@ -61,7 +63,7 @@ function bindSubscriptions(): void {
     if (mutation.type === 'explorer/toggleOpenNode'
       || mutation.type === 'explorer/setOpenNodes'
     ) {
-      writeJson(OPEN_NODES_KEY, store.state.explorer.openNodes || {});
+      writeJson(OPEN_NODES_KEY, useExplorerStore().openNodes || {});
     }
   });
   // file is in Pinia. Watch currentId via $subscribe.
@@ -92,7 +94,7 @@ function seedRecentSnapshot(): void {
       return f && f.parentId !== 'trash';
     })
     .slice(0, 10);
-  store.commit('explorer/setRecentSnapshot', snapshot);
+  useExplorerStore().setRecentSnapshot(snapshot);
 }
 
 export default {

@@ -79,6 +79,7 @@ import { useContextMenuStore } from '../stores/contextMenu';
 import { useQueueStore } from '../stores/queue';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
+import { useExplorerStore } from '../stores/explorer';
 
 // According to mousetrap
 const mod = /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'Meta' : 'Ctrl';
@@ -289,7 +290,7 @@ export default {
       }
     },
     closeCurrentFile() {
-      store.commit('explorer/setUserClosedFile', true);
+      useExplorerStore().setUserClosedFile(true);
       useFileStore().setCurrentId(null);
     },
     async onTitleContextMenu(evt) {

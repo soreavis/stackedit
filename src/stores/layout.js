@@ -5,6 +5,7 @@ import { useContentStore } from './content';
 import { useSyncLocationStore } from './syncLocation';
 import { usePublishLocationStore } from './publishLocation';
 import { useDataStore } from './data';
+import { useDiscussionStore } from './discussion';
 import vuexStore from '../store';
 
 let buttonCount = 2;
@@ -73,9 +74,8 @@ function computeStyles(state, layoutSettings, styles) {
   if (styles.showExplorer) styles.innerWidth -= layoutConstants.explorerWidth;
 
   let doublePanelWidth = styles.innerWidth - layoutConstants.buttonBarWidth;
-  // discussion module still in Vuex during the transition.
   const showGutter = !useFileStore().isCurrentTemp
-    && !!vuexStore.getters['discussion/currentDiscussion'];
+    && !!useDiscussionStore().currentDiscussion;
 
   if (showGutter) doublePanelWidth -= layoutConstants.gutterWidth;
   if (doublePanelWidth < layoutConstants.editorMinWidth) {
