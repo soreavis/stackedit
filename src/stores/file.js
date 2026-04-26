@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import empty from '../data/empties/emptyFile';
 import utils from '../services/utils';
-import vuexStore from '../store';
 import { useFolderStore } from './folder';
 import { useDataStore } from './data';
+import { useExplorerStore } from './explorer';
 
 // `file` doesn't reuse the itemStoreFactory because it adds currentId
 // state, plus three custom getters (current, isCurrentTemp, lastOpened
@@ -30,7 +30,7 @@ export const useFileStore = defineStore('file', {
       // without auto-expanding a currently-collapsed folder. The fallback
       // localDbSvc uses when currentId goes null; picking a file behind a
       // closed folder would pop it open in the explorer (disorienting).
-      const openNodes = vuexStore.state.explorer ? vuexStore.state.explorer.openNodes : {};
+      const openNodes = useExplorerStore().openNodes;
       const foldersById = useFolderStore().itemsById;
       const isHidden = (file) => {
         let pid = file.parentId;
