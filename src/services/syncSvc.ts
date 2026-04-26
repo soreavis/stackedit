@@ -1,7 +1,7 @@
 // 960-line sync orchestrator: workspace sync, file sync, content
-// merge, queue/retry, location resolution. Wire shapes (sync data,
-// locations, content tuples, providers) stay loosely typed (`any`)
-// pending a designed sync state-machine + location interface.
+// merge, queue/retry, location resolution. Provider responses still
+// use `any` (heterogeneous vendor APIs); core wire shapes (SyncData,
+// Change, SyncedContent, SyncContext) are typed below.
 import localDbSvc from './localDbSvc';
 import { useSyncLocationStore } from '../stores/syncLocation';
 import { usePublishLocationStore } from '../stores/publishLocation';
@@ -40,6 +40,40 @@ const maxContentHistory = 20;
 const LAST_SEEN = 0;
 const LAST_MERGED = 1;
 const LAST_SENT = 2;
+
+// Core sync wire shapes — minimal surfaces touched by this module.
+// Providers return arbitrary additional fields (which we read via `any`
+// at the call site).
+interface SyncData {
+  id: string;
+  itemId?: string;
+  type?: string;
+  hash?: number;
+  parentIds?: string[];
+}
+
+interface ChangeItem {
+  id: string;
+  type?: string;
+  hash?: number;
+  [key: string]: unknown;
+}
+
+interface Change {
+  fileId?: string;
+  syncDataId: string;
+  syncData?: SyncData;
+  item?: ChangeItem;
+  file?: { name?: string; [key: string]: unknown };
+}
+
+interface SyncedContent {
+  id: string;
+  v?: number;
+  historyData: Record<string, ChangeItem>;
+  syncHistory: Record<string, number[]>;
+  [key: string]: unknown;
+}
 
 let actionProvider: any;
 let workspaceProvider: any;
@@ -99,20 +133,20 @@ const setLastSyncActivity = (): void => {
 /**
  * Upgrade hashes if syncedContent is from an old version
  */
-const upgradeSyncedContent = (syncedContent: any): any => {
+const upgradeSyncedContent = (syncedContent: SyncedContent): SyncedContent => {
   if (syncedContent.v) {
     return syncedContent;
   }
-  const hashUpgrades: any = {};
-  const historyData: any = {};
-  const syncHistory: any = {};
-  Object.entries(syncedContent.historyData).forEach(([hash, content]: [string, any]) => {
+  const hashUpgrades: Record<string, number> = {};
+  const historyData: Record<string, ChangeItem> = {};
+  const syncHistory: Record<string, number[]> = {};
+  Object.entries(syncedContent.historyData).forEach(([hash, content]) => {
     const newContent = utils.addItemHash(content);
     historyData[newContent.hash] = newContent;
     hashUpgrades[hash] = newContent.hash;
   });
-  Object.entries(syncedContent.syncHistory).forEach(([id, hashEntries]: [string, any]) => {
-    syncHistory[id] = hashEntries.map((hash: any) => hashUpgrades[hash]);
+  Object.entries(syncedContent.syncHistory).forEach(([id, hashEntries]) => {
+    syncHistory[id] = hashEntries.map((hash: number) => hashUpgrades[String(hash)]);
   });
   return {
     ...syncedContent,
@@ -125,7 +159,7 @@ const upgradeSyncedContent = (syncedContent: any): any => {
 /**
  * Clean a syncedContent.
  */
-const cleanSyncedContent = (syncedContent: any): void => {
+const cleanSyncedContent = (syncedContent: SyncedContent): void => {
   // Clean syncHistory from removed syncLocations
   Object.keys(syncedContent.syncHistory).forEach((syncLocationId: string) => {
     if (syncLocationId !== 'main' && !(useSyncLocationStore() as any).itemsById[syncLocationId]) {
@@ -133,7 +167,7 @@ const cleanSyncedContent = (syncedContent: any): void => {
     }
   });
 
-  const allSyncLocationHashSet = new Set<any>(([] as any[])
+  const allSyncLocationHashSet = new Set<number>(([] as number[])
     .concat(...Object.keys(syncedContent.syncHistory)
       .map((id: string) => syncedContent.syncHistory[id])));
 
@@ -150,21 +184,23 @@ const cleanSyncedContent = (syncedContent: any): void => {
 /**
  * Apply changes retrieved from the workspace provider. Update sync data accordingly.
  */
-const applyChanges = (changes: any[]): void => {
-  const allItemsById: any = { ...(useGlobalStore() as any).allItemsById };
-  const syncDataById: any = { ...(useDataStore() as any).syncDataById };
-  const idsToKeep: any = {};
+const applyChanges = (changes: Change[]): void => {
+  const allItemsById: Record<string, ChangeItem> = { ...(useGlobalStore() as any).allItemsById };
+  const syncDataById: Record<string, SyncData> = { ...(useDataStore() as any).syncDataById };
+  const idsToKeep: Record<string, boolean> = {};
   let saveSyncData = false;
-  let getExistingItem: (existingSyncData: any) => any;
+  let getExistingItem: (existingSyncData: SyncData | undefined) => ChangeItem | undefined;
   if ((useWorkspaceStore() as any).currentWorkspaceIsGit) {
-    const itemsByGitPath: any = { ...(useGlobalStore() as any).itemsByGitPath };
-    getExistingItem = (existingSyncData: any) => existingSyncData && itemsByGitPath[existingSyncData.id];
+    const itemsByGitPath: Record<string, ChangeItem> = { ...(useGlobalStore() as any).itemsByGitPath };
+    getExistingItem = (existingSyncData) => existingSyncData && itemsByGitPath[existingSyncData.id];
   } else {
-    getExistingItem = (existingSyncData: any) => existingSyncData && allItemsById[existingSyncData.itemId];
+    getExistingItem = (existingSyncData) => existingSyncData && existingSyncData.itemId
+      ? allItemsById[existingSyncData.itemId]
+      : undefined;
   }
 
   // Process each change
-  changes.forEach((change: any) => {
+  changes.forEach((change) => {
     const existingSyncData = syncDataById[change.syncDataId];
     const existingItem = getExistingItem(existingSyncData);
     // If item was removed
@@ -175,11 +211,11 @@ const applyChanges = (changes: any[]): void => {
       }
       if (existingItem) {
         // Remove object from the store
-        deleteItemByType(existingItem.type, existingItem.id);
+        deleteItemByType(existingItem.type as string, existingItem.id);
         delete allItemsById[existingItem.id];
       }
     // If item was modified
-    } else if (change.item && change.item.hash) {
+    } else if (change.item && change.item.hash && change.syncData) {
       idsToKeep[change.item.id] = true;
 
       if ((existingSyncData || {}).hash !== change.syncData.hash) {
@@ -194,7 +230,7 @@ const applyChanges = (changes: any[]): void => {
         // And item is not content nor data, which will be merged later
         && change.item.type !== 'content' && change.item.type !== 'data'
       ) {
-        setItemByType(change.item.type, change.item);
+        setItemByType(change.item.type as string, change.item);
         allItemsById[change.item.id] = change.item;
       }
     }
@@ -308,7 +344,7 @@ const updateSyncData = (result: any): any => {
 
 class SyncContext {
   restartSkipContents = false;
-  attempted: any = {};
+  attempted: Record<string, boolean> = {};
 }
 
 /**

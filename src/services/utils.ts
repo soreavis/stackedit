@@ -1,20 +1,23 @@
-// Heterogeneous helper bag (yaml, marker offsets, hashing). Typed
-// loosely with `any` at boundaries — full shapes would require shared
-// content/discussion types out of scope for this pass.
+// Cross-cutting helpers — yaml settings overlay, marker hashing, query
+// params, base64, DOM range wrappers. Free-form payloads (yaml objects,
+// search criteria, item hash inputs) keep `unknown` annotations and
+// narrow at the call site.
 import yaml from 'js-yaml';
 import presets from '../data/presets';
 import constants from '../data/constants';
 
 // For utils.uid()
 const uidLength = 16;
-const crypto: Crypto = (window as any).crypto || (window as any).msCrypto;
+const crypto: Crypto = window.crypto || (window as unknown as { msCrypto: Crypto }).msCrypto;
 const alphabet: string[] = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const radix = alphabet.length;
 const array = new Uint32Array(uidLength);
 
+type QueryParams = Record<string, string>;
+
 // For utils.parseQueryParams()
-const parseQueryParams = (params: string): any => {
-  const result: any = {};
+const parseQueryParams = (params: string): QueryParams => {
+  const result: QueryParams = {};
   params.split('&').forEach((param: string) => {
     const [key, value] = param.split('=').map(decodeURIComponent);
     if (key && value != null) {
@@ -25,18 +28,19 @@ const parseQueryParams = (params: string): any => {
 };
 
 // For utils.setQueryParams()
-const filterParams = (params: any = {}): any => {
-  const result: any = {};
+const filterParams = (params: Record<string, unknown> = {}): QueryParams => {
+  const result: QueryParams = {};
   Object.entries(params).forEach(([key, value]) => {
     if (key && value != null) {
-      result[key] = value;
+      result[key] = String(value);
     }
   });
   return result;
 };
 
-// For utils.computeProperties()
-const deepOverride = (obj: any, opt: any): any => {
+// For utils.computeProperties() — recursive overlay; objects merge by
+// key, primitives prefer the override, type mismatches keep the base.
+const deepOverride = (obj: unknown, opt: unknown): unknown => {
   if (obj === undefined) {
     return opt;
   }
@@ -48,79 +52,97 @@ const deepOverride = (obj: any, opt: any): any => {
   if (objType !== '[object Object]') {
     return opt === undefined ? obj : opt;
   }
+  const o = obj as Record<string, unknown>;
+  const p = opt as Record<string, unknown>;
   Object.keys({
-    ...obj,
-    ...opt,
+    ...o,
+    ...p,
   }).forEach((key: string) => {
-    obj[key] = deepOverride(obj[key], opt[key]);
+    o[key] = deepOverride(o[key], p[key]);
   });
-  return obj;
+  return o;
 };
 
 // For utils.addQueryParams()
 const urlParser = document.createElement('a');
 
-const deepCopy = (obj: any): any => {
+function deepCopy<T>(obj: T): T {
   if (obj == null) {
     return obj;
   }
   return JSON.parse(JSON.stringify(obj));
-};
+}
 
 // Compute presets
-const computedPresets: any = {};
-Object.keys(presets).forEach((key: string) => {
-  let preset = deepCopy((presets as any)[key][0]);
-  if ((presets as any)[key][1]) {
-    preset = deepOverride(preset, (presets as any)[key][1]);
+const computedPresets: Record<string, unknown> = {};
+const presetsMap = presets as unknown as Record<string, [unknown, unknown?]>;
+Object.keys(presetsMap).forEach((key) => {
+  let preset = deepCopy(presetsMap[key][0]);
+  if (presetsMap[key][1]) {
+    preset = deepOverride(preset, presetsMap[key][1]);
   }
   computedPresets[key] = preset;
 });
 
+interface Constants {
+  textMaxLength: number;
+  defaultName: string;
+  [key: string]: unknown;
+}
+const consts = constants as Constants;
+
+interface Item {
+  id?: string;
+  hash?: number;
+  history?: unknown;
+  [key: string]: unknown;
+}
+
 export default {
   computedPresets,
-  queryParams: parseQueryParams(window.location.hash.slice(1)) as any,
-  setQueryParams(params: any = {}): void {
+  queryParams: parseQueryParams(window.location.hash.slice(1)) as QueryParams,
+  setQueryParams(params: Record<string, unknown> = {}): void {
     this.queryParams = filterParams(params);
     const serializedParams = Object.entries(this.queryParams).map(([key, value]) =>
-      `${encodeURIComponent(key)}=${encodeURIComponent(value as any)}`).join('&');
+      `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
     const hash = `#${serializedParams}`;
     if (window.location.hash !== hash) {
       window.location.replace(hash);
     }
   },
-  sanitizeText(text: any): string {
-    const result = `${text || ''}`.slice(0, (constants as any).textMaxLength);
+  sanitizeText(text: unknown): string {
+    const result = `${text || ''}`.slice(0, consts.textMaxLength);
     // last char must be a `\n`.
     return `${result}\n`.replace(/\n\n$/, '\n');
   },
-  sanitizeName(name: any): string {
+  sanitizeName(name: unknown): string {
     return `${name || ''}`
       // Keep only 250 characters
-      .slice(0, 250) || (constants as any).defaultName;
+      .slice(0, 250) || consts.defaultName;
   },
-  sanitizeFilename(name: any): string {
+  sanitizeFilename(name: unknown): string {
     return this.sanitizeName(`${name || ''}`
       // Replace `/`, control characters and other kind of spaces with a space
       .replace(/[/\x00-\x1F\x7f-\xa0\s]+/g, ' ') // eslint-disable-line no-control-regex
-      .trim()) || (constants as any).defaultName;
+      .trim()) || consts.defaultName;
   },
   deepCopy,
-  serializeObject(obj: any): any {
-    return obj === undefined ? obj : JSON.stringify(obj, (key: string, value: any) => {
+  serializeObject(obj: unknown): string | undefined {
+    return obj === undefined ? undefined : JSON.stringify(obj, (_key: string, value: unknown) => {
       if (Object.prototype.toString.call(value) !== '[object Object]') {
         return value;
       }
       // Sort keys to have a predictable result
-      return Object.keys(value).sort().reduce((sorted: any, valueKey: string) => {
-        sorted[valueKey] = value[valueKey];
+      const v = value as Record<string, unknown>;
+      return Object.keys(v).sort().reduce((sorted: Record<string, unknown>, valueKey: string) => {
+        sorted[valueKey] = v[valueKey];
         return sorted;
       }, {});
     });
   },
-  search(items: any[], criteria: any): any {
-    let result: any;
-    items.some((item: any) => {
+  search<T extends Record<string, unknown>>(items: T[], criteria: Record<string, unknown>): T | undefined {
+    let result: T | undefined;
+    items.some((item) => {
       // If every field fits the criteria
       if (Object.entries(criteria).every(([key, value]) => value === item[key])) {
         result = item;
@@ -136,7 +158,7 @@ export default {
     // regular string[].
     return Array.from(array, (value: number) => alphabet[value % radix]).join('');
   },
-  hash(str: any): number {
+  hash(str: string | undefined | null): number {
     // https://stackoverflow.com/a/7616484/1333165
     let hash = 0;
     if (!str) return hash;
@@ -147,7 +169,7 @@ export default {
     }
     return hash;
   },
-  getItemHash(item: any): number {
+  getItemHash(item: Item): number {
     return this.hash(this.serializeObject({
       ...item,
       // These properties must not be part of the hash
@@ -156,13 +178,13 @@ export default {
       history: undefined,
     }));
   },
-  addItemHash(item: any): any {
+  addItemHash<T extends Item>(item: T): T & { hash: number } {
     return {
       ...item,
       hash: this.getItemHash(item),
     };
   },
-  makeWorkspaceId(params: any): string {
+  makeWorkspaceId(params: Record<string, unknown>): string {
     return Math.abs(this.hash(this.serializeObject(params))).toString(36);
   },
   getDbName(workspaceId: string): string {
@@ -176,7 +198,7 @@ export default {
     const uriEncodedStr = encodeURIComponent(str);
     const utf8Str = uriEncodedStr.replace(
       /%([0-9A-F]{2})/g,
-      (match: string, p1: string) => String.fromCharCode(`0x${p1}` as any),
+      (_match: string, p1: string) => String.fromCharCode(parseInt(p1, 16)),
     );
     const result = btoa(utf8Str);
     if (!urlSafe) {
@@ -197,16 +219,16 @@ export default {
       .join('');
     return decodeURIComponent(uriEncodedStr);
   },
-  computeProperties(yamlProperties: any): any {
-    let properties: any = {};
+  computeProperties(yamlProperties: string | undefined): Record<string, unknown> {
+    let properties: Record<string, unknown> = {};
     try {
-      properties = yaml.load(yamlProperties) || {};
+      properties = (yaml.load(yamlProperties || '') || {}) as Record<string, unknown>;
     } catch (e) {
       // Ignore
     }
-    const extensions = properties.extensions || {};
-    const computedPreset = deepCopy(computedPresets[extensions.preset] || computedPresets.default);
-    const computedExtensions = deepOverride(computedPreset, properties.extensions);
+    const extensions = (properties.extensions || {}) as Record<string, unknown>;
+    const computedPreset = deepCopy(computedPresets[extensions.preset as string] || computedPresets.default);
+    const computedExtensions = deepOverride(computedPreset, properties.extensions) as Record<string, unknown>;
     computedExtensions.preset = extensions.preset;
     properties.extensions = computedExtensions;
     return properties;
@@ -214,44 +236,47 @@ export default {
   randomize(value: number): number {
     return Math.floor((1 + (Math.random() * 0.2)) * value);
   },
-  setInterval(func: () => any, interval: number): any {
+  setInterval(func: () => unknown, interval: number): ReturnType<typeof setInterval> {
     return setInterval(() => func(), this.randomize(interval));
   },
-  async awaitSequence(values: any[], asyncFunc: (val: any) => Promise<any>): Promise<any[]> {
-    const results: any[] = [];
+  async awaitSequence<T, R>(values: T[], asyncFunc: (val: T) => Promise<R>): Promise<R[]> {
+    const results: R[] = [];
     const valuesLeft = values.slice().reverse();
-    const runWithNextValue = async (): Promise<any[]> => {
+    const runWithNextValue = async (): Promise<R[]> => {
       if (!valuesLeft.length) {
         return results;
       }
-      results.push(await asyncFunc(valuesLeft.pop()));
+      results.push(await asyncFunc(valuesLeft.pop() as T));
       return runWithNextValue();
     };
     return runWithNextValue();
   },
-  async awaitSome(asyncFunc: () => Promise<any>): Promise<any> {
+  async awaitSome(asyncFunc: () => Promise<unknown>): Promise<null> {
     if (await asyncFunc()) {
       return this.awaitSome(asyncFunc);
     }
     return null;
   },
-  someResult(values: any[], func: (val: any) => any): any {
-    let result: any;
-    values.some((value: any) => {
-      result = func(value);
+  someResult<T, R>(values: T[], func: (val: T) => R | undefined | null): R | undefined {
+    let result: R | undefined;
+    values.some((value) => {
+      const ret = func(value);
+      if (ret) {
+        result = ret;
+      }
       return result;
     });
     return result;
   },
   parseQueryParams,
-  addQueryParams(url: string = '', params: any = {}, hash: boolean = false): string {
+  addQueryParams(url: string = '', params: Record<string, unknown> = {}, hash: boolean = false): string {
     const keys = Object.keys(params).filter((key: string) => params[key] != null);
     urlParser.href = url;
     if (!keys.length) {
       return urlParser.href;
     }
     const serializedParams = keys.map((key: string) =>
-      `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&');
+      `${encodeURIComponent(key)}=${encodeURIComponent(String(params[key]))}`).join('&');
     if (hash) {
       if (urlParser.hash) {
         urlParser.hash += '&';
@@ -290,16 +315,16 @@ export default {
   encodeUrlPath(path: string): string {
     return path ? path.split('/').map(encodeURIComponent).join('/') : '';
   },
-  parseGithubRepoUrl(url: any): any {
+  parseGithubRepoUrl(url: string | undefined | null): { owner: string; repo: string } | null {
     const parsedRepo = url && url.match(/([^/:]+)\/([^/]+?)(?:\.git|\/)?$/);
-    return parsedRepo && {
+    return parsedRepo ? {
       owner: parsedRepo[1],
       repo: parsedRepo[2],
-    };
+    } : null;
   },
-  parseGitlabProjectPath(url: any): any {
+  parseGitlabProjectPath(url: string | undefined | null): string | null {
     const parsedProject = url && url.match(/^https:\/\/[^/]+\/(.+?)(?:\.git|\/)?$/);
-    return parsedProject && parsedProject[1];
+    return parsedProject ? parsedProject[1] : null;
   },
   createHiddenIframe(url: string): HTMLIFrameElement {
     const iframeElt = document.createElement('iframe');
@@ -310,7 +335,7 @@ export default {
     iframeElt.src = url;
     return iframeElt;
   },
-  wrapRange(range: any, eltProperties: any): void {
+  wrapRange(range: Range, eltProperties: Record<string, unknown>): void {
     const rangeLength = `${range}`.length;
     let wrappedLength = 0;
     const treeWalker = document
@@ -329,7 +354,7 @@ export default {
             treeWalker.currentNode = (treeWalker.currentNode as Text).splitText(startOffset);
             startOffset = 0;
           }
-          const elt: any = document.createElement('span');
+          const elt = document.createElement('span') as HTMLSpanElement & Record<string, unknown>;
           Object.entries(eltProperties).forEach(([key, value]) => {
             elt[key] = value;
           });
@@ -344,23 +369,23 @@ export default {
       while (treeWalker.nextNode());
     }
   },
-  unwrapRange(eltCollection: any): void {
-    Array.prototype.slice.call(eltCollection).forEach((elt: any) => {
+  unwrapRange(eltCollection: ArrayLike<HTMLElement>): void {
+    Array.prototype.slice.call(eltCollection).forEach((elt: HTMLElement) => {
       // Loop in case another wrapper has been added inside
-      for (let child = elt.firstChild; child; child = elt.firstChild) {
+      for (let child: ChildNode | null = elt.firstChild; child; child = elt.firstChild) {
         if (child.nodeType === 3) {
           if (elt.previousSibling && elt.previousSibling.nodeType === 3) {
-            child.nodeValue = elt.previousSibling.nodeValue + child.nodeValue;
-            elt.parentNode.removeChild(elt.previousSibling);
+            child.nodeValue = (elt.previousSibling.nodeValue || '') + (child.nodeValue || '');
+            elt.parentNode!.removeChild(elt.previousSibling);
           }
           if (!child.nextSibling && elt.nextSibling && elt.nextSibling.nodeType === 3) {
-            child.nodeValue += elt.nextSibling.nodeValue;
-            elt.parentNode.removeChild(elt.nextSibling);
+            child.nodeValue = (child.nodeValue || '') + (elt.nextSibling.nodeValue || '');
+            elt.parentNode!.removeChild(elt.nextSibling);
           }
         }
-        elt.parentNode.insertBefore(child, elt);
+        elt.parentNode!.insertBefore(child, elt);
       }
-      elt.parentNode.removeChild(elt);
+      elt.parentNode!.removeChild(elt);
     });
   },
 };
