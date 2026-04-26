@@ -117,8 +117,10 @@ export interface Cm6ClEditorBridge {
   toggleEditable(value?: boolean): void;
   getContent(): string;
   setContent(value: string, noUndo?: boolean): { start: number; end: number; range: unknown };
+  setSelection(start: number, end: number): void;
   replace(start: number, end: number, replacement: string): void;
   replaceAll(search: RegExp | string, replacement: string, startOffset?: number): void;
+  adjustCursorPosition(): void;
   addMarker(m: Cm6Marker): void;
   removeMarker(m: Cm6Marker): void;
   addKeystroke(_k: unknown): void;
@@ -345,6 +347,17 @@ export function createCm6ClEditorBridge(
       return { start: startOffset, end: value.length - endOffset, range: { from: fromIdx, to: toIdx } };
     },
 
+    setSelection(start, end) {
+      // cledit exposes editor.setSelection at the top level (not just on
+      // selectionMgr). Pagedown's TextareaState.restore calls
+      // `inputArea.setSelection(start, end)` directly — without this
+      // shim the call throws "setSelection is not a function" and aborts
+      // the post-button-click cursor restore.
+      try {
+        view.dispatch({ selection: EditorSelection.range(start, end) });
+      } catch { /* out of range — ignore */ }
+    },
+
     replace(start, end, replacement) {
       const min = Math.min(start, end);
       const max = Math.max(start, end);
@@ -352,6 +365,14 @@ export function createCm6ClEditorBridge(
         changes: { from: min, to: max, insert: replacement },
         selection: EditorSelection.cursor(min + replacement.length),
       });
+    },
+
+    adjustCursorPosition() {
+      // cledit's adjustCursorPosition syncs DOM caret state into the
+      // selectionMgr after content mutations. CM6 manages its own caret
+      // state via transactions, so this is a no-op — but pagedown
+      // (after wrap-style commands) calls it on the input. Keep the
+      // method present so pagedown's flow doesn't abort.
     },
 
     replaceAll(search, replacement, startOffset = 0) {
