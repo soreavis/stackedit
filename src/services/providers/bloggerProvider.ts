@@ -1,8 +1,5 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for Blogger posts. Method params + response
+// payloads kept loose because shapes vary across the Blogger v3 API.
 import googleHelper from './helpers/googleHelper';
 import Provider from './common/Provider';
 import { useDataStore } from '../../stores/data';
@@ -10,18 +7,18 @@ import { useDataStore } from '../../stores/data';
 export default new Provider({
   id: 'blogger',
   name: 'Blogger',
-  getToken({ sub }) {
+  getToken({ sub }: any): any {
     const token = useDataStore().googleTokensBySub[sub];
-    return token && token.isBlogger ? token : null;
+    return token && (token as any).isBlogger ? token : null;
   },
-  getLocationUrl({ blogId, postId }) {
+  getLocationUrl({ blogId, postId }: any): string {
     return `https://www.blogger.com/blogger.g?blogID=${blogId}#editor/target=post;postID=${postId}`;
   },
-  getLocationDescription({ postId }) {
+  getLocationDescription({ postId }: any): string {
     return postId;
   },
-  async publish(token, html, metadata, publishLocation) {
-    const post = await googleHelper.uploadBlogger({
+  async publish(token: any, html: string, metadata: any, publishLocation: any): Promise<any> {
+    const post = await (googleHelper as any).uploadBlogger({
       ...publishLocation,
       token,
       title: metadata.title,
@@ -36,9 +33,9 @@ export default new Provider({
       postId: post.id,
     };
   },
-  makeLocation(token, blogUrl, postId) {
-    const location = {
-      providerId: this.id,
+  makeLocation(token: any, blogUrl: string, postId?: string): any {
+    const location: any = {
+      providerId: (this as any).id,
       sub: token.sub,
       blogUrl,
     };

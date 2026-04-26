@@ -1,15 +1,12 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for GitLab. Method params + response payloads
+// kept loose (`any`) — vendor APIs return dynamic shapes.
 import utils from '../../utils';
 import networkSvc from '../../networkSvc';
 import userSvc from '../../userSvc';
 import badgeSvc from '../../badgeSvc';
 import { useDataStore } from '../../../stores/data';
 
-const request = ({ accessToken, serverUrl }, options) => networkSvc.request({
+const request = ({ accessToken, serverUrl }: any, options: any): Promise<any> => (networkSvc as any).request({
   ...options,
   url: `${serverUrl}/api/v4/${options.url}`,
   headers: {
@@ -17,10 +14,10 @@ const request = ({ accessToken, serverUrl }, options) => networkSvc.request({
     Authorization: `Bearer ${accessToken}`,
   },
 })
-  .then(res => res.body);
+  .then((res: any) => res.body);
 
-const getCommitMessage = (name, path) => {
-  const message = useDataStore().computedSettings.git[name];
+const getCommitMessage = (name: any, path: any): any => {
+  const message = (useDataStore().computedSettings as any).git[name];
   return message.replace(/{{path}}/g, path);
 };
 
@@ -28,10 +25,11 @@ const getCommitMessage = (name, path) => {
  * https://docs.gitlab.com/ee/api/users.html#for-user
  */
 const subPrefix = 'gl';
-userSvc.setInfoResolver('gitlab', subPrefix, async (sub) => {
+(userSvc as any).setInfoResolver('gitlab', subPrefix, async (sub: any) => {
   try {
-    const [, serverUrl, id] = sub.match(/^(.+)\/([^/]+)$/);
-    const user = (await networkSvc.request({
+    const matched = sub.match(/^(.+)\/([^/]+)$/) as RegExpMatchArray;
+    const [, serverUrl, id] = matched;
+    const user = (await (networkSvc as any).request({
       url: `${serverUrl}/api/v4/users/${id}`,
     })).body;
     const uniqueSub = `${serverUrl}/${user.id}`;
@@ -41,7 +39,7 @@ userSvc.setInfoResolver('gitlab', subPrefix, async (sub) => {
       name: user.username,
       imageUrl: user.avatar_url || '',
     };
-  } catch (err) {
+  } catch (err: any) {
     if (err.status !== 404) {
       throw new Error('RETRY');
     }
@@ -55,9 +53,9 @@ export default {
   /**
    * https://docs.gitlab.com/ee/api/oauth2.html
    */
-  async startOauth2(serverUrl, applicationId, sub = null, silent = false) {
+  async startOauth2(serverUrl: any, applicationId: any, sub: any = null, silent: boolean = false): Promise<any> {
     // Get an OAuth2 code
-    const { accessToken } = await networkSvc.startOauth2(
+    const { accessToken } = await (networkSvc as any).startOauth2(
       `${serverUrl}/oauth/authorize`,
       {
         client_id: applicationId,
@@ -72,7 +70,7 @@ export default {
       url: 'user',
     });
     const uniqueSub = `${serverUrl}/${user.id}`;
-    userSvc.addUserInfo({
+    (userSvc as any).addUserInfo({
       id: `${subPrefix}:${uniqueSub}`,
       name: user.username,
       imageUrl: user.avatar_url || '',
@@ -95,16 +93,16 @@ export default {
     useDataStore().addGitlabToken(token);
     return token;
   },
-  async addAccount(serverUrl, applicationId, sub = null) {
+  async addAccount(serverUrl: any, applicationId: any, sub: any = null): Promise<any> {
     const token = await this.startOauth2(serverUrl, applicationId, sub);
-    badgeSvc.addBadge('addGitLabAccount');
+    (badgeSvc as any).addBadge('addGitLabAccount');
     return token;
   },
 
   /**
    * https://docs.gitlab.com/ee/api/projects.html#get-single-project
    */
-  async getProjectId(token, { projectPath, projectId }) {
+  async getProjectId(token: any, { projectPath, projectId }: any): Promise<any> {
     if (projectId) {
       return projectId;
     }
@@ -122,7 +120,7 @@ export default {
     token,
     projectId,
     branch,
-  }) {
+  }: any): Promise<any> {
     return request(token, {
       url: `projects/${encodeURIComponent(projectId)}/repository/tree`,
       params: {
@@ -141,7 +139,7 @@ export default {
     projectId,
     branch,
     path,
-  }) {
+  }: any): Promise<any> {
     return request(token, {
       url: `projects/${encodeURIComponent(projectId)}/repository/commits`,
       params: {
@@ -162,7 +160,7 @@ export default {
     path,
     content,
     sha,
-  }) {
+  }: any): Promise<any> {
     return request(token, {
       method: sha ? 'PUT' : 'POST',
       url: `projects/${encodeURIComponent(projectId)}/repository/files/${encodeURIComponent(path)}`,
@@ -184,7 +182,7 @@ export default {
     branch,
     path,
     sha,
-  }) {
+  }: any): Promise<any> {
     return request(token, {
       method: 'DELETE',
       url: `projects/${encodeURIComponent(projectId)}/repository/files/${encodeURIComponent(path)}`,
@@ -204,14 +202,14 @@ export default {
     projectId,
     branch,
     path,
-  }) {
+  }: any): Promise<any> {
     const res = await request(token, {
       url: `projects/${encodeURIComponent(projectId)}/repository/files/${encodeURIComponent(path)}`,
       params: { ref: branch },
     });
     return {
       sha: res.last_commit_id,
-      data: utils.decodeBase64(res.content),
+      data: (utils as any).decodeBase64(res.content),
     };
   },
 };
