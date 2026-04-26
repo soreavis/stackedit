@@ -144,7 +144,7 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
 
 export default {
   newItem(isFolder = false): void {
-    const selectedNode: ExplorerNode = useExplorerStore().selectedNode;
+    const selectedNode = useExplorerStore().selectedNode as unknown as ExplorerNode;
     let parentId: string | null = useExplorerStore().selectedNodeFolder.item.id;
     // If the selected folder is collapsed, create at the root instead
     // of burying the new item inside a closed branch.
@@ -166,12 +166,12 @@ export default {
     });
   },
   async deleteItem(): Promise<void> {
-    const selectedNodes: ExplorerNode[] = useExplorerStore().selectedNodes;
+    const selectedNodes = useExplorerStore().selectedNodes as unknown as ExplorerNode[];
     if (selectedNodes.length > 1) {
       await bulkDelete(selectedNodes);
       return;
     }
-    const selectedNode: ExplorerNode = useExplorerStore().selectedNode;
+    const selectedNode = useExplorerStore().selectedNode as unknown as ExplorerNode;
     if (selectedNode.isNil) {
       return;
     }

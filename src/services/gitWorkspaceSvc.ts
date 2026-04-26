@@ -33,7 +33,7 @@ const endsWith = (str: string, suffix: string): boolean => str.slice(-suffix.len
 export default {
   shaByPath: Object.create(null) as Record<string, string>,
   makeChanges(tree: TreeEntry[]): Change[] {
-    const workspacePath: string = useWorkspaceStore().currentWorkspace.path || '';
+    const workspacePath: string = (useWorkspaceStore().currentWorkspace.path as string) || '';
 
     // Store all blobs sha
     this.shaByPath = Object.create(null);
