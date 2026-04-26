@@ -1,19 +1,25 @@
 import { defineStore } from 'pinia';
 import { useNotificationStore } from './notification';
-import { useGlobalStore } from './/global';
+import { useGlobalStore } from './global';
 
-let queue = Promise.resolve();
+interface QueueState {
+  isEmpty: boolean;
+  isSyncRequested: boolean;
+  isPublishRequested: boolean;
+  currentLocation: Record<string, unknown>;
+}
+
+let queue: Promise<unknown> = Promise.resolve();
 
 export const useQueueStore = defineStore('queue', {
-  state: () => ({
+  state: (): QueueState => ({
     isEmpty: true,
     isSyncRequested: false,
     isPublishRequested: false,
     currentLocation: {},
   }),
   actions: {
-    enqueue(cb) {
-      // Vuex root state still owns the offline flag during the transition.
+    enqueue(cb: () => Promise<unknown> | unknown): void {
       if (useGlobalStore().offline) {
         return;
       }
@@ -35,7 +41,6 @@ export const useQueueStore = defineStore('queue', {
           .catch((err) => {
             console.error(err);
             checkOffline();
-            // notification module still lives in Vuex during the transition.
             useNotificationStore().error(err);
           })
           .then(() => {
@@ -45,31 +50,31 @@ export const useQueueStore = defineStore('queue', {
           }));
       queue = newQueue;
     },
-    enqueueSyncRequest(cb) {
+    enqueueSyncRequest(cb: () => Promise<unknown>): void {
       if (!this.isSyncRequested) {
         this.isSyncRequested = true;
         const unset = () => {
           this.isSyncRequested = false;
         };
-        this.enqueue(() => cb().then(unset, (err) => {
+        this.enqueue(() => cb().then(unset, (err: unknown) => {
           unset();
           throw err;
         }));
       }
     },
-    enqueuePublishRequest(cb) {
+    enqueuePublishRequest(cb: () => Promise<unknown>): void {
       if (!this.isSyncRequested) {
         this.isPublishRequested = true;
         const unset = () => {
           this.isPublishRequested = false;
         };
-        this.enqueue(() => cb().then(unset, (err) => {
+        this.enqueue(() => cb().then(unset, (err: unknown) => {
           unset();
           throw err;
         }));
       }
     },
-    async doWithLocation({ location, action }) {
+    async doWithLocation<T>({ location, action }: { location: Record<string, unknown>; action: () => Promise<T> | T }): Promise<T> {
       try {
         this.currentLocation = location;
         return await action();
