@@ -1,20 +1,26 @@
-// @ts-nocheck
 // Web Worker that runs user-supplied Handlebars templates in a sandboxed
-// context. Loaded via Vite's ?worker suffix. Kept simple — typing the
-// Handlebars template runtime would mean importing @types/handlebars +
-// designing the Worker message protocol shape. Not blocking for migration.
+// context. Loaded via Vite's ?worker suffix. Handlebars carries its own
+// types since v4.7+ — the surface used here (registerHelper, compile,
+// SafeString) is fully typed.
 // This WebWorker provides a safe environment to run user scripts
 // See http://stackoverflow.com/questions/10653809/making-webworkers-a-safe-environment/10796616
 
 import Handlebars from 'handlebars';
 
+interface TocItem {
+  level: number;
+  anchor?: string;
+  title?: string;
+  children?: TocItem[];
+}
+
 // Classeur own helpers
-Handlebars.registerHelper('tocToHtml', (toc, depth = 6) => {
-  function arrayToHtml(arr) {
+Handlebars.registerHelper('tocToHtml', (toc: TocItem[], depth: number = 6) => {
+  function arrayToHtml(arr: TocItem[] | undefined): string {
     if (!arr || !arr.length || arr[0].level > depth) {
       return '';
     }
-    const ulHtml = arr.map((item) => {
+    const ulHtml = arr.map((item: TocItem) => {
       let result = '<li>';
       if (item.anchor && item.title) {
         result += `<a href="#${item.anchor}">${item.title}</a>`;
@@ -85,10 +91,11 @@ while (global !== Object.prototype) {
   });
   global = Object.getPrototypeOf(global);
 }
-self.Handlebars = Handlebars;
+(self as any).Handlebars = Handlebars;
 
-function safeEval(code) {
-  eval(`"use strict";\n${code}`);  
+function safeEval(code: string): void {
+  // eslint-disable-next-line no-eval
+  eval(`"use strict";\n${code}`);
 }
 
 self.onmessage = (evt) => {
