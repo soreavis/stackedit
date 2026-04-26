@@ -7,6 +7,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 ## [Unreleased]
 
 ### Changed
+- **`@ts-nocheck` removal — 3 files cleaned (33 → 30)** — `src/services/optional/index.ts` (header-only barrel — no actual types to add), `src/services/optional/taskChange.ts` (added `editorSvcRaw as any` cast at the import boundary, typed the DOM event target + `getPreviewOffset` recursion), and `src/services/templateWorker.ts` (added a `TocItem` interface for the `tocToHtml` Handlebars helper, typed the `safeEval(code: string)` parameter, single `(self as any).Handlebars` cast for the worker-global assignment). Other candidates — `optional/scrollSync.ts`, `optional/shortcuts.ts`, `editorSvc.ts`, `editorSvcDiscussions.ts`, the provider files, `diffUtils.ts`, `utils.ts` — keep `@ts-nocheck` because they reach into animationSvc's fluent chain API, the editorSvc Object.assign mixin shape, or external API responses (Google / GitHub / Dropbox / etc.) that need real type design beyond a single-file edit. Tracked as a long-tail follow-up.
 - **Lint cleanup — 17 → 0 warnings** — swept the leftover unused-import warnings (mostly `mapPiniaState` / `mapPiniaActions` / `mapState` aliases imported from `'pinia'` but never read) across 15 components. Each import statement gets the unused name surgically dropped (kept the rest of the destructure intact). Lint now reports **0 errors / 0 warnings**. No runtime change. Typecheck clean, unit 479/479, build clean, main bundle 138.59 kB brotli (unchanged — these were dead imports).
 
 ### Removed
