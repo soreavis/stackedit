@@ -46,6 +46,7 @@
 
 <script>
 import { mapState, mapMutations, mapGetters } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import providerRegistry from '../../services/providers/common/providerRegistry';
 import UserImage from '../UserImage';
 import UserName from '../UserName';
@@ -55,6 +56,7 @@ import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import store from '../../store';
+import { useContentStore } from '../../stores/content';
 import { useFileStore } from '../../stores/file';
 import { useNotificationStore } from '../../stores/notification';
 import { useQueueStore } from '../../stores/queue';
@@ -87,7 +89,7 @@ export default {
     ...mapGetters('syncLocation', {
       syncLocations: 'currentWithWorkspaceSyncLocation',
     }),
-    ...mapState('content', [
+    ...mapPiniaState(useContentStore, [
       'revisionContent',
     ]),
     syncLocation() {
@@ -162,9 +164,9 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('content', [
-      'setRevisionContent',
-    ]),
+    ...mapPiniaActions(useContentStore, {
+      setRevisionContent: 'setRevisionContentRaw',
+    }),
     async signin() {
       try {
         await googleHelper.signin();
@@ -201,7 +203,7 @@ export default {
       }
       if (revisionContentPromise) {
         revisionContentPromise.then(revisionContent =>
-          store.dispatch('content/setRevisionContent', revisionContent));
+          useContentStore().setRevisionContent(revisionContent));
       }
     },
     refreshHighlighters() {

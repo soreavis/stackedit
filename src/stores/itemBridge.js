@@ -9,11 +9,15 @@ import vuexStore from '../store';
 import { useFolderStore } from './folder';
 import { useSyncedContentStore } from './syncedContent';
 import { useContentStateStore } from './contentState';
+import { useFileStore } from './file';
+import { useContentStore } from './content';
 
 const piniaStores = {
   folder: useFolderStore,
   syncedContent: useSyncedContentStore,
   contentState: useContentStateStore,
+  file: useFileStore,
+  content: useContentStore,
 };
 
 export function setItemByType(type, value) {

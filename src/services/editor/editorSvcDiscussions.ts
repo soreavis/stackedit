@@ -7,6 +7,7 @@ import cleditRaw from './cledit';
 import utils from '../utils';
 import diffUtils from '../diffUtils';
 import store from '../../store';
+import { useContentStore } from '../../stores/content';
 import { useContentStateStore } from '../../stores/contentState';
 import EditorClassApplier from '../../components/common/EditorClassApplier';
 import PreviewClassApplier from '../../components/common/PreviewClassApplier';
@@ -131,7 +132,7 @@ export default {
     this.clEditor = cledit(editorElt, editorElt.parentNode, true);
     ({ clEditor } = this);
     clEditor.on('contentChanged', (text: string) => {
-      const oldContent = store.getters['content/current'];
+      const oldContent = useContentStore().current;
       const newContent = {
         ...utils.deepCopy(oldContent),
         text: utils.sanitizeText(text),
@@ -146,13 +147,13 @@ export default {
         diffUtils.restoreDiscussionOffsets(newContent, markerKeys);
         syncDiscussionMarkers(newContent, false);
       }
-      store.dispatch('content/patchCurrent', newContent);
+      useContentStore().patchCurrent(newContent);
       isChangePatch = false;
     });
     clEditor.on('focus', () => store.commit('discussion/setNewCommentFocus', false));
   },
   initClEditorInternal(opts: any) {
-    const content = store.getters['content/current'];
+    const content = useContentStore().current;
     if (content) {
       removeDiscussionMarkers(); // Markers will be recreated on contentChanged
       const contentState = useContentStateStore().current;
@@ -179,7 +180,7 @@ export default {
   },
   applyContent() {
     if (clEditor) {
-      const content = store.getters['content/current'];
+      const content = useContentStore().current;
       if (clEditor.setContent(content.text, true).range) {
         // Marker will be recreated on contentChange
         removeDiscussionMarkers();
@@ -204,7 +205,7 @@ export default {
   initHighlighters() {
     store.watch(
       () => store.getters['discussion/newDiscussion'],
-      () => syncDiscussionMarkers(store.getters['content/current'], false),
+      () => syncDiscussionMarkers(useContentStore().current, false),
     );
 
     store.watch(

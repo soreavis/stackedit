@@ -5,6 +5,7 @@
 import cleditRaw from './editor/cledit';
 import editorSvcRaw from './editorSvc';
 import store from '../store';
+import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import utils from './utils';
 import workspaceSvc from './workspaceSvc';
@@ -95,7 +96,7 @@ const svc: TempFileSvc = {
         // Close editor if file has changed for some reason
         svc.close();
       } else if (!svc.closed && editorSvc.previewCtx.html != null) {
-        const content = store.getters['content/current'];
+        const content = useContentStore().current;
         const properties = utils.computeProperties(content.properties);
         window.parent.postMessage({
           type: 'fileChange',

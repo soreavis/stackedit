@@ -1,4 +1,5 @@
 import store from '../store';
+import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useFolderStore } from '../stores/folder';
@@ -93,7 +94,7 @@ export default {
     }
 
     // Save file and content in the store
-    store.commit('content/setItem', content);
+    useContentStore().setItem(content);
     useFileStore().setItem(item);
     if (workspaceUniquePaths) {
       this.makePathUnique(id);
@@ -189,7 +190,7 @@ export default {
     // Delete the file
     useFileStore().deleteItem(fileId);
     // Delete the content
-    store.commit('content/deleteItem', `${fileId}/content`);
+    useContentStore().deleteItem(`${fileId}/content`);
     // Delete the syncedContent
     useSyncedContentStore().deleteItem(`${fileId}/syncedContent`);
     // Delete the contentState

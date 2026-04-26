@@ -2,7 +2,6 @@ import createLogger from 'vuex/dist/logger';
 import Vue from 'vue';
 import Vuex from 'vuex';
 import utils from '../services/utils';
-import content from './content';
 import data from './data';
 import discussion from './discussion';
 import explorer from './explorer';
@@ -11,6 +10,8 @@ import { useNotificationStore } from '../stores/notification';
 import { useFolderStore } from '../stores/folder';
 import { useSyncedContentStore } from '../stores/syncedContent';
 import { useContentStateStore } from '../stores/contentState';
+import { useFileStore } from '../stores/file';
+import { useContentStore } from '../stores/content';
 import workspace from './workspace';
 import locationTemplate from './locationTemplate';
 import emptyPublishLocation from '../data/empties/emptyPublishLocation';
@@ -23,7 +24,6 @@ const debug = NODE_ENV !== 'production';
 
 const store = new Vuex.Store({
   modules: {
-    content,
     data,
     discussion,
     explorer,
@@ -62,6 +62,8 @@ const store = new Vuex.Store({
         folder: useFolderStore,
         syncedContent: useSyncedContentStore,
         contentState: useContentStateStore,
+        file: useFileStore,
+        content: useContentStore,
       };
       constants.types.forEach((type) => {
         if (piniaStores[type]) {

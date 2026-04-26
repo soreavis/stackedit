@@ -40,6 +40,7 @@ import customToolbarButtons from '../../data/customToolbarButtons';
 import pagedownButtons from '../../data/pagedownButtons';
 import editorSvc from '../../services/editorSvc';
 import store from '../../store';
+import { useContentStore } from '../../stores/content';
 import badgeSvc from '../../services/badgeSvc';
 
 // Build a flat list of executable commands from the toolbar configs.
@@ -53,7 +54,7 @@ function buildCommands() {
       name: btn.title,
       group: 'Format',
       perform: () => {
-        if (!store.getters['content/isCurrentEditable']) return;
+        if (!useContentStore().isCurrentEditable) return;
         editorSvc.pagedownEditor.uiManager.doClick(btn.method);
         badgeSvc.addBadge('formatButtons');
       },

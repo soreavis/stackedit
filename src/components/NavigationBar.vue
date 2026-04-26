@@ -57,6 +57,7 @@
 
 <script>
 import { mapState, mapMutations, mapGetters, mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
 import publishSvc from '../services/publishSvc';
@@ -66,6 +67,7 @@ import utils from '../services/utils';
 import pagedownButtons from '../data/pagedownButtons';
 import customToolbarButtons from '../data/customToolbarButtons';
 import store from '../store';
+import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { useModalStore } from '../stores/modal';
 import workspaceSvc from '../services/workspaceSvc';
@@ -132,7 +134,7 @@ export default {
       'canUndo',
       'canRedo',
     ]),
-    ...mapState('content', [
+    ...mapPiniaState(useContentStore, [
       'revisionContent',
     ]),
     ...mapGetters('layout', [
@@ -208,7 +210,7 @@ export default {
     metaParts() {
       const current = useFileStore().current;
       if (!current || !current.id) return null;
-      const content = store.getters['content/current'];
+      const content = useContentStore().current;
       const text = (content && content.text) || '';
       const bytes = new Blob([text]).size;
       const words = text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -257,12 +259,10 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('content', [
-      'setRevisionContent',
-    ]),
-    ...mapActions('content', [
-      'restoreRevision',
-    ]),
+    ...mapPiniaActions(useContentStore, {
+      setRevisionContent: 'setRevisionContentRaw',
+      restoreRevision: 'restoreRevision',
+    }),
     ...mapActions('data', [
       'toggleExplorer',
       'toggleSideBar',
@@ -321,7 +321,7 @@ export default {
       } catch (e) { /* ignore */ }
     },
     pagedownClick(name, evt) {
-      if (!store.getters['content/isCurrentEditable']) return;
+      if (!useContentStore().isCurrentEditable) return;
       // Heading button opens a level picker (H1-H6) instead of cycling
       // through pagedown's 3 levels. More direct and exposes H4-H6 which
       // upstream's button never reached.
@@ -372,7 +372,7 @@ export default {
       // functions live in src/data/customToolbarButtons.js. Buttons with
       // `dropdown: true` open a contextMenu popover anchored under the
       // button instead of running an action directly.
-      if (!store.getters['content/isCurrentEditable']) return;
+      if (!useContentStore().isCurrentEditable) return;
       if (button.dropdown) {
         return this.openCustomDropdown(button, evt);
       }
