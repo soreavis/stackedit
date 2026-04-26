@@ -1,5 +1,6 @@
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { usePublishLocationStore } from '../stores/publishLocation';
 import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
@@ -19,7 +20,7 @@ interface PublishLocation {
 }
 
 const hasCurrentFilePublishLocations = (): boolean =>
-  !!(store.getters['publishLocation/current'] as unknown[]).length;
+  !!((usePublishLocationStore() as any).current as unknown[]).length;
 
 const loader = (type: string) => (fileId: string) => (localDbSvc as any).loadItem(`${fileId}/${type}`)
   // Item does not exist, create it
@@ -80,7 +81,7 @@ const publishFile = async (fileId: string): Promise<void> => {
   let counter = 0;
   await loadContent(fileId);
   const publishLocations: PublishLocation[] = [
-    ...(store.getters['publishLocation/filteredGroupedByFileId'][fileId] as PublishLocation[]) || [],
+    ...((usePublishLocationStore() as any).filteredGroupedByFileId[fileId] as PublishLocation[]) || [],
   ];
   try {
     await utils.awaitSequence(publishLocations, async (publishLocation: PublishLocation) => {
@@ -93,7 +94,7 @@ const publishFile = async (fileId: string): Promise<void> => {
             if (utils.serializeObject(publishLocation) !==
               utils.serializeObject(publishLocationToStore)
             ) {
-              store.commit('publishLocation/patchItem', publishLocationToStore);
+              usePublishLocationStore().patchItem(publishLocationToStore);
               (workspaceSvc as any).ensureUniqueLocations();
             }
             counter += 1;

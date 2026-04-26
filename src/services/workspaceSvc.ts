@@ -1,4 +1,7 @@
 import store from '../store';
+import { useSyncLocationStore } from '../stores/syncLocation';
+import { usePublishLocationStore } from '../stores/publishLocation';
+import { useWorkspaceStore } from '../stores/workspace';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
@@ -68,7 +71,7 @@ export default {
       discussions: discussions || {},
       comments: comments || {},
     };
-    const workspaceUniquePaths = store.getters['workspace/currentWorkspaceHasUniquePaths'];
+    const workspaceUniquePaths = useWorkspaceStore().currentWorkspaceHasUniquePaths;
 
     // Show warning dialogs
     if (!background) {
@@ -129,7 +132,7 @@ export default {
     }
 
     // Check if there is a path conflict
-    if (store.getters['workspace/currentWorkspaceHasUniquePaths']) {
+    if (useWorkspaceStore().currentWorkspaceHasUniquePaths) {
       const parentPath = store.getters.pathsByItemId[item.parentId as string] || '';
       const path = parentPath + sanitizedName;
       const items: Item[] = store.getters.itemsByPath[path] || [];
@@ -175,7 +178,7 @@ export default {
     this.removeCircularReference(item);
 
     // Ensure path uniqueness
-    if (store.getters['workspace/currentWorkspaceHasUniquePaths']) {
+    if (useWorkspaceStore().currentWorkspaceHasUniquePaths) {
       this.makePathUnique(item.id);
     }
 
@@ -196,11 +199,11 @@ export default {
     // Delete the contentState
     useContentStateStore().deleteItem(`${fileId}/contentState`);
     // Delete sync locations
-    ((store.getters['syncLocation/groupedByFileId'][fileId] || []) as Item[])
-      .forEach(item => store.commit('syncLocation/deleteItem', item.id));
+    (((useSyncLocationStore() as any).groupedByFileId[fileId] || []) as Item[])
+      .forEach(item => useSyncLocationStore().deleteItem(item.id));
     // Delete publish locations
-    ((store.getters['publishLocation/groupedByFileId'][fileId] || []) as Item[])
-      .forEach(item => store.commit('publishLocation/deleteItem', item.id));
+    (((usePublishLocationStore() as any).groupedByFileId[fileId] || []) as Item[])
+      .forEach(item => usePublishLocationStore().deleteItem(item.id));
   },
 
   /**
@@ -238,7 +241,7 @@ export default {
    * Ensure two files/folders don't have the same path if the workspace doesn't allow it.
    */
   ensureUniquePaths(idsToKeep: Record<string, boolean> = {}): void {
-    if (store.getters['workspace/currentWorkspaceHasUniquePaths']) {
+    if (useWorkspaceStore().currentWorkspaceHasUniquePaths) {
       if (Object.keys(store.getters.pathsByItemId)
         .some(id => !idsToKeep[id] && this.makePathUnique(id))
       ) {
@@ -283,7 +286,7 @@ export default {
   },
 
   addSyncLocation(location: Location): void {
-    store.commit('syncLocation/setItem', {
+    useSyncLocationStore().setItem({
       ...location,
       id: utils.uid(),
     });
@@ -291,13 +294,13 @@ export default {
     // Sanitize the workspace
     this.ensureUniqueLocations();
 
-    if (Object.keys(store.getters['syncLocation/currentWithWorkspaceSyncLocation']).length > 1) {
+    if (Object.keys((useSyncLocationStore() as any).currentWithWorkspaceSyncLocation).length > 1) {
       badgeSvc.addBadge('syncMultipleLocations');
     }
   },
 
   addPublishLocation(location: Location): void {
-    store.commit('publishLocation/setItem', {
+    usePublishLocationStore().setItem({
       ...location,
       id: utils.uid(),
     });
@@ -305,7 +308,7 @@ export default {
     // Sanitize the workspace
     this.ensureUniqueLocations();
 
-    if (Object.keys(store.getters['publishLocation/current']).length > 1) {
+    if (Object.keys((usePublishLocationStore() as any).current).length > 1) {
       badgeSvc.addBadge('publishMultipleLocations');
     }
   },
@@ -332,7 +335,7 @@ export default {
     // Remove from the store first as workspace tabs will reload.
     // Workspace deletion will be persisted as soon as possible
     // by the store.getters['data/workspaces'] watcher in localDbSvc.
-    store.dispatch('workspace/removeWorkspace', id);
+    useWorkspaceStore().removeWorkspace(id);
 
     // Drop the database
     await new Promise<void>((resolve) => {

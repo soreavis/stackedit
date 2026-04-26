@@ -33,18 +33,19 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
 import MenuEntry from './common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import gitlabHelper from '../../services/providers/helpers/gitlabHelper';
 import { useModalStore } from '../../stores/modal';
+import { useWorkspaceStore } from '../../stores/workspace';
 
 export default {
   components: {
     MenuEntry,
   },
   computed: {
-    ...mapGetters('workspace', [
+    ...mapPiniaState(useWorkspaceStore, [
       'workspacesById',
       'currentWorkspace',
     ]),

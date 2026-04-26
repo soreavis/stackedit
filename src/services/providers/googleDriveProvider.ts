@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import googleHelper from './helpers/googleHelper';
@@ -50,7 +51,7 @@ export default new Provider({
             folderId,
           };
           const workspaceId = utils.makeWorkspaceId(workspaceParams);
-          const workspace = store.getters['workspace/workspacesById'][workspaceId];
+          const workspace = useWorkspaceStore().workspacesById[workspaceId];
           // If we have the workspace, open it by changing the current URL
           if (workspace) {
             utils.setQueryParams(workspaceParams);
