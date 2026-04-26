@@ -4,6 +4,10 @@
       <span v-for="n in lineCount" :key="n">{{ n }}</span>
     </div>
     <pre class="editor__inner markdown-highlighting" :style="{padding: styles.editorPadding}" :class="{monospaced: computedSettings.editor.monospacedFontOnly}"></pre>
+    <div v-if="cm6Enabled" class="editor__cm6-sandbox" aria-label="CodeMirror 6 sandbox (Stage 3 batch 1)">
+      <div class="editor__cm6-sandbox-label">CM6 sandbox</div>
+      <div ref="cm6Mount" class="editor__cm6-sandbox-mount"></div>
+    </div>
     <div class="gutter" :style="{left: styles.editorGutterLeft + 'px'}">
       <comment-list v-if="styles.editorGutterWidth"></comment-list>
       <editor-new-discussion-button v-if="!isCurrentTemp"></editor-new-discussion-button>
@@ -21,6 +25,7 @@ import { useFileStore } from '../stores/file';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
 import { useDiscussionStore } from '../stores/discussion';
+import { isCm6FlagEnabled } from '../services/editor/cm6/cm6Flag';
 
 export default {
   components: {
@@ -29,6 +34,7 @@ export default {
   },
   data: () => ({
     lineCount: 1,
+    cm6Enabled: isCm6FlagEnabled(),
   }),
   computed: {
     ...mapPiniaState(useFileStore, [
@@ -49,6 +55,17 @@ export default {
     },
   },
   mounted() {
+    if (this.cm6Enabled) {
+      // Lazy-load CM6 so flag-off users don't pay the ~250 KB chunk cost.
+      import('../services/editor/cm6/cm6Editor').then(({ mountCm6Editor }) => {
+        if (this.$refs.cm6Mount) {
+          this._cm6Handle = mountCm6Editor(this.$refs.cm6Mount, {
+            doc: '# CM6 sandbox\n\nStage 3 batch 1 — type here to verify the leaf editor works.\n',
+          });
+        }
+      });
+    }
+
     // Recompute line count when content changes (sectionList event fires
     // after every parse). Cheap O(n) split on the editor text.
     const updateLineCount = () => {
@@ -96,6 +113,12 @@ export default {
         }
       },
     );
+  },
+  beforeDestroy() {
+    if (this._cm6Handle) {
+      this._cm6Handle.dispose();
+      this._cm6Handle = null;
+    }
   },
 };
 </script>
@@ -149,6 +172,56 @@ export default {
 
 .editor--with-line-numbers .editor__inner {
   padding-left: 52px !important;
+}
+
+/* Stage 3 batch 1 sandbox: appears only with `?cm6=1` query param.
+   Pinned bottom-right so it doesn't fight cledit for layout. Removed
+   along with cledit at Stage 3 cutover (batch 7). */
+.editor__cm6-sandbox {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  height: 280px;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .app--dark & {
+    background: rgba(40, 40, 40, 0.97);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.editor__cm6-sandbox-label {
+  flex: none;
+  padding: 4px 10px;
+  font: 600 11px/1.4 monospace;
+  background: rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  .app--dark & {
+    background: rgba(255, 255, 255, 0.08);
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.editor__cm6-sandbox-mount {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+
+  .cm-editor {
+    height: 100%;
+  }
 }
 
 .editor__inner {
