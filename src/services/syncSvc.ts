@@ -5,7 +5,6 @@
 // state machine + content/location wire shapes, out of scope for
 // this incremental migration.
 import localDbSvc from './localDbSvc';
-import store from '../store';
 import { useSyncLocationStore } from '../stores/syncLocation';
 import { usePublishLocationStore } from '../stores/publishLocation';
 import { useWorkspaceStore } from '../stores/workspace';
@@ -31,6 +30,7 @@ import constants from '../data/constants';
 import badgeSvc from './badgeSvc';
 import { useQueueStore } from '../stores/queue';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 const minAutoSyncEvery = 60 * 1000; // 60 sec
 const inactivityThreshold = 3 * 1000; // 3 sec
@@ -66,7 +66,7 @@ const hasCurrentFileSyncLocations = () => !!(useSyncLocationStore() as any).curr
 /**
  * Return true if we are online and we have something to sync.
  */
-const isSyncPossible = () => !store.state.offline &&
+const isSyncPossible = () => !useGlobalStore().offline &&
   (isWorkspaceSyncPossible() || hasCurrentFileSyncLocations());
 
 /**
@@ -153,13 +153,13 @@ const cleanSyncedContent = (syncedContent) => {
  * Apply changes retrieved from the workspace provider. Update sync data accordingly.
  */
 const applyChanges = (changes) => {
-  const allItemsById = { ...store.getters.allItemsById };
+  const allItemsById = { ...useGlobalStore().allItemsById };
   const syncDataById = { ...useDataStore().syncDataById };
   const idsToKeep = {};
   let saveSyncData = false;
   let getExistingItem;
   if (useWorkspaceStore().currentWorkspaceIsGit) {
-    const itemsByGitPath = { ...store.getters.itemsByGitPath };
+    const itemsByGitPath = { ...useGlobalStore().itemsByGitPath };
     getExistingItem = existingSyncData => existingSyncData && itemsByGitPath[existingSyncData.id];
   } else {
     getExistingItem = existingSyncData => existingSyncData && allItemsById[existingSyncData.itemId];
@@ -535,7 +535,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
           try {
             await doSyncLocation();
           } catch (err) {
-            if (store.state.offline || (err && err.message === 'TOO_LATE')) {
+            if (useGlobalStore().offline || (err && err.message === 'TOO_LATE')) {
               throw err;
             }
             console.error(err);  
@@ -714,11 +714,11 @@ const syncWorkspace = async (skipContents = false) => {
       let getItem;
       let getFileItem;
       if (useWorkspaceStore().currentWorkspaceIsGit) {
-        const { itemsByGitPath } = store.getters;
+        const { itemsByGitPath } = useGlobalStore();
         getItem = syncData => itemsByGitPath[syncData.id];
-        getFileItem = syncData => itemsByGitPath[syncData.id.slice(1)]; // Remove leading /
+        getFileItem = syncData => itemsByGitPath[syncData.id.slice(1)];
       } else {
-        const { allItemsById } = store.getters;
+        const { allItemsById } = useGlobalStore();
         getItem = syncData => allItemsById[syncData.itemId];
         getFileItem = syncData => allItemsById[syncData.itemId.split('/')[0]];
       }
@@ -770,7 +770,7 @@ const syncWorkspace = async (skipContents = false) => {
       await utils.awaitSome(async () => {
         let getSyncData;
         if (useWorkspaceStore().currentWorkspaceIsGit) {
-          const { gitPathsByItemId } = store.getters;
+          const { gitPathsByItemId } = useGlobalStore();
           const syncDataById = useDataStore().syncDataById;
           getSyncData = contentId => syncDataById[gitPathsByItemId[contentId]];
         } else {
@@ -834,7 +834,7 @@ const syncWorkspace = async (skipContents = false) => {
  */
 const requestSync = (addTriggerSyncBadge = false) => {
   // No sync in light mode
-  if (store.state.light) {
+  if (useGlobalStore().light) {
     return;
   }
 
@@ -949,7 +949,7 @@ export default {
 
     await tempFileSvc.init();
 
-    if (!store.state.light) {
+    if (!useGlobalStore().light) {
       // Sync periodically
       utils.setInterval(() => {
         if (isSyncPossible()

@@ -1,5 +1,4 @@
 import localDbSvc from './localDbSvc';
-import store from '../store';
 import { usePublishLocationStore } from '../stores/publishLocation';
 import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
@@ -12,6 +11,7 @@ import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
 import { useQueueStore } from '../stores/queue';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 interface PublishLocation {
   fileId?: string;
@@ -100,7 +100,7 @@ const publishFile = async (fileId: string): Promise<void> => {
             }
             counter += 1;
           } catch (err) {
-            if (store.state.offline) {
+            if (useGlobalStore().offline) {
               throw err;
             }
             console.error(err);
@@ -118,7 +118,7 @@ const publishFile = async (fileId: string): Promise<void> => {
 
 const requestPublish = (): void => {
   // No publish in light mode
-  if (store.state.light) {
+  if (useGlobalStore().light) {
     return;
   }
 

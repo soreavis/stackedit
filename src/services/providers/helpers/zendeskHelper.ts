@@ -4,7 +4,6 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import networkSvc from '../../networkSvc';
-import store from '../../../store';
 import badgeSvc from '../../badgeSvc';
 import { useDataStore } from '../../../stores/data';
 

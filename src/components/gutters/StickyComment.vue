@@ -6,7 +6,6 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import Comment from './Comment';
 import NewComment from './NewComment';

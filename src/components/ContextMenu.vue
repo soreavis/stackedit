@@ -11,12 +11,12 @@
 </template>
 
 <script>
-import { mapState } from 'pinia';
+import { mapState, mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import { useContextMenuStore } from '../stores/contextMenu';
 
 export default {
   computed: {
-    ...mapState(useContextMenuStore, [
+    ...mapPiniaState(useContextMenuStore, [
       'coordinates',
       'items',
       'resolve',

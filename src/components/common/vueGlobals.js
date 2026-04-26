@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import timeSvc from '../../services/timeSvc';
-import store from '../../store';
+import { useGlobalStore } from '../../stores/global';
 
 // Fallback for older browsers / insecure contexts (navigator.clipboard is
 // only available on https:// or localhost).
@@ -103,5 +103,5 @@ Vue.directive('clipboard', {
 // Global filters
 Vue.filter('formatTime', time =>
   // Access the time counter for reactive refresh
-  timeSvc.format(time, store.state.timeCounter));
+  timeSvc.format(time, useGlobalStore().timeCounter));
 

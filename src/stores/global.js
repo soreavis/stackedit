@@ -1,50 +1,27 @@
-import createLogger from 'vuex/dist/logger';
-import Vue from 'vue';
-import Vuex from 'vuex';
+import { defineStore } from 'pinia';
 import utils from '../services/utils';
-import { useNotificationStore } from '../stores/notification';
-import { useFolderStore } from '../stores/folder';
-import { useSyncedContentStore } from '../stores/syncedContent';
-import { useContentStateStore } from '../stores/contentState';
-import { useFileStore } from '../stores/file';
-import { useContentStore } from '../stores/content';
-import { usePublishLocationStore } from '../stores/publishLocation';
-import { useSyncLocationStore } from '../stores/syncLocation';
-import { useWorkspaceStore } from '../stores/workspace';
-import { useDataStore } from '../stores/data';
-import { useExplorerStore } from '../stores/explorer';
 import constants from '../data/constants';
+import { useNotificationStore } from './notification';
+import { useFolderStore } from './folder';
+import { useSyncedContentStore } from './syncedContent';
+import { useContentStateStore } from './contentState';
+import { useFileStore } from './file';
+import { useContentStore } from './content';
+import { usePublishLocationStore } from './publishLocation';
+import { useSyncLocationStore } from './syncLocation';
+import { useWorkspaceStore } from './workspace';
+import { useDataStore } from './data';
+import { useExplorerStore } from './explorer';
 
-Vue.use(Vuex);
-
-const debug = NODE_ENV !== 'production';
-
-const store = new Vuex.Store({
-  state: {
+export const useGlobalStore = defineStore('global', {
+  state: () => ({
     light: false,
     offline: false,
     lastOfflineCheck: 0,
     timeCounter: 0,
-  },
-  mutations: {
-    setLight: (state, value) => {
-      state.light = value;
-    },
-    setOffline: (state, value) => {
-      state.offline = value;
-    },
-    updateLastOfflineCheck: (state) => {
-      state.lastOfflineCheck = Date.now();
-    },
-    updateTimeCounter: (state) => {
-      state.timeCounter += 1;
-    },
-  },
+  }),
   getters: {
-    allItemsById: (state) => {
-      // During the Pinia transition, item types live in mixed stores.
-      // folder / syncedContent / contentState moved to Pinia; the rest
-      // remain in Vuex state for now.
+    allItemsById() {
       const result = {};
       const piniaStores = {
         folder: useFolderStore,
@@ -58,13 +35,11 @@ const store = new Vuex.Store({
       constants.types.forEach((type) => {
         if (piniaStores[type]) {
           Object.assign(result, piniaStores[type]().itemsById);
-        } else if (state[type]) {
-          Object.assign(result, state[type].itemsById);
         }
       });
       return result;
     },
-    pathsByItemId: () => {
+    pathsByItemId() {
       const result = {};
       const processNode = (node, parentPath = '') => {
         let path = parentPath;
@@ -77,17 +52,17 @@ const store = new Vuex.Store({
           }
           result[node.item.id] = path;
         }
-
         if (node.isFolder) {
           node.folders.forEach(child => processNode(child, path));
           node.files.forEach(child => processNode(child, path));
         }
       };
-
       processNode(useExplorerStore().rootNode);
       return result;
     },
-    itemsByPath: (state, { allItemsById, pathsByItemId }) => {
+    itemsByPath() {
+      const allItemsById = this.allItemsById;
+      const pathsByItemId = this.pathsByItemId;
       const result = {};
       Object.entries(pathsByItemId).forEach(([id, path]) => {
         const items = result[path] || [];
@@ -96,7 +71,9 @@ const store = new Vuex.Store({
       });
       return result;
     },
-    gitPathsByItemId: (state, { allItemsById, pathsByItemId }) => {
+    gitPathsByItemId() {
+      const allItemsById = this.allItemsById;
+      const pathsByItemId = this.pathsByItemId;
       const result = {};
       Object.entries(allItemsById).forEach(([id, item]) => {
         if (item.type === 'data') {
@@ -113,7 +90,6 @@ const store = new Vuex.Store({
         } else if (item.type === 'folder') {
           result[id] = pathsByItemId[id];
         } else if (item.type === 'syncLocation' || item.type === 'publishLocation') {
-          // locations are stored as paths
           const encodedItem = utils.encodeBase64(utils.serializeObject({
             ...item,
             id: undefined,
@@ -127,39 +103,38 @@ const store = new Vuex.Store({
       });
       return result;
     },
-    itemIdsByGitPath: (state, { gitPathsByItemId }) => {
+    itemIdsByGitPath() {
       const result = {};
-      Object.entries(gitPathsByItemId).forEach(([id, path]) => {
+      Object.entries(this.gitPathsByItemId).forEach(([id, path]) => {
         result[path] = id;
       });
       return result;
     },
-    itemsByGitPath: (state, { allItemsById, gitPathsByItemId }) => {
+    itemsByGitPath() {
+      const allItemsById = this.allItemsById;
       const result = {};
-      Object.entries(gitPathsByItemId).forEach(([id, path]) => {
+      Object.entries(this.gitPathsByItemId).forEach(([id, path]) => {
         const item = allItemsById[id];
-        if (item) {
-          result[path] = item;
-        }
+        if (item) result[path] = item;
       });
       return result;
     },
-    isSponsor: ({ light }) => {
-      if (light) {
-        return true;
-      }
-      if (!useDataStore().serverConf.allowSponsorship) {
-        return true;
-      }
+    isSponsor() {
+      if (this.light) return true;
+      if (!useDataStore().serverConf.allowSponsorship) return true;
       const sponsorToken = useWorkspaceStore().sponsorToken;
       return sponsorToken ? sponsorToken.isSponsor : false;
     },
   },
   actions: {
-    setOffline: ({ state, commit }, value) => {
-      if (state.offline !== value) {
-        commit('setOffline', value);
-        if (state.offline) {
+    setLight(value) { this.light = value; },
+    setOfflineRaw(value) { this.offline = value; },
+    updateLastOfflineCheck() { this.lastOfflineCheck = Date.now(); },
+    updateTimeCounter() { this.timeCounter += 1; },
+    setOffline(value) {
+      if (this.offline !== value) {
+        this.setOfflineRaw(value);
+        if (this.offline) {
           return Promise.reject(new Error('You are offline.'));
         }
         useNotificationStore().info('You are back online!');
@@ -167,12 +142,4 @@ const store = new Vuex.Store({
       return Promise.resolve();
     },
   },
-  strict: debug,
-  plugins: debug ? [createLogger()] : [],
 });
-
-setInterval(() => {
-  store.commit('updateTimeCounter');
-}, 30 * 1000);
-
-export default store;

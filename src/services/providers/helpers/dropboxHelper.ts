@@ -5,7 +5,6 @@
 // tracking; full typing requires per-provider response interfaces.
 import networkSvc from '../../networkSvc';
 import userSvc from '../../userSvc';
-import store from '../../../store';
 import badgeSvc from '../../badgeSvc';
 import { useDataStore } from '../../../stores/data';
 
