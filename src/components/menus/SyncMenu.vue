@@ -96,7 +96,6 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
 import { mapState as mapPiniaState } from 'pinia';
 import MenuEntry from './common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
@@ -130,7 +129,7 @@ export default {
     MenuEntry,
   },
   computed: {
-    ...mapState('queue', [
+    ...mapPiniaState(useQueueStore, [
       'isSyncRequested',
     ]),
     ...mapPiniaState(useWorkspaceStore, [

@@ -3,7 +3,6 @@
 // sync service. Typed boundary work pending: response shapes vary by
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
-import store from '../../store';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useModalStore } from '../../stores/modal';
 import gitlabHelper from './helpers/gitlabHelper';
@@ -13,6 +12,7 @@ import userSvc from '../userSvc';
 import gitWorkspaceSvc from '../gitWorkspaceSvc';
 import badgeSvc from '../badgeSvc';
 import { useDataStore } from '../../stores/data';
+import { useGlobalStore } from '../../stores/global';
 
 const getAbsolutePath = ({ id }) =>
   `${useWorkspaceStore().currentWorkspace.path || ''}${id}`;
@@ -124,7 +124,7 @@ export default new Provider({
   },
   async saveWorkspaceItem({ item }) {
     const syncData = {
-      id: store.getters.gitPathsByItemId[item.id],
+      id: useGlobalStore().gitPathsByItemId[item.id],
       type: item.type,
       hash: item.hash,
     };
@@ -202,7 +202,7 @@ export default new Provider({
     };
   },
   async uploadWorkspaceContent({ token, content, file }) {
-    const path = store.getters.gitPathsByItemId[file.id];
+    const path = useGlobalStore().gitPathsByItemId[file.id];
     const absolutePath = `${useWorkspaceStore().currentWorkspace.path || ''}${path}`;
     const sha = gitWorkspaceSvc.shaByPath[path];
     await gitlabHelper.uploadFile({
@@ -216,7 +216,7 @@ export default new Provider({
     // Return new sync data
     return {
       contentSyncData: {
-        id: store.getters.gitPathsByItemId[content.id],
+        id: useGlobalStore().gitPathsByItemId[content.id],
         type: content.type,
         hash: content.hash,
         sha,
@@ -229,7 +229,7 @@ export default new Provider({
     };
   },
   async uploadWorkspaceData({ token, item }) {
-    const path = store.getters.gitPathsByItemId[item.id];
+    const path = useGlobalStore().gitPathsByItemId[item.id];
     const syncData = {
       id: path,
       type: item.type,

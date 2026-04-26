@@ -32,7 +32,6 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import Toc from './Toc';
 import MainMenu from './menus/MainMenu';
@@ -44,8 +43,8 @@ import ImportExportMenu from './menus/ImportExportMenu';
 import WorkspaceBackupMenu from './menus/WorkspaceBackupMenu';
 import markdownSample from '../data/markdownSample.md?raw';
 import markdownConversionSvc from '../services/markdownConversionSvc';
-import store from '../store';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 const panelNames = {
   menu: 'Menu',
@@ -75,7 +74,7 @@ export default {
   }),
   computed: {
     panel() {
-      if (store.state.light) {
+      if (useGlobalStore().light) {
         return null; // No menu in light mode
       }
       const result = useDataStore().layoutSettings.sideBarPanel;

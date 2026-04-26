@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import store from '../store';
+import { useLayoutStore } from './layout';
 
 export const useContextMenuStore = defineStore('contextMenu', {
   state: () => ({
@@ -17,8 +17,7 @@ export const useContextMenuStore = defineStore('contextMenu', {
         const elt = document.querySelector('.context-menu__inner');
         if (elt) {
           const height = elt.offsetHeight;
-          // layout module still lives in Vuex during the transition.
-          const { bodyHeight, bodyWidth } = store.state.layout;
+          const { bodyHeight, bodyWidth } = useLayoutStore();
           if (coordinates.top + height > bodyHeight) {
             coordinates.top -= height;
           }

@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { mapState } from 'pinia';
+import { mapState, mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import cledit from '../services/editor/cledit';
 import { useFindReplaceStore } from '../stores/findReplace';
@@ -91,7 +91,7 @@ export default {
     findPosition: 0,
   }),
   computed: {
-    ...mapState(useFindReplaceStore, [
+    ...mapPiniaState(useFindReplaceStore, [
       'type',
       'lastOpen',
     ]),

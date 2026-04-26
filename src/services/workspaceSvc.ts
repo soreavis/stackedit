@@ -1,10 +1,9 @@
-import store from '../store';
 import { useSyncLocationStore } from '../stores/syncLocation';
 import { usePublishLocationStore } from '../stores/publishLocation';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
-import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
+import { setItemByType, patchItemByType, deleteItemByType, getItemsByType, getGroupedByFileIdAndHashByType } from '../stores/itemBridge';
 import { useFolderStore } from '../stores/folder';
 import { useSyncedContentStore } from '../stores/syncedContent';
 import { useContentStateStore } from '../stores/contentState';
@@ -13,6 +12,7 @@ import utils from './utils';
 import constants from '../data/constants';
 import badgeSvc from './badgeSvc';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 interface Item {
   id: string;
@@ -86,9 +86,9 @@ export default {
 
       // Check if there is already a file with that path
       if (workspaceUniquePaths) {
-        const parentPath = store.getters.pathsByItemId[item.parentId as string] || '';
+        const parentPath = (useGlobalStore().pathsByItemId as Record<string, string>)[item.parentId as string] || '';
         const path = parentPath + item.name;
-        if (store.getters.itemsByPath[path]) {
+        if ((useGlobalStore().itemsByPath as Record<string, any>)[path]) {
           await useModalStore().open({
             type: 'pathConflict',
             item,
@@ -134,9 +134,9 @@ export default {
 
     // Check if there is a path conflict
     if (useWorkspaceStore().currentWorkspaceHasUniquePaths) {
-      const parentPath = store.getters.pathsByItemId[item.parentId as string] || '';
+      const parentPath = (useGlobalStore().pathsByItemId as Record<string, string>)[item.parentId as string] || '';
       const path = parentPath + sanitizedName;
-      const items: Item[] = store.getters.itemsByPath[path] || [];
+      const items: Item[] = (useGlobalStore().itemsByPath as Record<string, Item[]>)[path] || [];
       if (items.some(itemWithSamePath => itemWithSamePath.id !== id)) {
         await useModalStore().open({
           type: 'pathConflict',
@@ -156,7 +156,7 @@ export default {
    */
   setOrPatchItem(patch: Item): Item | null {
     const item: Item = {
-      ...store.getters.allItemsById[patch.id] || patch,
+      ...(useGlobalStore().allItemsById as Record<string, any>)[patch.id] || patch,
     };
     if (!item.id) {
       return null;
@@ -183,7 +183,7 @@ export default {
       this.makePathUnique(item.id);
     }
 
-    return store.getters.allItemsById[item.id];
+    return (useGlobalStore().allItemsById as Record<string, any>)[item.id];
   },
 
   /**
@@ -243,7 +243,7 @@ export default {
    */
   ensureUniquePaths(idsToKeep: Record<string, boolean> = {}): void {
     if (useWorkspaceStore().currentWorkspaceHasUniquePaths) {
-      if (Object.keys(store.getters.pathsByItemId)
+      if (Object.keys(useGlobalStore().pathsByItemId as Record<string, string>)
         .some(id => !idsToKeep[id] && this.makePathUnique(id))
       ) {
         // Just changed one item path, restart
@@ -257,7 +257,9 @@ export default {
    * Add a prefix to its name and return true otherwise.
    */
   makePathUnique(id: string): boolean {
-    const { itemsByPath, allItemsById, pathsByItemId } = store.getters;
+    const itemsByPath = useGlobalStore().itemsByPath as Record<string, Item[]>;
+    const allItemsById = useGlobalStore().allItemsById as Record<string, Item>;
+    const pathsByItemId = useGlobalStore().pathsByItemId as Record<string, string>;
     const item: Item = allItemsById[id];
     if (!item) {
       return false;
@@ -319,9 +321,9 @@ export default {
    */
   ensureUniqueLocations(idsToKeep: Record<string, boolean> = {}): void {
     ['syncLocation', 'publishLocation'].forEach((type) => {
-      (store.getters[`${type}/items`] as Item[]).forEach((item) => {
+      (getItemsByType(type) as Item[]).forEach((item) => {
         if (!idsToKeep[item.id]
-          && (store.getters[`${type}/groupedByFileIdAndHash`][item.fileId as string][item.hash as number] as Item[]).length > 1
+          && ((getGroupedByFileIdAndHashByType(type) as any)[item.fileId as string][item.hash as number] as Item[]).length > 1
         ) {
           deleteItemByType(item.type, item.id);
         }

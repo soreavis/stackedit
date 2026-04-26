@@ -3,7 +3,7 @@
 // glue. Tightly coupled to editorSvc + cledit dynamic surfaces. .ts rename
 // is for migration tracking; full typing comes after editorSvc/cledit are
 // properly typed.
-import store from '../../store';
+import { watch } from 'vue';
 import { useFileStore } from '../../stores/file';
 import animationSvc from '../animationSvc';
 import editorSvc from '../editorSvc';
@@ -124,7 +124,7 @@ const forceScrollSync = () => {
     doScrollSync();
   }
 };
-store.watch(() => useDataStore().layoutSettings.scrollSync, forceScrollSync);
+watch(() => useDataStore().layoutSettings.scrollSync, forceScrollSync);
 
 editorSvc.$on('inited', () => {
   editorScrollerElt = editorSvc.editorElt.parentNode;
@@ -164,7 +164,7 @@ editorSvc.$on('previewCtx', () => {
   }, 100);
 });
 
-store.watch(
+watch(
   () => useLayoutStore().styles.showEditor,
   (showEditor) => {
     isScrollEditor = showEditor;

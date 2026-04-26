@@ -67,7 +67,6 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ExplorerNode from './ExplorerNode';
 import explorerSvc from '../services/explorerSvc';
@@ -78,6 +77,7 @@ import { useFileStore } from '../stores/file';
 import { useFolderStore } from '../stores/folder';
 import { useDataStore } from '../stores/data';
 import { useExplorerStore } from '../stores/explorer';
+import { useGlobalStore } from '../stores/global';
 
 export default {
   components: {
@@ -87,7 +87,7 @@ export default {
     marquee: null, // { x, y, w, h, baseIds, additive } while dragging; null otherwise
   }),
   computed: {
-    ...mapState([
+    ...mapPiniaState(useGlobalStore, [
       'light',
     ]),
     ...mapPiniaState(useExplorerStore, [

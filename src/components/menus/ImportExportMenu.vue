@@ -50,7 +50,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import TurndownService from 'turndown/lib/turndown.browser.umd';
 import htmlSanitizer from '../../libs/htmlSanitizer';
 import MenuEntry from './common/MenuEntry';
@@ -62,6 +62,7 @@ import workspaceSvc from '../../services/workspaceSvc';
 import exportSvc from '../../services/exportSvc';
 import badgeSvc from '../../services/badgeSvc';
 import { useDataStore } from '../../stores/data';
+import { useGlobalStore } from '../../stores/global';
 
 const turndownService = new TurndownService(useDataStore().computedSettings.turndown);
 
@@ -104,7 +105,7 @@ export default {
     MenuEntry,
   },
   computed: {
-    ...mapGetters(['isSponsor']),
+    ...mapPiniaState(useGlobalStore, ['isSponsor']),
     hasCurrentFile() {
       return !!useFileStore().current.id;
     },

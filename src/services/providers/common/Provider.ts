@@ -6,7 +6,6 @@
 import providerRegistry from './providerRegistry';
 import emptyContent from '../../../data/empties/emptyContent';
 import utils from '../../utils';
-import store from '../../../store';
 import { useSyncLocationStore } from '../../../stores/syncLocation';
 import { useContentStore } from '../../../stores/content';
 import { useFileStore } from '../../../stores/file';

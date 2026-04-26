@@ -2,14 +2,15 @@
 // from `allowJs` only capture a partial surface. Re-cast to `any` at the
 // import boundary so call sites don't get bogus errors. Tightening these
 // is a follow-up that needs the cledit + editorSvc files ported too.
+import { watch } from 'vue';
 import cleditRaw from './editor/cledit';
 import editorSvcRaw from './editorSvc';
-import store from '../store';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import utils from './utils';
 import workspaceSvc from './workspaceSvc';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 const cledit = cleditRaw as any;
 const editorSvc = editorSvcRaw as any;
@@ -54,7 +55,7 @@ const svc: TempFileSvc = {
     if (!isLight) {
       return;
     }
-    store.commit('setLight', true);
+    useGlobalStore().setLight(true);
 
     const file = await workspaceSvc.createFile({
       name: fileName || utils.getHostname(origin),
@@ -117,7 +118,7 @@ const svc: TempFileSvc = {
 
     // Watch preview refresh and file name changes
     editorSvc.$on('previewCtx', onChange);
-    store.watch(() => useFileStore().current.name, onChange);
+    watch(() => useFileStore().current.name, onChange);
   },
 };
 

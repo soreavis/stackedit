@@ -59,7 +59,6 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import NavigationBar from './NavigationBar';
 import ButtonBar from './ButtonBar';
@@ -82,6 +81,7 @@ import { useFindReplaceStore } from '../stores/findReplace';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
 import { useDiscussionStore } from '../stores/discussion';
+import { useGlobalStore } from '../stores/global';
 
 export default {
   components: {
@@ -98,7 +98,7 @@ export default {
     FindReplace,
   },
   computed: {
-    ...mapState([
+    ...mapPiniaState(useGlobalStore, [
       'light',
     ]),
     ...mapPiniaState(useContentStore, [

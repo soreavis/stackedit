@@ -1,9 +1,8 @@
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { watch } from 'vue';
 import utils from './utils';
-import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useFileStore } from '../stores/file';
-import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
+import { setItemByType, patchItemByType, deleteItemByType, getItemsByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
 import welcomeFile from '../data/welcomeFile.md?raw';
 import workspaceSvc from './workspaceSvc';
@@ -12,6 +11,7 @@ import constants from '../data/constants';
 import { useDataStore } from '../stores/data';
 import { useDiscussionStore } from '../stores/discussion';
 import { useExplorerStore } from '../stores/explorer';
+import { useGlobalStore } from '../stores/global';
 
 interface DbItem {
   id: string;
@@ -233,7 +233,7 @@ const localDbSvc: LocalDbSvc = {
       }
 
       // Read the collected changes
-      const storeItemMap: StoreItemMap = { ...store.getters.allItemsById };
+      const storeItemMap: StoreItemMap = { ...useGlobalStore().allItemsById };
       changes.forEach((item) => {
         this.readDbItem(item, storeItemMap);
         // If item is an old delete marker, remove it from the DB
@@ -333,7 +333,7 @@ const localDbSvc: LocalDbSvc = {
    */
   async loadItem(id: string): Promise<DbItem> {
     // Check if item is in the store
-    const itemInStore: DbItem | undefined = store.getters.allItemsById[id];
+    const itemInStore: DbItem | undefined = (useGlobalStore().allItemsById as Record<string, DbItem>)[id];
     if (itemInStore) {
       // Use deepCopy to freeze item
       return Promise.resolve(itemInStore);
@@ -368,7 +368,7 @@ const localDbSvc: LocalDbSvc = {
     // Keep only last opened files in memory
     const lastOpenedFileIdSet = new Set<string>(useDataStore().lastOpenedIds);
     Object.keys(contentTypes).forEach((type) => {
-      (store.getters[`${type}/items`] as DbItem[]).forEach((item) => {
+      (getItemsByType(type) as DbItem[]).forEach((item) => {
         const [fileId] = item.id.split('/');
         if (!lastOpenedFileIdSet.has(fileId)) {
           // Remove item from the store
@@ -401,7 +401,7 @@ const localDbSvc: LocalDbSvc = {
 
     // Watch workspace deletions and persist them as soon as possible
     // to make the changes available to reloading workspace tabs.
-    store.watch(
+    watch(
       () => useDataStore().workspaces,
       () => this.syncLocalStorage(),
     );
@@ -433,7 +433,7 @@ const localDbSvc: LocalDbSvc = {
 
     // watch current file changing
     let prevCurrentId: string | null = useFileStore().current.id || null;
-    store.watch(
+    watch(
       () => useFileStore().current.id,
       async (newId: string | null | undefined) => {
         // If the file we're leaving was a brand-new draft the user never
