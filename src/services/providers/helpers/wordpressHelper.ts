@@ -1,8 +1,5 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for WordPress. Method params + response payloads
+// kept loose (`any`) — vendor APIs return dynamic shapes.
 import networkSvc from '../../networkSvc';
 import { useModalStore } from '../../../stores/modal';
 import badgeSvc from '../../badgeSvc';
@@ -10,24 +7,24 @@ import { useDataStore } from '../../../stores/data';
 
 const tokenExpirationMargin = 5 * 60 * 1000; // 5 min (WordPress tokens expire after 2 weeks)
 
-const request = (token, options) => networkSvc.request({
+const request = (token: any, options: any): Promise<any> => (networkSvc as any).request({
   ...options,
   headers: {
     ...options.headers || {},
     Authorization: `Bearer ${token.accessToken}`,
   },
 })
-  .then(res => res.body);
+  .then((res: any) => res.body);
 
 export default {
   /**
    * https://developer.wordpress.com/docs/oauth2/
    */
-  async startOauth2(sub = null, silent = false) {
-    const clientId = useDataStore().serverConf.wordpressClientId;
+  async startOauth2(sub: any = null, silent: boolean = false): Promise<any> {
+    const clientId = (useDataStore().serverConf as any).wordpressClientId;
 
     // Get an OAuth2 code
-    const { accessToken, expiresIn } = await networkSvc.startOauth2(
+    const { accessToken, expiresIn } = await (networkSvc as any).startOauth2(
       'https://public-api.wordpress.com/oauth2/authorize',
       {
         client_id: clientId,
@@ -57,9 +54,9 @@ export default {
     useDataStore().addWordpressToken(token);
     return token;
   },
-  async refreshToken(token) {
+  async refreshToken(token: any): Promise<any> {
     const { sub } = token;
-    const lastToken = useDataStore().wordpressTokensBySub[sub];
+    const lastToken: any = useDataStore().wordpressTokensBySub[sub];
 
     if (lastToken.expiresOn > Date.now() + tokenExpirationMargin) {
       return lastToken;
@@ -72,9 +69,9 @@ export default {
     });
     return this.startOauth2(sub);
   },
-  async addAccount(fullAccess = false) {
+  async addAccount(fullAccess: any = false): Promise<any> {
     const token = await this.startOauth2(fullAccess);
-    badgeSvc.addBadge('addWordpressAccount');
+    (badgeSvc as any).addBadge('addWordpressAccount');
     return token;
   },
 
@@ -96,7 +93,7 @@ export default {
     featuredImage,
     status,
     date,
-  }) {
+  }: any): Promise<any> {
     const refreshedToken = await this.refreshToken(token);
     return request(refreshedToken, {
       method: 'POST',

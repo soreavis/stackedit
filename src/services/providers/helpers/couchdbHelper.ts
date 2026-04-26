@@ -1,37 +1,34 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for CouchDB. Method params + response payloads
+// kept loose (`any`) — vendor APIs return dynamic shapes.
 import networkSvc from '../../networkSvc';
 import utils from '../../utils';
 import { useModalStore } from '../../../stores/modal';
 import userSvc from '../../userSvc';
 import { useDataStore } from '../../../stores/data';
 
-const request = async (token, options = {}) => {
+const request = async (token: any, options: any = {}): Promise<any> => {
   const baseUrl = `${token.dbUrl}/`;
-  const getLastToken = () => useDataStore().couchdbTokensBySub[token.sub];
+  const getLastToken = (): any => useDataStore().couchdbTokensBySub[token.sub];
 
-  const assertUnauthorized = (err) => {
+  const assertUnauthorized = (err: any): void => {
     if (err.status !== 401) {
       throw err;
     }
   };
 
-  const onUnauthorized = async () => {
+  const onUnauthorized = async (): Promise<void> => {
     try {
       const { name, password } = getLastToken();
-      await networkSvc.request({
+      await (networkSvc as any).request({
         method: 'POST',
-        url: utils.resolveUrl(baseUrl, '../_session'),
+        url: (utils as any).resolveUrl(baseUrl, '../_session'),
         withCredentials: true,
         body: {
           name,
           password,
         },
       });
-    } catch (err) {
+    } catch (err: any) {
       assertUnauthorized(err);
       await useModalStore().open({
         type: 'couchdbCredentials',
@@ -41,27 +38,27 @@ const request = async (token, options = {}) => {
     }
   };
 
-  const config = {
+  const config: any = {
     ...options,
     headers: {
       Accept: 'application/json',
       ...options.headers || {},
     },
-    url: utils.resolveUrl(baseUrl, options.path || '.'),
+    url: (utils as any).resolveUrl(baseUrl, options.path || '.'),
     withCredentials: true,
   };
 
   try {
-    let res;
+    let res: any;
     try {
-      res = await networkSvc.request(config);
-    } catch (err) {
+      res = await (networkSvc as any).request(config);
+    } catch (err: any) {
       assertUnauthorized(err);
       await onUnauthorized();
-      res = await networkSvc.request(config);
+      res = await (networkSvc as any).request(config);
     }
     return res.body;
-  } catch (err) {
+  } catch (err: any) {
     if (err.status === 409) {
       throw new Error('TOO_LATE');
     }
@@ -74,20 +71,20 @@ export default {
   /**
    * http://docs.couchdb.org/en/2.1.1/api/database/common.html#db
    */
-  getDb(token) {
+  getDb(token: any): Promise<any> {
     return request(token);
   },
 
   /**
    * http://docs.couchdb.org/en/2.1.1/api/database/changes.html#db-changes
    */
-  async getChanges(token, lastSeq) {
-    const result = {
+  async getChanges(token: any, lastSeq: any): Promise<any> {
+    const result: any = {
       changes: [],
       lastSeq,
     };
 
-    const getPage = async () => {
+    const getPage = async (): Promise<any> => {
       const body = await request(token, {
         method: 'GET',
         path: '_changes',
@@ -119,25 +116,25 @@ export default {
     dataType = null,
     documentId = null,
     rev = null,
-  }) {
-    const options = {
+  }: any): Promise<any> {
+    const options: any = {
       method: 'POST',
-      body: { item, time: Date.now() },
+      body: { item, time: Date.now() } as any,
     };
-    const userId = userSvc.getCurrentUserId();
+    const userId = (userSvc as any).getCurrentUserId();
     if (userId) {
       options.body.sub = userId;
     }
     if (documentId) {
       options.method = 'PUT';
       options.path = documentId;
-      options.body._rev = rev;  
+      options.body._rev = rev;
     }
     if (data) {
-      options.body._attachments = {  
+      options.body._attachments = {
         data: {
           content_type: dataType,
-          data: utils.encodeBase64(data),
+          data: (utils as any).encodeBase64(data),
         },
       };
     }
@@ -147,7 +144,7 @@ export default {
   /**
    * http://docs.couchdb.org/en/2.1.1/api/document/common.html#delete--db-docid
    */
-  async removeDocument(token, documentId, rev) {
+  async removeDocument(token: any, documentId: any, rev: any): Promise<any> {
     if (!documentId) {
       // Prevent from deleting the whole database
       throw new Error('Missing document ID');
@@ -163,7 +160,7 @@ export default {
   /**
    * http://docs.couchdb.org/en/2.1.1/api/document/common.html#get--db-docid
    */
-  async retrieveDocument(token, documentId, rev) {
+  async retrieveDocument(token: any, documentId: any, rev: any): Promise<any> {
     return request(token, {
       path: documentId,
       params: { rev },
@@ -173,15 +170,15 @@ export default {
   /**
    * http://docs.couchdb.org/en/2.1.1/api/document/common.html#get--db-docid
    */
-  async retrieveDocumentWithAttachments(token, documentId, rev) {
+  async retrieveDocumentWithAttachments(token: any, documentId: any, rev?: any): Promise<any> {
     const body = await request(token, {
       path: documentId,
       params: { attachments: true, rev },
     });
     body.attachments = {};
-     
-    Object.entries(body._attachments).forEach(([name, attachment]) => {
-      body.attachments[name] = utils.decodeBase64(attachment.data);
+
+    Object.entries(body._attachments).forEach(([name, attachment]: any) => {
+      body.attachments[name] = (utils as any).decodeBase64(attachment.data);
     });
     return body;
   },
@@ -189,7 +186,7 @@ export default {
   /**
    * http://docs.couchdb.org/en/2.1.1/api/document/common.html#get--db-docid
    */
-  async retrieveDocumentWithRevisions(token, documentId) {
+  async retrieveDocumentWithRevisions(token: any, documentId: any): Promise<any> {
     return request(token, {
       path: documentId,
       params: {
