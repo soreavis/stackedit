@@ -74,6 +74,7 @@ import fileImportSvc from '../services/fileImportSvc';
 import workspaceSvc from '../services/workspaceSvc';
 import badgeSvc from '../services/badgeSvc';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { useFolderStore } from '../stores/folder';
 
 export default {
@@ -211,7 +212,7 @@ export default {
         if (node.isFolder) {
           store.commit('explorer/toggleOpenNode', primaryId);
         } else {
-          store.commit('file/setCurrentId', primaryId);
+          useFileStore().setCurrentId(primaryId);
         }
         return;
       }
@@ -236,7 +237,7 @@ export default {
     async duplicatePrimary() {
       const primaryId = store.state.explorer.selectedId;
       if (!primaryId) return;
-      const original = store.state.file.itemsById[primaryId];
+      const original = useFileStore().itemsById[primaryId];
       if (!original) return;
       try {
         const localDbSvc = (await import('../services/localDbSvc')).default;
@@ -247,7 +248,7 @@ export default {
           text: (content && content.text) || '',
           properties: (content && content.properties) || '',
         }, true);
-        store.commit('file/setCurrentId', copy.id);
+        useFileStore().setCurrentId(copy.id);
       } catch (e) {
         console.error(e);
       }
@@ -367,7 +368,7 @@ export default {
   },
   created() {
     this.$watch(
-      () => store.getters['file/current'].id,
+      () => useFileStore().current.id,
       (currentFileId) => {
         store.commit('explorer/setSelectedIds', currentFileId ? [currentFileId] : []);
         store.dispatch('explorer/openNode', currentFileId);

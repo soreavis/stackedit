@@ -95,7 +95,7 @@ export default new Provider({
     switch (token && state.action) {
       case 'create': {
         const file = await workspaceSvc.createFile({}, true);
-        store.commit('file/setCurrentId', file.id);
+        useFileStore().setCurrentId(file.id);
         // Return a new syncLocation
         return this.makeLocation(token, null, googleHelper.driveActionFolder.id);
       }
@@ -113,7 +113,7 @@ export default new Provider({
     return Provider.parseContent(content, `${syncLocation.fileId}/content`);
   },
   async uploadContent(token, content, syncLocation, ifNotTooLate) {
-    const file = store.state.file.itemsById[syncLocation.fileId];
+    const file = useFileStore().itemsById[syncLocation.fileId];
     const name = utils.sanitizeName(file && file.name);
     const parents = [];
     if (syncLocation.driveParentId) {
@@ -170,18 +170,18 @@ export default new Provider({
         // Create the file
         const item = await workspaceSvc.createFile({
           name: driveFile.name,
-          parentId: store.getters['file/current'].parentId,
+          parentId: useFileStore().current.parentId,
           text: content.text,
           properties: content.properties,
           discussions: content.discussions,
           comments: content.comments,
         }, true);
-        store.commit('file/setCurrentId', item.id);
+        useFileStore().setCurrentId(item.id);
         workspaceSvc.addSyncLocation({
           ...syncLocation,
           fileId: item.id,
         });
-        useNotificationStore().info(`${store.getters['file/current'].name} was imported from Google Drive.`);
+        useNotificationStore().info(`${useFileStore().current.name} was imported from Google Drive.`);
       }
     });
   },

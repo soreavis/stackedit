@@ -1,4 +1,5 @@
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { useFolderStore } from '../stores/folder';
 import { useModalStore } from '../stores/modal';
 import workspaceSvc from './workspaceSvc';
@@ -37,7 +38,7 @@ function pickVisibleReplacement(): string | null {
   const ids: string[] = store.getters['data/lastOpenedIds'];
   for (let i = 0; i < ids.length; i += 1) {
     const id = ids[i];
-    const file = store.state.file.itemsById[id];
+    const file = (useFileStore().itemsById as Record<string, any>)[id];
     if (!file || file.parentId === 'trash') continue;
     let visible = true;
     for (
@@ -94,7 +95,7 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
     return; // cancelled
   }
 
-  const currentFileId = store.getters['file/current'].id;
+  const currentFileId = useFileStore().current.id;
   let doClose = false;
 
   const recursivePurge = (node: ExplorerNode): void => {
@@ -135,7 +136,7 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
   store.commit('explorer/setSelectedIds', []);
 
   if (doClose) {
-    store.commit('file/setCurrentId', pickVisibleReplacement());
+    useFileStore().setCurrentId(pickVisibleReplacement());
   }
 }
 
@@ -216,7 +217,7 @@ export default {
     };
 
     if (selectedNode === store.getters['explorer/selectedNode']) {
-      const currentFileId = store.getters['file/current'].id;
+      const currentFileId = useFileStore().current.id;
       let doClose = selectedNode.item.id === currentFileId;
       if (selectedNode.isFolder) {
         const recursiveDelete = (folderNode: ExplorerNode): void => {
@@ -235,7 +236,7 @@ export default {
       }
       if (doClose) {
         const replacement = pickVisibleReplacement();
-        store.commit('file/setCurrentId', replacement);
+        useFileStore().setCurrentId(replacement);
       }
     }
   },

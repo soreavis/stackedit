@@ -55,6 +55,7 @@ import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import { useNotificationStore } from '../../stores/notification';
 import { useQueueStore } from '../../stores/queue';
 import badgeSvc from '../../services/badgeSvc';
@@ -104,14 +105,14 @@ export default {
       return providerRegistry.providersById[this.syncLocation.providerId].name;
     },
     currentFileName() {
-      return store.getters['file/current'].name;
+      return useFileStore().current.name;
     },
     historyContext() {
       const { syncLocation } = this;
       if (syncLocation) {
         const provider = providerRegistry.providersById[syncLocation.providerId];
         const token = provider.getToken(syncLocation);
-        const fileId = store.getters['file/current'].id;
+        const fileId = useFileStore().current.id;
         const contentId = `${fileId}/content`;
         const historyContext = {
           token,

@@ -8,6 +8,7 @@ import markdownConversionSvc from './markdownConversionSvc';
 import extensionSvc from './extensionSvc';
 import utils from './utils';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import htmlSanitizer from '../libs/htmlSanitizer';
 
 interface Heading {
@@ -63,7 +64,7 @@ export default {
     },
     pdf = false,
   ): Promise<string> {
-    const file = store.state.file.itemsById[fileId];
+    const file = (useFileStore().itemsById as Record<string, any>)[fileId];
     const content = await localDbSvc.loadItem(`${fileId}/content`);
     const properties = utils.computeProperties(content.properties);
     const options = extensionSvc.getOptions(properties);
@@ -141,7 +142,7 @@ export default {
    * Export a file to disk.
    */
   async exportToDisk(fileId: string, type: string, template?: Template): Promise<void> {
-    const file = store.state.file.itemsById[fileId];
+    const file = (useFileStore().itemsById as Record<string, any>)[fileId];
     const html = await this.applyTemplate(fileId, template);
     const blob = new Blob([html], {
       type: 'text/plain;charset=utf-8',

@@ -13,10 +13,12 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
 import CommentList from './gutters/CommentList';
 import EditorNewDiscussionButton from './gutters/EditorNewDiscussionButton';
 import editorSvc from '../services/editorSvc';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 
 export default {
   components: {
@@ -27,7 +29,7 @@ export default {
     lineCount: 1,
   }),
   computed: {
-    ...mapGetters('file', [
+    ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
     ...mapGetters('layout', [

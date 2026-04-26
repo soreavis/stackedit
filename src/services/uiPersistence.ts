@@ -4,6 +4,7 @@
 // not documents, and synchronous reads during boot are preferable.
 
 import store from '../store';
+import { useFileStore } from '../stores/file';
 
 const OPEN_NODES_KEY = 'stackedit.ui.openNodes';
 const CURRENT_ID_KEY = 'stackedit.ui.currentId';
@@ -39,10 +40,10 @@ function restoreCurrentId(): void {
     try { return localStorage.getItem(CURRENT_ID_KEY); } catch { return null; }
   })();
   if (!id) return;
-  const file = store.state.file.itemsById[id];
+  const file = (useFileStore().itemsById as Record<string, any>)[id];
   if (!file || file.parentId === 'trash') return;
-  if (store.state.file.currentId !== id) {
-    store.commit('file/setCurrentId', id);
+  if (useFileStore().currentId !== id) {
+    useFileStore().setCurrentId(id);
   }
 }
 
@@ -54,17 +55,21 @@ interface MutationLike {
 function bindSubscriptions(): void {
   if (bound) return;
   bound = true;
+  // explorer is still Vuex.
   store.subscribe((mutation: MutationLike) => {
     if (mutation.type === 'explorer/toggleOpenNode'
       || mutation.type === 'explorer/setOpenNodes'
     ) {
       writeJson(OPEN_NODES_KEY, store.state.explorer.openNodes || {});
-      return;
     }
-    if (mutation.type === 'file/setCurrentId') {
-      const id = mutation.payload as string | null | undefined;
+  });
+  // file is in Pinia. Watch currentId via $subscribe.
+  let lastCurrentId = useFileStore().currentId;
+  useFileStore().$subscribe((_mutation, state) => {
+    if (state.currentId !== lastCurrentId) {
+      lastCurrentId = state.currentId;
       try {
-        if (id) localStorage.setItem(CURRENT_ID_KEY, id);
+        if (state.currentId) localStorage.setItem(CURRENT_ID_KEY, state.currentId);
         else localStorage.removeItem(CURRENT_ID_KEY);
       } catch {
         // ignore
@@ -82,7 +87,7 @@ function seedRecentSnapshot(): void {
     .sort((a, b) => b[1] - a[1])
     .map(([id, ts]) => ({ id, ts }))
     .filter((entry) => {
-      const f = store.state.file.itemsById[entry.id];
+      const f = (useFileStore().itemsById as Record<string, any>)[entry.id];
       return f && f.parentId !== 'trash';
     })
     .slice(0, 10);
