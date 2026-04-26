@@ -65,7 +65,7 @@ export default {
   ): Promise<string> {
     const file = (useFileStore().itemsById as Record<string, any>)[fileId];
     const content = await localDbSvc.loadItem(`${fileId}/content`);
-    const properties = utils.computeProperties(content.properties);
+    const properties = utils.computeProperties(content.properties as string | undefined);
     const options = extensionSvc.getOptions(properties);
     const converter = (markdownConversionSvc as any).createConverter(options, true);
     const parsingCtx = (markdownConversionSvc as any).parseSections(converter, content.text);
