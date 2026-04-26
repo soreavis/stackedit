@@ -19,7 +19,7 @@ import {
 import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { bracketMatching } from '@codemirror/language';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
-import { markdown } from '@codemirror/lang-markdown';
+import { markdown, markdownKeymap } from '@codemirror/lang-markdown';
 import { stackeditHighlight } from './cm6Highlighter';
 import { markerField } from './cm6Marker';
 import { classRangeField } from './cm6Decorations';
@@ -157,6 +157,7 @@ function baseExtensions(): Extension[] {
     markerField,
     classRangeField,
     keymap.of([
+      ...markdownKeymap,
       ...defaultKeymap,
       ...historyKeymap,
       ...searchKeymap,
