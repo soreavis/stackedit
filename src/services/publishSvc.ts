@@ -95,7 +95,7 @@ const publishFile = async (fileId: string): Promise<void> => {
             if (utils.serializeObject(publishLocation) !==
               utils.serializeObject(publishLocationToStore)
             ) {
-              usePublishLocationStore().patchItem(publishLocationToStore);
+              usePublishLocationStore().patchItem(publishLocationToStore as PublishLocation & { id: string });
               (workspaceSvc as any).ensureUniqueLocations();
             }
             counter += 1;

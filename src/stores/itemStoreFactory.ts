@@ -1,6 +1,31 @@
 import { defineStore } from 'pinia';
 import utils from '../services/utils';
 
+export interface BaseItem {
+  id: string;
+  type?: string;
+  hash?: number;
+  [key: string]: unknown;
+}
+
+export interface ItemStoreState<T extends BaseItem> {
+  itemsById: Record<string, T>;
+}
+
+// Pinia getters/actions are heterogeneous — getters take state OR use
+// `this`, actions take arbitrary args. Use `any` here so consumers can
+// type their extras as concretely as they want without fighting
+// contravariance.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExtraGetters = Record<string, (...args: any[]) => any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExtraActions = Record<string, (...args: any[]) => any>;
+
+interface CreateItemStoreOptions {
+  extraGetters?: ExtraGetters;
+  extraActions?: ExtraActions;
+}
+
 // Pinia equivalent of src/store/moduleTemplate.js. Same shape: itemsById
 // keyed by item.id, items getter returns Object.values, setItem /
 // patchItem / deleteItem actions with the same hash semantics. Used by
@@ -16,23 +41,29 @@ import utils from '../services/utils';
 //
 // Returns a `useFooStore = defineStore(...)` factory function — call it
 // inside your component / service to get the live store.
-export function createItemStore(storeId, empty, simpleHash = false, {
-  extraGetters = {},
-  extraActions = {},
-} = {}) {
-  const hashFunc = simpleHash ? Date.now : item => utils.getItemHash(item);
+export function createItemStore<T extends BaseItem>(
+  storeId: string,
+  empty: (id?: string) => T,
+  simpleHash = false,
+  { extraGetters = {}, extraActions = {} }: CreateItemStoreOptions = {},
+) {
+  const hashFunc: (item: T) => number = simpleHash
+    ? () => Date.now()
+    : (item: T) => utils.getItemHash(item);
 
   return defineStore(storeId, {
-    state: () => ({
+    state: (): ItemStoreState<T> => ({
       itemsById: {},
     }),
     getters: {
-      items: ({ itemsById }) => Object.values(itemsById),
+      items(state): T[] {
+        return Object.values(state.itemsById);
+      },
       ...extraGetters,
     },
     actions: {
-      setItem(value) {
-        const item = Object.assign(empty(value.id), value);
+      setItem(value: Partial<T> & { id: string }): void {
+        const item = Object.assign(empty(value.id), value) as T;
         if (!item.hash || !simpleHash) {
           item.hash = hashFunc(item);
         }
@@ -42,17 +73,17 @@ export function createItemStore(storeId, empty, simpleHash = false, {
         // getters/computed.
         this.itemsById = { ...this.itemsById, [item.id]: item };
       },
-      patchItem(patch) {
+      patchItem(patch: Partial<T> & { id: string }): boolean {
         const item = this.itemsById[patch.id];
         if (item) {
-          const updated = { ...item, ...patch };
+          const updated = { ...item, ...patch } as T;
           updated.hash = hashFunc(updated);
           this.itemsById = { ...this.itemsById, [item.id]: updated };
           return true;
         }
         return false;
       },
-      deleteItem(id) {
+      deleteItem(id: string): void {
         const next = { ...this.itemsById };
         delete next[id];
         this.itemsById = next;
