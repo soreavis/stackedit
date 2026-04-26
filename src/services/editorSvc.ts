@@ -8,8 +8,7 @@ import Vue from 'vue';
 import DiffMatchPatch from 'diff-match-patch';
 import Prism from 'prismjs';
 import markdownItPandocRenderer from 'markdown-it-pandoc-renderer';
-import cledit from './editor/cledit';
-import pagedown from '../libs/pagedown';
+import { debounce } from './editor/sharedUtils';
 import htmlSanitizer from '../libs/htmlSanitizer';
 import markdownConversionSvc from './markdownConversionSvc';
 import markdownGrammarSvc from './markdownGrammarSvc';
@@ -58,7 +57,6 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
   tocElt: null,
   // Other objects
   clEditor: null,
-  pagedownEditor: null,
   options: null,
   prismGrammars: null,
   converter: null,
@@ -375,24 +373,10 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
         useLayoutStore().setCanRedo(canRedo);
       }
     });
-    this.pagedownEditor = pagedown({
-      input: Object.create(this.clEditor),
-    });
-    this.pagedownEditor.run();
-    this.pagedownEditor.hooks.set('insertLinkDialog', (callback) => {
-      useModalStore().open({
-        type: 'link',
-        callback,
-      });
-      return true;
-    });
-    this.pagedownEditor.hooks.set('insertImageDialog', (callback) => {
-      useModalStore().open({
-        type: 'image',
-        callback,
-      });
-      return true;
-    });
+    // Stage 3 batch 11 — pagedown removed. NavigationBar / shortcuts
+    // dispatch directly through cm6Commands; link / image modals are
+    // wired at the call site (linkCommand / imageCommand factories
+    // accept the modal opener as an argument).
 
     this.editorElt.parentNode.addEventListener('scroll', () => this.saveContentState(true));
     this.previewElt.parentNode.addEventListener('scroll', () => this.saveContentState(true));
@@ -463,7 +447,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
         }) && imgElt;
     };
 
-    const triggerImgCacheGc = cledit.Utils.debounce(() => {
+    const triggerImgCacheGc = debounce(() => {
       Object.entries(imgCache).forEach(([src, entries]) => {
         // Filter entries that are not attached to the DOM
         const filteredEntries = entries.filter(imgElt => this.editorElt.contains(imgElt));

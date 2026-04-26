@@ -1,12 +1,8 @@
 import DiffMatchPatch from 'diff-match-patch';
-import cleditRaw from './cledit';
+import { findContainer } from './sharedUtils';
 import animationSvc from '../animationSvc';
 import { useContentStateStore } from '../../stores/contentState';
 import { useLayoutStore } from '../../stores/layout';
-
-// cledit / editorSvc are still partially typed; cast cledit to `any` so
-// `cledit.Utils.findContainer` resolves without a deep types port.
-const cledit = cleditRaw as any;
 
 const diffMatchPatch = new DiffMatchPatch();
 
@@ -134,8 +130,8 @@ export default {
    * Get the coordinates of an offset in the preview
    */
   getPreviewOffsetCoordinates(this: EditorSvcThis, offset: number): { top: number; height: number; left: number } {
-    const start = cledit.Utils.findContainer(this.previewElt, offset && offset - 1);
-    const end = cledit.Utils.findContainer(this.previewElt, offset || offset + 1);
+    const start = findContainer(this.previewElt, offset && offset - 1);
+    const end = findContainer(this.previewElt, offset || offset + 1);
     const range = document.createRange();
     range.setStart(start.container, start.offsetInContainer);
     range.setEnd(end.container, end.offsetInContainer);

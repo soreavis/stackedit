@@ -1,10 +1,10 @@
-import cledit from '../../services/editor/cledit';
+import { debounce } from '../../services/editor/sharedUtils';
 import editorSvc from '../../services/editorSvc';
 import utils from '../../services/utils';
 
 let savedSelection = null;
 const nextTickCbs = [];
-const nextTickExecCbs = cledit.Utils.debounce(() => {
+const nextTickExecCbs = debounce(() => {
   while (nextTickCbs.length) {
     nextTickCbs.shift()();
   }
