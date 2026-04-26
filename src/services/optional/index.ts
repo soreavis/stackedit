@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Optional editor service — keyboard / scroll-sync / shortcuts / task-change
 // glue. Tightly coupled to editorSvc + the CM6 bridge.
 //
