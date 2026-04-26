@@ -2,6 +2,7 @@ import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useUserInfoStore } from '../stores/userInfo';
 import utils from './utils';
+import { useDataStore } from '../stores/data';
 
 const refreshUserInfoAfter = 60 * 60 * 1000; // 60 minutes
 
@@ -83,7 +84,7 @@ export default {
     if (lastInfo === undefined) {
       // Try to find a token with this sub to resolve name as soon as possible
       const [type, sub] = parseUserId(sanitizedUserId);
-      const token = store.getters['data/tokensByType'][type]?.[sub];
+      const token = useDataStore().tokensByType[type]?.[sub];
       if (token) {
         useUserInfoStore().setItem({
           id: sanitizedUserId,

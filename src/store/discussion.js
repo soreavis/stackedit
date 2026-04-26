@@ -3,6 +3,7 @@ import googleHelper from '../services/providers/helpers/googleHelper';
 import syncSvc from '../services/syncSvc';
 import { useModalStore } from '../stores/modal';
 import { useContentStore } from '../stores/content';
+import { useWorkspaceStore } from '../stores/workspace';
 
 const idShifter = offset => (state, getters) => {
   const ids = Object.keys(getters.currentFileDiscussions)
@@ -64,7 +65,7 @@ export default {
   getters: {
     newDiscussion: ({ currentDiscussionId, newDiscussionId, newDiscussion }) =>
       currentDiscussionId === newDiscussionId && newDiscussion,
-    currentFileDiscussionLastComments: (state, getters, rootState, rootGetters) => {
+    currentFileDiscussionLastComments: () => {
       const { discussions, comments } = useContentStore().current;
       const discussionLastComments = {};
       Object.entries(comments).forEach(([, comment]) => {
@@ -80,8 +81,6 @@ export default {
     currentFileDiscussions: (
       { newDiscussionId },
       { newDiscussion, currentFileDiscussionLastComments },
-      rootState,
-      rootGetters,
     ) => {
       const currentFileDiscussions = {};
       if (newDiscussion) {
@@ -103,8 +102,6 @@ export default {
     currentDiscussionComments: (
       { currentDiscussionId },
       { currentDiscussion },
-      rootState,
-      rootGetters,
     ) => {
       const comments = {};
       if (currentDiscussion) {
@@ -134,8 +131,8 @@ export default {
         commit('setCurrentDiscussionId', getters.nextDiscussionId);
       }
     },
-    async createNewDiscussion({ commit, dispatch, rootGetters }, selection) {
-      const loginToken = rootGetters['workspace/loginToken'];
+    async createNewDiscussion({ commit, dispatch }, selection) {
+      const loginToken = useWorkspaceStore().loginToken;
       if (!loginToken) {
         try {
           await useModalStore().open('signInForComment');
@@ -154,9 +151,7 @@ export default {
     },
     cleanCurrentFile({
       getters,
-      rootGetters,
       commit,
-      dispatch,
     }, { filterComment, filterDiscussion } = {}) {
       const { discussions } = useContentStore().current;
       const { comments } = useContentStore().current;

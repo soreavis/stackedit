@@ -15,6 +15,7 @@ import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
 import htmlSanitizer from '../libs/htmlSanitizer';
 import store from '../store';
+import { useDataStore } from '../stores/data';
 
 // Browsers don't ship a unified FileSystemEntry type that covers both
 // `isFile`/`isDirectory` branches with the file()/createReader() shape
@@ -41,7 +42,7 @@ const stripHtmlExt = (name: string): string => name.replace(HTML_EXT_RE, '');
 let turndownService: any = null;
 const getTurndown = (): any => {
   if (!turndownService) {
-    const settings = (store.getters['data/computedSettings'] || {}).turndown;
+    const settings = (useDataStore().computedSettings || {}).turndown;
     turndownService = new TurndownService(settings || {});
   }
   return turndownService;

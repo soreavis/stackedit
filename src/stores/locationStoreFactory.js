@@ -1,8 +1,9 @@
 import { createItemStore } from './itemStoreFactory';
 import providerRegistry from '../services/providers/common/providerRegistry';
 import utils from '../services/utils';
-import vuexStore from '../store';
 import { useFileStore } from './file';
+import { useDataStore } from './data';
+import { useWorkspaceStore } from './workspace';
 
 const addToGroup = (groups, item) => {
   const list = groups[item.fileId];
@@ -65,14 +66,14 @@ export function createLocationStore(storeId, empty) {
       },
       currentWithWorkspaceSyncLocation() {
         const fileId = useFileStore().current.id;
-        // data + workspace modules still live in Vuex during the transition.
-        const fileSyncData = vuexStore.getters['data/syncDataByItemId'][fileId];
-        const contentSyncData = vuexStore.getters['data/syncDataByItemId'][`${fileId}/content`];
+        const syncDataByItemId = useDataStore().syncDataByItemId;
+        const fileSyncData = syncDataByItemId[fileId];
+        const contentSyncData = syncDataByItemId[`${fileId}/content`];
         if (!fileSyncData || !contentSyncData) {
           return this.current;
         }
         const workspaceProvider = providerRegistry.providersById[
-          vuexStore.getters['workspace/currentWorkspace'].providerId];
+          useWorkspaceStore().currentWorkspace.providerId];
         return [{
           id: 'main',
           providerId: workspaceProvider.id,

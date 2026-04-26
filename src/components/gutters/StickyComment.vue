@@ -7,8 +7,10 @@
 
 <script>
 import { mapState, mapGetters } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import Comment from './Comment';
 import NewComment from './NewComment';
+import { useLayoutStore } from '../../stores/layout';
 
 export default {
   components: {
@@ -19,7 +21,7 @@ export default {
     top: 0,
   }),
   computed: {
-    ...mapGetters('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'constants',
     ]),
     ...mapState('discussion', [

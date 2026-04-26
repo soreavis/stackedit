@@ -64,11 +64,10 @@
 
 <script>
 import Vue from 'vue';
-import { mapGetters } from 'vuex';
+
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
 import workspaceSvc from '../../services/workspaceSvc';
-import store from '../../store';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';

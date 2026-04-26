@@ -86,6 +86,7 @@ import gitlabHelper from '../../services/providers/helpers/gitlabHelper';
 import wordpressHelper from '../../services/providers/helpers/wordpressHelper';
 import zendeskHelper from '../../services/providers/helpers/zendeskHelper';
 import badgeSvc from '../../services/badgeSvc';
+import { useDataStore } from '../../stores/data';
 
 export default {
   components: {
@@ -98,7 +99,7 @@ export default {
     ]),
     entries() {
       return [
-        ...Object.values(store.getters['data/googleTokensBySub']).map(token => ({
+        ...Object.values(useDataStore().googleTokensBySub).map(token => ({
           token,
           providerId: 'google',
           userId: token.sub,
@@ -106,26 +107,26 @@ export default {
           scopes: ['openid', 'profile', ...token.scopes
             .map(scope => scope.replace(/^https:\/\/www.googleapis.com\/auth\//, ''))],
         })),
-        ...Object.values(store.getters['data/couchdbTokensBySub']).map(token => ({
+        ...Object.values(useDataStore().couchdbTokensBySub).map(token => ({
           token,
           providerId: 'couchdb',
           url: token.dbUrl,
           name: token.name,
         })),
-        ...Object.values(store.getters['data/dropboxTokensBySub']).map(token => ({
+        ...Object.values(useDataStore().dropboxTokensBySub).map(token => ({
           token,
           providerId: 'dropbox',
           userId: token.sub,
           name: token.name,
         })),
-        ...Object.values(store.getters['data/githubTokensBySub']).map(token => ({
+        ...Object.values(useDataStore().githubTokensBySub).map(token => ({
           token,
           providerId: 'github',
           userId: token.sub,
           name: token.name,
           scopes: token.scopes,
         })),
-        ...Object.values(store.getters['data/gitlabTokensBySub']).map(token => ({
+        ...Object.values(useDataStore().gitlabTokensBySub).map(token => ({
           token,
           providerId: 'gitlab',
           url: token.serverUrl,
@@ -133,14 +134,14 @@ export default {
           name: token.name,
           scopes: ['api'],
         })),
-        ...Object.values(store.getters['data/wordpressTokensBySub']).map(token => ({
+        ...Object.values(useDataStore().wordpressTokensBySub).map(token => ({
           token,
           providerId: 'wordpress',
           userId: token.sub,
           name: token.name,
           scopes: ['global'],
         })),
-        ...Object.values(store.getters['data/zendeskTokensBySub']).map(token => ({
+        ...Object.values(useDataStore().zendeskTokensBySub).map(token => ({
           token,
           providerId: 'zendesk',
           url: `https://${token.subdomain}.zendesk.com/`,
@@ -155,7 +156,7 @@ export default {
     async remove(entry) {
       const tokensBySub = utils.deepCopy(store.getters[`data/${entry.providerId}TokensBySub`]);
       delete tokensBySub[entry.token.sub];
-      await store.dispatch('data/patchTokensByType', {
+      await useDataStore().patchTokensByType({
         [entry.providerId]: tokensBySub,
       });
       badgeSvc.addBadge('removeAccount');
@@ -168,13 +169,13 @@ export default {
     async addDropboxAccount() {
       try {
         await useModalStore().open({ type: 'dropboxAccount' });
-        await dropboxHelper.addAccount(!store.getters['data/localSettings'].dropboxRestrictedAccess);
+        await dropboxHelper.addAccount(!useDataStore().localSettings.dropboxRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async addGithubAccount() {
       try {
         await useModalStore().open({ type: 'githubAccount' });
-        await githubHelper.addAccount(store.getters['data/localSettings'].githubRepoFullAccess);
+        await githubHelper.addAccount(useDataStore().localSettings.githubRepoFullAccess);
       } catch (e) { /* cancel */ }
     },
     async addGitlabAccount() {
@@ -186,7 +187,7 @@ export default {
     async addGoogleDriveAccount() {
       try {
         await useModalStore().open({ type: 'googleDriveAccount' });
-        await googleHelper.addDriveAccount(!store.getters['data/localSettings'].googleDriveRestrictedAccess);
+        await googleHelper.addDriveAccount(!useDataStore().localSettings.googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async addWordpressAccount() {

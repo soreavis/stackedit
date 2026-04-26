@@ -7,7 +7,6 @@
 <script>
 import { mapActions } from 'vuex';
 import editorSvc from '../../services/editorSvc';
-import store from '../../store';
 import { useContentStore } from '../../stores/content';
 
 export default {

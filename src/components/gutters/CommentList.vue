@@ -10,11 +10,14 @@
 
 <script>
 import { mapState, mapGetters, mapMutations } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import Comment from './Comment';
 import NewComment from './NewComment';
 import editorSvc from '../../services/editorSvc';
 import store from '../../store';
 import utils from '../../services/utils';
+import { useDataStore } from '../../stores/data';
+import { useLayoutStore } from '../../stores/layout';
 
 export default {
   components: {
@@ -25,7 +28,7 @@ export default {
     tops: {},
   }),
   computed: {
-    ...mapGetters('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'constants',
       'styles',
     ]),
@@ -74,7 +77,7 @@ export default {
       'setCurrentDiscussionId',
     ]),
     updateTops() {
-      const layoutSettings = store.getters['data/layoutSettings'];
+      const layoutSettings = useDataStore().layoutSettings;
       const minTop = -2;
       let minCommentTop = minTop;
       const getTop = (discussion, commentElt1, commentElt2, isCurrent) => {
@@ -137,7 +140,7 @@ export default {
       { immediate: true },
     );
 
-    const layoutSettings = store.getters['data/layoutSettings'];
+    const layoutSettings = useDataStore().layoutSettings;
     this.scrollerElt = layoutSettings.showEditor
       ? editorSvc.editorElt.parentNode
       : editorSvc.previewElt.parentNode;

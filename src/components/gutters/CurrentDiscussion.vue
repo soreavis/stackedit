@@ -29,7 +29,7 @@
 
 <script>
 import { mapState, mapGetters, mapMutations } from 'vuex';
-import { mapActions as mapPiniaActions } from 'pinia';
+import { mapActions as mapPiniaActions, mapState as mapPiniaState } from 'pinia';
 import { useNotificationStore } from '../../stores/notification';
 import editorSvc from '../../services/editorSvc';
 import animationSvc from '../../services/animationSvc';
@@ -39,6 +39,8 @@ import StickyComment from './StickyComment';
 import store from '../../store';
 import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
+import { useDataStore } from '../../stores/data';
+import { useLayoutStore } from '../../stores/layout';
 
 export default {
   components: {
@@ -56,7 +58,7 @@ export default {
       'currentFileDiscussions',
       'currentDiscussionLastCommentId',
     ]),
-    ...mapGetters('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'constants',
     ]),
     text() {
@@ -78,7 +80,7 @@ export default {
     ]),
     goToDiscussion(discussionId = this.currentDiscussionId) {
       this.setCurrentDiscussionId(discussionId);
-      const layoutSettings = store.getters['data/layoutSettings'];
+      const layoutSettings = useDataStore().layoutSettings;
       const discussion = this.currentFileDiscussions[discussionId];
       const coordinates = layoutSettings.showEditor
         ? editorSvc.clEditor.selectionMgr.getCoordinates(discussion.end)

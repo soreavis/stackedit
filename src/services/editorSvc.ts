@@ -21,6 +21,8 @@ import store from '../store';
 import { useContentStore } from '../stores/content';
 import { useContentStateStore } from '../stores/contentState';
 import { useModalStore } from '../stores/modal';
+import { useDataStore } from '../stores/data';
+import { useLayoutStore } from '../stores/layout';
 
 const allowDebounce = (action, wait) => {
   let timeoutId;
@@ -106,7 +108,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
         return this.parsingCtx.sections;
       },
       getCursorFocusRatio: () => {
-        if (store.getters['data/layoutSettings'].focusMode) {
+        if (useDataStore().layoutSettings.focusMode) {
           return 1;
         }
         return 0.15;
@@ -365,12 +367,12 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     });
     this.clEditor.undoMgr.on('undoStateChange', () => {
       const canUndo = this.clEditor.undoMgr.canUndo();
-      if (canUndo !== store.state.layout.canUndo) {
-        store.commit('layout/setCanUndo', canUndo);
+      if (canUndo !== useLayoutStore().canUndo) {
+        useLayoutStore().setCanUndo(canUndo);
       }
       const canRedo = this.clEditor.undoMgr.canRedo();
-      if (canRedo !== store.state.layout.canRedo) {
-        store.commit('layout/setCanRedo', canRedo);
+      if (canRedo !== useLayoutStore().canRedo) {
+        useLayoutStore().setCanRedo(canRedo);
       }
     });
     this.pagedownEditor = pagedown({
@@ -474,7 +476,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     }, 100);
 
     let imgEltsToCache = [];
-    if (store.getters['data/computedSettings'].editor.inlineImages) {
+    if (useDataStore().computedSettings.editor.inlineImages) {
       this.clEditor.highlighter.on('sectionHighlighted', (section) => {
         Array.from(section.elt.getElementsByClassName('token img')).forEach((imgTokenElt) => {
           const srcElt = imgTokenElt.querySelector('.token.cl-src');
@@ -587,7 +589,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     );
 
     store.watch(
-      () => utils.serializeObject(store.getters['layout/styles']),
+      () => utils.serializeObject(useLayoutStore().styles),
       () => this.measureSectionDimensions(false, true, true),
     );
 

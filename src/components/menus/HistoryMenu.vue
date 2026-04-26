@@ -45,7 +45,7 @@
 </template>
 
 <script>
-import { mapState, mapMutations, mapGetters } from 'vuex';
+import { mapState } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import providerRegistry from '../../services/providers/common/providerRegistry';
 import UserImage from '../UserImage';
@@ -55,13 +55,13 @@ import PreviewClassApplier from '../common/PreviewClassApplier';
 import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
-import store from '../../store';
 import { useSyncLocationStore } from '../../stores/syncLocation';
 import { useContentStore } from '../../stores/content';
 import { useFileStore } from '../../stores/file';
 import { useNotificationStore } from '../../stores/notification';
 import { useQueueStore } from '../../stores/queue';
 import badgeSvc from '../../services/badgeSvc';
+import { useDataStore } from '../../stores/data';
 
 let editorClassAppliers = [];
 let previewClassAppliers = [];
@@ -84,7 +84,7 @@ export default {
     syncLocationId: null,
   }),
   computed: {
-    ...mapGetters('data', [
+    ...mapPiniaState(useDataStore, [
       'syncDataByItemId',
     ]),
     ...mapPiniaState(useSyncLocationStore, {
@@ -177,7 +177,7 @@ export default {
       }
     },
     close() {
-      store.dispatch('data/setSideBarPanel', 'menu');
+      useDataStore().setSideBarPanel('menu');
     },
     showMore() {
       this.showCount += pageSize;

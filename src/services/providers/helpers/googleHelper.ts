@@ -10,6 +10,7 @@ import { useWorkspaceStore } from '../../../stores/workspace';
 import { useModalStore } from '../../../stores/modal';
 import userSvc from '../../userSvc';
 import badgeSvc from '../../badgeSvc';
+import { useDataStore } from '../../../stores/data';
 
 const appsDomain = null;
 const tokenExpirationMargin = 5 * 60 * 1000; // 5 min (tokens expire after 1h)
@@ -25,7 +26,7 @@ const checkIdToken = (idToken) => {
   try {
     const token = idToken.split('.');
     const payload = JSON.parse(utils.decodeBase64(token[1]));
-    const clientId = store.getters['data/serverConf'].googleClientId;
+    const clientId = useDataStore().serverConf.googleClientId;
     return payload.aud === clientId && Date.now() + tokenExpirationMargin < payload.exp * 1000;
   } catch (e) {
     return false;
@@ -45,7 +46,7 @@ if (utils.queryParams.providerId === 'googleDrive') {
  * https://developers.google.com/people/api/rest/v1/people/get
  */
 const getUser = async (sub, token) => {
-  const apiKey = store.getters['data/serverConf'].googleApiKey;
+  const apiKey = useDataStore().serverConf.googleApiKey;
   const url = `https://people.googleapis.com/v1/people/${sub}?personFields=names,photos&key=${apiKey}`;
   const { body } = await networkSvc.request(sub === 'me' && token
     ? {
@@ -65,7 +66,7 @@ const getUser = async (sub, token) => {
 const subPrefix = 'go';
 userSvc.setInfoResolver('google', subPrefix, async (sub) => {
   try {
-    const googleToken = Object.values(store.getters['data/googleTokensBySub'])[0];
+    const googleToken = Object.values(useDataStore().googleTokensBySub)[0];
     const body = await getUser(sub, googleToken);
     const name = (body.names && body.names[0]) || {};
     const photo = (body.photos && body.photos[0]) || {};
@@ -101,7 +102,7 @@ export default {
       const { reason } = (((err.body || {}).error || {}).errors || [])[0] || {};
       if (reason === 'authError') {
         // Mark the token as revoked and get a new one
-        store.dispatch('data/addGoogleToken', {
+        useDataStore().addGoogleToken({
           ...token,
           expiresOn: 0,
         });
@@ -117,7 +118,7 @@ export default {
    * https://developers.google.com/identity/protocols/OpenIDConnect
    */
   async startOauth2(scopes, sub = null, silent = false) {
-    const clientId = store.getters['data/serverConf'].googleClientId;
+    const clientId = useDataStore().serverConf.googleClientId;
 
     // Get an OAuth2 code
     const { accessToken, expiresIn, idToken } = await networkSvc.startOauth2(
@@ -153,7 +154,7 @@ export default {
     }
 
     // Build token object including scopes and sub
-    const existingToken = store.getters['data/googleTokensBySub'][body.sub];
+    const existingToken = useDataStore().googleTokensBySub[body.sub];
     const token = {
       scopes,
       accessToken,
@@ -216,12 +217,12 @@ export default {
     }
 
     // Add token to google tokens
-    await store.dispatch('data/addGoogleToken', token);
+    await useDataStore().addGoogleToken(token);
     return token;
   },
   async refreshToken(token, scopes = []) {
     const { sub } = token;
-    const lastToken = store.getters['data/googleTokensBySub'][sub];
+    const lastToken = useDataStore().googleTokensBySub[sub];
     const mergedScopes = [...new Set([
       ...scopes,
       ...lastToken.scopes,

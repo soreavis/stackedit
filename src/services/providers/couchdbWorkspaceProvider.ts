@@ -9,6 +9,7 @@ import couchdbHelper from './helpers/couchdbHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
 import badgeSvc from '../badgeSvc';
+import { useDataStore } from '../../stores/data';
 
 let syncLastSeq;
 
@@ -40,8 +41,8 @@ export default new Provider({
     const workspaceId = utils.makeWorkspaceId(workspaceParams);
 
     // Create the token if it doesn't exist
-    if (!store.getters['data/couchdbTokensBySub'][workspaceId]) {
-      store.dispatch('data/addCouchdbToken', {
+    if (!useDataStore().couchdbTokensBySub[workspaceId]) {
+      useDataStore().addCouchdbToken({
         sub: workspaceId,
         dbUrl,
       });
@@ -51,7 +52,7 @@ export default new Provider({
     if (!useWorkspaceStore().workspacesById[workspaceId]) {
       try {
         // Make sure the database exists and retrieve its name
-        const db = await couchdbHelper.getDb(store.getters['data/couchdbTokensBySub'][workspaceId]);
+        const db = await couchdbHelper.getDb(useDataStore().couchdbTokensBySub[workspaceId]);
         useWorkspaceStore().patchWorkspacesById({
           [workspaceId]: {
             id: workspaceId,
@@ -70,7 +71,7 @@ export default new Provider({
   },
   async getChanges() {
     const syncToken = useWorkspaceStore().syncToken;
-    const lastSeq = store.getters['data/localSettings'].syncLastSeq;
+    const lastSeq = useDataStore().localSettings.syncLastSeq;
     const result = await couchdbHelper.getChanges(syncToken, lastSeq);
     const changes = result.changes.filter((change) => {
       if (!change.deleted && change.doc) {
@@ -94,7 +95,7 @@ export default new Provider({
     return changes;
   },
   onChangesApplied() {
-    store.dispatch('data/patchLocalSettings', {
+    useDataStore().patchLocalSettings({
       syncLastSeq,
     });
   },

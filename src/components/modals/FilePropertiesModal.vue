@@ -97,9 +97,9 @@ import FormEntry from './common/FormEntry';
 import CodeEditor from '../CodeEditor';
 import utils from '../../services/utils';
 import presets from '../../data/presets';
-import store from '../../store';
 import { useContentStore } from '../../stores/content';
 import badgeSvc from '../../services/badgeSvc';
+import { useDataStore } from '../../stores/data';
 
 const metadataProperties = {
   title: '',
@@ -133,10 +133,10 @@ export default {
     presets: () => Object.keys(presets).sort(),
     tab: {
       get() {
-        return store.getters['data/localSettings'].filePropertiesTab;
+        return useDataStore().localSettings.filePropertiesTab;
       },
       set(value) {
-        store.dispatch('data/patchLocalSettings', {
+        useDataStore().patchLocalSettings({
           filePropertiesTab: value,
         });
       },

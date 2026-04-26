@@ -68,6 +68,7 @@
 
 <script>
 import { mapState, mapGetters, mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ExplorerNode from './ExplorerNode';
 import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
@@ -76,6 +77,7 @@ import badgeSvc from '../services/badgeSvc';
 import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useFolderStore } from '../stores/folder';
+import { useDataStore } from '../stores/data';
 
 export default {
   components: {
@@ -113,7 +115,7 @@ export default {
       return Object.keys(store.state.explorer.selectedIds).length > 1;
     },
     sortMode() {
-      return (store.getters['data/localSettings'] || {}).explorerSort || 'name';
+      return (useDataStore().localSettings || {}).explorerSort || 'name';
     },
     sortLabel() {
       return { name: 'by name', modified: 'recently opened', created: 'recently created' }[this.sortMode];
@@ -137,7 +139,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('data', [
+    ...mapPiniaActions(useDataStore, [
       'toggleExplorer',
     ]),
     ...mapActions('explorer', [
@@ -160,7 +162,7 @@ export default {
       const order = ['name', 'modified', 'created'];
       const current = this.sortMode;
       const next = order[(order.indexOf(current) + 1) % order.length];
-      store.dispatch('data/patchLocalSettings', { explorerSort: next });
+      useDataStore().patchLocalSettings({ explorerSort: next });
     },
     visibleNodeIds() {
       const els = this.$refs.tree

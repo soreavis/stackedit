@@ -20,7 +20,6 @@ import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
 import utils from '../../services/utils';
-import store from '../../store';
 import { useWorkspaceStore } from '../../stores/workspace';
 
 export default {

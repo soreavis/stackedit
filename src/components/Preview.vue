@@ -16,14 +16,15 @@
   </div>
 </template>
 
-
 <script>
-import { mapGetters, mapActions } from 'vuex';
-import { mapState as mapPiniaState } from 'pinia';
+import { mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import CommentList from './gutters/CommentList';
 import PreviewNewDiscussionButton from './gutters/PreviewNewDiscussionButton';
 import store from '../store';
 import { useFileStore } from '../stores/file';
+import { useDataStore } from '../stores/data';
+import { useLayoutStore } from '../stores/layout';
 
 const appUri = `${window.location.protocol}//${window.location.host}`;
 
@@ -39,12 +40,12 @@ export default {
     ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
-    ...mapGetters('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'styles',
     ]),
   },
   methods: {
-    ...mapActions('data', [
+    ...mapPiniaActions(useDataStore, [
       'toggleEditor',
     ]),
     onClick(evt) {

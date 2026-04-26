@@ -39,7 +39,6 @@ import ModalInner from './common/ModalInner';
 import customToolbarButtons from '../../data/customToolbarButtons';
 import pagedownButtons from '../../data/pagedownButtons';
 import editorSvc from '../../services/editorSvc';
-import store from '../../store';
 import { useContentStore } from '../../stores/content';
 import badgeSvc from '../../services/badgeSvc';
 

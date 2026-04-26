@@ -96,7 +96,7 @@
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex';
+import { mapState } from 'vuex';
 import { mapState as mapPiniaState } from 'pinia';
 import MenuEntry from './common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
@@ -108,13 +108,13 @@ import dropboxProvider from '../../services/providers/dropboxProvider';
 import githubProvider from '../../services/providers/githubProvider';
 import gitlabProvider from '../../services/providers/gitlabProvider';
 import syncSvc from '../../services/syncSvc';
-import store from '../../store';
 import { useSyncLocationStore } from '../../stores/syncLocation';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
+import { useDataStore } from '../../stores/data';
 
 const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
   .filter(token => filter(token))
@@ -149,16 +149,16 @@ export default {
       return `"${useFileStore().current.name}"`;
     },
     dropboxTokens() {
-      return tokensToArray(store.getters['data/dropboxTokensBySub']);
+      return tokensToArray(useDataStore().dropboxTokensBySub);
     },
     githubTokens() {
-      return tokensToArray(store.getters['data/githubTokensBySub']);
+      return tokensToArray(useDataStore().githubTokensBySub);
     },
     gitlabTokens() {
-      return tokensToArray(store.getters['data/gitlabTokensBySub']);
+      return tokensToArray(useDataStore().gitlabTokensBySub);
     },
     googleDriveTokens() {
-      return tokensToArray(store.getters['data/googleTokensBySub'], token => token.isDrive);
+      return tokensToArray(useDataStore().googleTokensBySub, token => token.isDrive);
     },
     noToken() {
       return !this.googleDriveTokens.length
@@ -180,13 +180,13 @@ export default {
     async addDropboxAccount() {
       try {
         await useModalStore().open({ type: 'dropboxAccount' });
-        await dropboxHelper.addAccount(!store.getters['data/localSettings'].dropboxRestrictedAccess);
+        await dropboxHelper.addAccount(!useDataStore().localSettings.dropboxRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async addGithubAccount() {
       try {
         await useModalStore().open({ type: 'githubAccount' });
-        await githubHelper.addAccount(store.getters['data/localSettings'].githubRepoFullAccess);
+        await githubHelper.addAccount(useDataStore().localSettings.githubRepoFullAccess);
       } catch (e) { /* cancel */ }
     },
     async addGitlabAccount() {
@@ -198,7 +198,7 @@ export default {
     async addGoogleDriveAccount() {
       try {
         await useModalStore().open({ type: 'googleDriveAccount' });
-        await googleHelper.addDriveAccount(!store.getters['data/localSettings'].googleDriveRestrictedAccess);
+        await googleHelper.addDriveAccount(!useDataStore().localSettings.googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async openDropbox(token) {

@@ -1,13 +1,8 @@
 import { defineStore } from 'pinia';
 import utils from '../services/utils';
 import providerRegistry from '../services/providers/common/providerRegistry';
-import vuexStore from '../store';
+import { useDataStore } from './data';
 
-// data module still lives in Vuex during the transition. Workspace's
-// getters delegate to data/workspaces, data/googleTokensBySub etc., and
-// patchWorkspacesById commits back to data/setItem. Once data migrates
-// (batch 7) these vuexStore.* references can switch to direct Pinia
-// store calls.
 export const useWorkspaceStore = defineStore('workspace', {
   state: () => ({
     currentWorkspaceId: null,
@@ -17,7 +12,7 @@ export const useWorkspaceStore = defineStore('workspace', {
     workspacesById() {
       const workspacesById = {};
       const mainWorkspaceToken = this.mainWorkspaceToken;
-      Object.entries(vuexStore.getters['data/workspaces']).forEach(([id, workspace]) => {
+      Object.entries(useDataStore().workspaces).forEach(([id, workspace]) => {
         const sanitizedWorkspace = {
           id,
           providerId: 'googleDriveAppData',
@@ -57,7 +52,7 @@ export const useWorkspaceStore = defineStore('workspace', {
     },
     mainWorkspaceToken() {
       return utils.someResult(
-        Object.values(vuexStore.getters['data/googleTokensBySub']),
+        Object.values(useDataStore().googleTokensBySub),
         (token) => {
           if (token.isLogin) return token;
           return null;
@@ -68,13 +63,13 @@ export const useWorkspaceStore = defineStore('workspace', {
       const cw = this.currentWorkspace;
       switch (cw.providerId) {
         case 'googleDriveWorkspace':
-          return vuexStore.getters['data/googleTokensBySub'][cw.sub];
+          return useDataStore().googleTokensBySub[cw.sub];
         case 'githubWorkspace':
-          return vuexStore.getters['data/githubTokensBySub'][cw.sub];
+          return useDataStore().githubTokensBySub[cw.sub];
         case 'gitlabWorkspace':
-          return vuexStore.getters['data/gitlabTokensBySub'][cw.sub];
+          return useDataStore().gitlabTokensBySub[cw.sub];
         case 'couchdbWorkspace':
-          return vuexStore.getters['data/couchdbTokensBySub'][cw.id];
+          return useDataStore().couchdbTokensBySub[cw.id];
         default:
           return this.mainWorkspaceToken;
       }
@@ -88,7 +83,7 @@ export const useWorkspaceStore = defineStore('workspace', {
       }
     },
     loginToken() {
-      const tokensBySub = vuexStore.getters['data/tokensByType'][this.loginType];
+      const tokensBySub = useDataStore().tokensByType[this.loginType];
       return tokensBySub && tokensBySub[this.currentWorkspace.sub];
     },
     sponsorToken() {
@@ -103,15 +98,15 @@ export const useWorkspaceStore = defineStore('workspace', {
       this.lastFocus = value;
     },
     removeWorkspace(id) {
-      const workspaces = { ...vuexStore.getters['data/workspaces'] };
+      const workspaces = { ...useDataStore().workspaces };
       delete workspaces[id];
-      vuexStore.commit('data/setItem', { id: 'workspaces', data: workspaces });
+      useDataStore().setItem({ id: 'workspaces', data: workspaces });
     },
     patchWorkspacesById(workspaces) {
       const sanitizedWorkspaces = {};
       Object
         .entries({
-          ...vuexStore.getters['data/workspaces'],
+          ...useDataStore().workspaces,
           ...workspaces,
         })
         .forEach(([id, workspace]) => {
@@ -122,7 +117,7 @@ export const useWorkspaceStore = defineStore('workspace', {
             locationUrl: undefined,
           };
         });
-      vuexStore.commit('data/setItem', { id: 'workspaces', data: sanitizedWorkspaces });
+      useDataStore().setItem({ id: 'workspaces', data: sanitizedWorkspaces });
     },
     setCurrentWorkspaceId(value) {
       this.setCurrentWorkspaceIdRaw(value);

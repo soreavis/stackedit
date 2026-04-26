@@ -56,7 +56,7 @@
 </template>
 
 <script>
-import { mapState, mapMutations, mapGetters, mapActions } from 'vuex';
+import { mapState, mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
@@ -77,6 +77,8 @@ import workspaceSvc from '../services/workspaceSvc';
 import badgeSvc from '../services/badgeSvc';
 import { useContextMenuStore } from '../stores/contextMenu';
 import { useQueueStore } from '../stores/queue';
+import { useDataStore } from '../stores/data';
+import { useLayoutStore } from '../stores/layout';
 
 // According to mousetrap
 const mod = /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'Meta' : 'Ctrl';
@@ -101,7 +103,7 @@ function formatReadingTime(words) {
 
 const getShortcut = (method) => {
   let result = '';
-  Object.entries(store.getters['data/computedSettings'].shortcuts).some(([keys, shortcut]) => {
+  Object.entries(useDataStore().computedSettings.shortcuts).some(([keys, shortcut]) => {
     if (`${shortcut.method || shortcut}` === method) {
       result = keys.split('+').map(key => key.toLowerCase()).map((key) => {
         if (key === 'mod') {
@@ -133,14 +135,14 @@ export default {
       'isPublishRequested',
       'currentLocation',
     ]),
-    ...mapState('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'canUndo',
       'canRedo',
     ]),
     ...mapPiniaState(useContentStore, [
       'revisionContent',
     ]),
-    ...mapGetters('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'styles',
     ]),
     ...mapPiniaState(useSyncLocationStore, {
@@ -220,7 +222,7 @@ export default {
       const lines = text ? text.split(/\r\n|\r|\n/).length : 0;
       const path = store.getters.pathsByItemId[current.id] || '';
       const parent = path.replace(/[^/]*$/, '').replace(/\/$/, '') || '/';
-      const lastOpenedMap = store.getters['data/lastOpened'] || {};
+      const lastOpenedMap = useDataStore().lastOpened || {};
       const lastOpenedTs = lastOpenedMap[current.id];
       return {
         bytes,
@@ -266,7 +268,7 @@ export default {
       setRevisionContent: 'setRevisionContentRaw',
       restoreRevision: 'restoreRevision',
     }),
-    ...mapActions('data', [
+    ...mapPiniaActions(useDataStore, [
       'toggleExplorer',
       'toggleSideBar',
     ]),

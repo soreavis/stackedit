@@ -23,9 +23,11 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import utils from '../services/utils';
+import { useLayoutStore } from '../stores/layout';
 
 // A footer stat: either a regex counter OR a custom computeFn(text) → value.
 class Stat {
@@ -81,7 +83,7 @@ export default {
       new Stat('read', null, formatReading),
     ],
   }),
-  computed: mapGetters('layout', [
+  computed: mapPiniaState(useLayoutStore, [
     'styles',
   ]),
   created() {

@@ -3,6 +3,7 @@ import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useNotificationStore } from '../stores/notification';
 import constants from '../data/constants';
+import { useDataStore } from '../stores/data';
 
 interface RequestConfig {
   url: string;
@@ -138,7 +139,7 @@ export default {
       try {
         isConfLoading = true;
         const res = await this.request({ url: 'conf' });
-        await store.dispatch('data/setServerConf', res.body);
+        await useDataStore().setServerConf(res.body);
         isConfLoaded = true;
       } finally {
         isConfLoading = false;
@@ -157,7 +158,7 @@ export default {
   },
 
   isConfLoaded(): boolean {
-    return !!Object.keys(store.getters['data/serverConf']).length;
+    return !!Object.keys(useDataStore().serverConf).length;
   },
 
   async loadScript(url: string): Promise<unknown> {

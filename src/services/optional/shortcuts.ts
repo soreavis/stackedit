@@ -10,6 +10,7 @@ import { useModalStore } from '../../stores/modal';
 import editorSvc from '../../services/editorSvc';
 import syncSvc from '../../services/syncSvc';
 import { useFindReplaceStore } from '../../stores/findReplace';
+import { useDataStore } from '../../stores/data';
 
 // -----------------------------------------------------------------------------
 // Keyboard shortcuts — chord bindings via tinykeys
@@ -121,7 +122,7 @@ function collectExpansions(computedSettings) {
 let unbindAll = () => {};
 
 store.watch(
-  () => store.getters['data/computedSettings'],
+  () => useDataStore().computedSettings,
   (computedSettings) => {
     unbindAll();
     const bindings = {};

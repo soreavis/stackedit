@@ -1,8 +1,8 @@
 import ModalInner from './ModalInner';
 import FormEntry from './FormEntry';
-import store from '../../../store';
 import { useFileStore } from '../../../stores/file';
 import { useModalStore } from '../../../stores/modal';
+import { useDataStore } from '../../../stores/data';
 
 const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
 
@@ -45,17 +45,17 @@ export default (desc) => {
   Object.entries(desc.computedLocalSettings || {}).forEach(([key, id]) => {
     component.computed[key] = {
       get() {
-        return store.getters['data/localSettings'][id];
+        return useDataStore().localSettings[id];
       },
       set(value) {
-        store.dispatch('data/patchLocalSettings', {
+        useDataStore().patchLocalSettings({
           [id]: value,
         });
       },
     };
     if (key === 'selectedTemplate') {
       component.computed.allTemplatesById = () => {
-        const allTemplatesById = store.getters['data/allTemplatesById'];
+        const allTemplatesById = useDataStore().allTemplatesById;
         const sortedTemplatesById = {};
         Object.entries(allTemplatesById)
           .sort(([, template1], [, template2]) => collator.compare(template1.name, template2.name))
@@ -70,7 +70,7 @@ export default (desc) => {
           type: 'templates',
           selectedId: this.selectedTemplate,
         });
-        store.dispatch('data/patchLocalSettings', {
+        useDataStore().patchLocalSettings({
           [id]: selectedId,
         });
       };

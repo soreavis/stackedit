@@ -12,6 +12,7 @@ import utils from '../utils';
 import userSvc from '../userSvc';
 import gitWorkspaceSvc from '../gitWorkspaceSvc';
 import badgeSvc from '../badgeSvc';
+import { useDataStore } from '../../stores/data';
 
 const getAbsolutePath = ({ id }) =>
   `${useWorkspaceStore().currentWorkspace.path || ''}${id}`;
@@ -74,11 +75,11 @@ export default new Provider({
     let token;
     if (workspace) {
       // Token sub is in the workspace
-      token = store.getters['data/githubTokensBySub'][workspace.sub];
+      token = useDataStore().githubTokensBySub[workspace.sub];
     }
     if (!token) {
       await useModalStore().open({ type: 'githubAccount' });
-      token = await githubHelper.addAccount(store.getters['data/localSettings'].githubRepoFullAccess);
+      token = await githubHelper.addAccount(useDataStore().localSettings.githubRepoFullAccess);
     }
 
     if (!workspace) {

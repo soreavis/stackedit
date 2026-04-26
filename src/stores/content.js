@@ -3,10 +3,10 @@ import DiffMatchPatch from 'diff-match-patch';
 import empty from '../data/empties/emptyContent';
 import utils from '../services/utils';
 import cledit from '../services/editor/cledit';
-import vuexStore from '../store';
 import badgeSvc from '../services/badgeSvc';
 import { useFileStore } from './file';
 import { useModalStore } from './modal';
+import { useLayoutStore } from './layout';
 
 const diffMatchPatch = new DiffMatchPatch();
 
@@ -42,8 +42,7 @@ export const useContentStore = defineStore('content', {
       return utils.computeProperties(this.current.properties);
     },
     isCurrentEditable() {
-      // layout module still lives in Vuex during the transition.
-      const layoutStyles = vuexStore.getters['layout/styles'];
+      const layoutStyles = useLayoutStore().styles;
       return !this.revisionContent && this.current.id && layoutStyles.showEditor;
     },
   },

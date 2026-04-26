@@ -3,6 +3,7 @@ import cleditRaw from './cledit';
 import animationSvc from '../animationSvc';
 import store from '../../store';
 import { useContentStateStore } from '../../stores/contentState';
+import { useLayoutStore } from '../../stores/layout';
 
 // cledit / editorSvc are still partially typed; cast cledit to `any` so
 // `cledit.Utils.findContainer` resolves without a deep types port.
@@ -25,7 +26,7 @@ export default {
    * Get an object describing the position of the scroll bar in the file.
    */
   getScrollPosition(this: EditorSvcThis, elt?: HTMLElement): ScrollPosition | undefined {
-    const useElt = elt || (store.getters['layout/styles'].showEditor
+    const useElt = elt || (useLayoutStore().styles.showEditor
       ? this.editorElt
       : this.previewElt);
     const dimensionKey = useElt === this.editorElt ? 'editorDimension' : 'previewDimension';

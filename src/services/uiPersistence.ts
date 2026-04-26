@@ -5,6 +5,7 @@
 
 import store from '../store';
 import { useFileStore } from '../stores/file';
+import { useDataStore } from '../stores/data';
 
 const OPEN_NODES_KEY = 'stackedit.ui.openNodes';
 const CURRENT_ID_KEY = 'stackedit.ui.currentId';
@@ -65,7 +66,7 @@ function bindSubscriptions(): void {
   });
   // file is in Pinia. Watch currentId via $subscribe.
   let lastCurrentId = useFileStore().currentId;
-  useFileStore().$subscribe((_mutation, state) => {
+  useFileStore().$subscribe((_mutation: any, state: any) => {
     if (state.currentId !== lastCurrentId) {
       lastCurrentId = state.currentId;
       try {
@@ -82,7 +83,7 @@ function bindSubscriptions(): void {
 // clicking a file (which bumps its lastOpened timestamp) doesn't shuffle
 // the list under the user. Reload reseeds.
 function seedRecentSnapshot(): void {
-  const lastOpened: Record<string, number> = store.getters['data/lastOpened'] || {};
+  const lastOpened: Record<string, number> = useDataStore().lastOpened || {};
   const snapshot = Object.entries(lastOpened)
     .sort((a, b) => b[1] - a[1])
     .map(([id, ts]) => ({ id, ts }))

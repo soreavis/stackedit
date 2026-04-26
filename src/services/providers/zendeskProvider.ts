@@ -6,12 +6,13 @@
 import store from '../../store';
 import zendeskHelper from './helpers/zendeskHelper';
 import Provider from './common/Provider';
+import { useDataStore } from '../../stores/data';
 
 export default new Provider({
   id: 'zendesk',
   name: 'Zendesk',
   getToken({ sub }) {
-    return store.getters['data/zendeskTokensBySub'][sub];
+    return useDataStore().zendeskTokensBySub[sub];
   },
   getLocationUrl({ sub, locale, articleId }) {
     const token = this.getToken({ sub });

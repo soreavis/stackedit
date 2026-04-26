@@ -8,6 +8,7 @@ import { useWorkspaceStore } from '../../stores/workspace';
 import googleHelper from './helpers/googleHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
+import { useDataStore } from '../../stores/data';
 
 let syncStartPageToken;
 
@@ -39,7 +40,7 @@ export default new Provider({
   },
   async getChanges() {
     const syncToken = useWorkspaceStore().syncToken;
-    const startPageToken = store.getters['data/localSettings'].syncStartPageToken;
+    const startPageToken = useDataStore().localSettings.syncStartPageToken;
     const result = await googleHelper.getChanges(syncToken, startPageToken, true);
     const changes = result.changes.filter((change) => {
       if (change.file) {
@@ -64,7 +65,7 @@ export default new Provider({
     return changes;
   },
   onChangesApplied() {
-    store.dispatch('data/patchLocalSettings', {
+    useDataStore().patchLocalSettings({
       syncStartPageToken,
     });
   },
