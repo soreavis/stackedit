@@ -55,15 +55,15 @@ import TurndownService from 'turndown/lib/turndown.browser.umd';
 import htmlSanitizer from '../../libs/htmlSanitizer';
 import MenuEntry from './common/MenuEntry';
 import Provider from '../../services/providers/common/Provider';
-import store from '../../store';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import workspaceSvc from '../../services/workspaceSvc';
 import exportSvc from '../../services/exportSvc';
 import badgeSvc from '../../services/badgeSvc';
+import { useDataStore } from '../../stores/data';
 
-const turndownService = new TurndownService(store.getters['data/computedSettings'].turndown);
+const turndownService = new TurndownService(useDataStore().computedSettings.turndown);
 
 // Heuristic: does this string already look like hand-written Markdown? Used to
 // decide whether to skip the HTML→Markdown conversion when the clipboard has

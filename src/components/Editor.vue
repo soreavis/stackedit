@@ -12,13 +12,15 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import { mapState as mapPiniaState } from 'pinia';
+
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import CommentList from './gutters/CommentList';
 import EditorNewDiscussionButton from './gutters/EditorNewDiscussionButton';
 import editorSvc from '../services/editorSvc';
 import store from '../store';
 import { useFileStore } from '../stores/file';
+import { useDataStore } from '../stores/data';
+import { useLayoutStore } from '../stores/layout';
 
 export default {
   components: {
@@ -32,10 +34,10 @@ export default {
     ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
-    ...mapGetters('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'styles',
     ]),
-    ...mapGetters('data', [
+    ...mapPiniaState(useDataStore, [
       'computedSettings',
       'layoutSettings',
     ]),

@@ -4,6 +4,7 @@ import { useFolderStore } from '../stores/folder';
 import { useModalStore } from '../stores/modal';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
+import { useDataStore } from '../stores/data';
 
 // ExplorerNode is the tree-shaped wrapper that the `explorer/nodeStructure`
 // getter produces. Real shape is rich (folders/files arrays, isRoot/isTrash/
@@ -35,7 +36,7 @@ function isUnder(node: ExplorerNode, sentinelId: string, nodeMap: Record<string,
 function pickVisibleReplacement(): string | null {
   const { nodeMap } = store.getters['explorer/nodeStructure'];
   const openNodes = store.state.explorer.openNodes;
-  const ids: string[] = store.getters['data/lastOpenedIds'];
+  const ids: string[] = useDataStore().lastOpenedIds;
   for (let i = 0; i < ids.length; i += 1) {
     const id = ids[i];
     const file = (useFileStore().itemsById as Record<string, any>)[id];

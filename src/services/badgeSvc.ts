@@ -1,5 +1,6 @@
 import store from '../store';
 import { useNotificationStore } from '../stores/notification';
+import { useDataStore } from '../stores/data';
 
 interface Badge {
   isEarned: boolean;
@@ -13,7 +14,7 @@ let debounceTimeoutId: ReturnType<typeof setTimeout> | undefined;
 const showInfo = (): void => {
   if (!lastEarnedFeatureIds) return;
   const previouslyEarned = lastEarnedFeatureIds;
-  const earnedBadges: Badge[] = (store.getters['data/allBadges'] as Badge[])
+  const earnedBadges: Badge[] = (useDataStore().allBadges as Badge[])
     .filter(badge => badge.isEarned && !previouslyEarned.has(badge.featureId));
   if (earnedBadges.length) {
     useNotificationStore().badge(earnedBadges.length > 1
@@ -25,15 +26,15 @@ const showInfo = (): void => {
 
 export default {
   addBadge(featureId: string): void {
-    if (!store.getters['data/badgeCreations'][featureId]) {
+    if (!useDataStore().badgeCreations[featureId]) {
       if (!lastEarnedFeatureIds) {
-        const earnedFeatureIds: string[] = (store.getters['data/allBadges'] as Badge[])
+        const earnedFeatureIds: string[] = (useDataStore().allBadges as Badge[])
           .filter(badge => badge.isEarned)
           .map(badge => badge.featureId);
         lastEarnedFeatureIds = new Set(earnedFeatureIds);
       }
 
-      store.dispatch('data/patchBadgeCreations', {
+      useDataStore().patchBadgeCreations({
         [featureId]: {
           created: Date.now(),
         },

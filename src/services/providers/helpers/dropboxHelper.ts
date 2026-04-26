@@ -7,12 +7,13 @@ import networkSvc from '../../networkSvc';
 import userSvc from '../../userSvc';
 import store from '../../../store';
 import badgeSvc from '../../badgeSvc';
+import { useDataStore } from '../../../stores/data';
 
 const getAppKey = (fullAccess) => {
   if (fullAccess) {
-    return store.getters['data/serverConf'].dropboxAppKeyFull;
+    return useDataStore().serverConf.dropboxAppKeyFull;
   }
-  return store.getters['data/serverConf'].dropboxAppKey;
+  return useDataStore().serverConf.dropboxAppKey;
 };
 
 const httpHeaderSafeJson = args => args && JSON.stringify(args)
@@ -34,7 +35,7 @@ const request = ({ accessToken }, options, args) => networkSvc.request({
  */
 const subPrefix = 'db';
 userSvc.setInfoResolver('dropbox', subPrefix, async (sub) => {
-  const dropboxToken = Object.values(store.getters['data/dropboxTokensBySub'])[0];
+  const dropboxToken = Object.values(useDataStore().dropboxTokensBySub)[0];
   try {
     const { body } = await request(dropboxToken, {
       method: 'POST',
@@ -100,7 +101,7 @@ export default {
     };
 
     // Add token to dropbox tokens
-    store.dispatch('data/addDropboxToken', token);
+    useDataStore().addDropboxToken(token);
     return token;
   },
   async addAccount(fullAccess = false) {

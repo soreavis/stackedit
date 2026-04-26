@@ -17,8 +17,10 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
+import { useLayoutStore } from '../stores/layout';
 
 export default {
   data: () => ({
@@ -28,7 +30,7 @@ export default {
     foldLevel: 6,
   }),
   computed: {
-    ...mapGetters('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'styles',
     ]),
   },

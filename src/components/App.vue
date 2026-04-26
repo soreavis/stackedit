@@ -21,9 +21,9 @@ import syncSvc from '../services/syncSvc';
 import networkSvc from '../services/networkSvc';
 import tempFileSvc from '../services/tempFileSvc';
 import uiPersistence from '../services/uiPersistence';
-import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useNotificationStore } from '../stores/notification';
+import { useDataStore } from '../stores/data';
 import './common/vueGlobals';
 
 const themeClasses = {
@@ -44,7 +44,7 @@ export default {
   }),
   computed: {
     classes() {
-      const result = themeClasses[store.getters['data/computedSettings'].colorTheme];
+      const result = themeClasses[useDataStore().computedSettings.colorTheme];
       return Array.isArray(result) ? result : themeClasses.light;
     },
   },

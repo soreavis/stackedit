@@ -57,8 +57,8 @@
 import googleHelper from '../../../services/providers/helpers/googleHelper';
 import googleDriveProvider from '../../../services/providers/googleDriveProvider';
 import modalTemplate from '../common/modalTemplate';
-import store from '../../../store';
 import { useModalStore } from '../../../stores/modal';
+import { useDataStore } from '../../../stores/data';
 
 export default modalTemplate({
   data: () => ({
@@ -75,7 +75,7 @@ export default modalTemplate({
         googleHelper.openPicker(this.config.token, 'folder')
           .then((folders) => {
             if (folders[0]) {
-              store.dispatch('data/patchLocalSettings', {
+              useDataStore().patchLocalSettings({
                 googleDriveFolderId: folders[0].id,
               });
             }

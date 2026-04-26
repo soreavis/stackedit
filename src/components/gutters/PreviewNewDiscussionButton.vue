@@ -7,8 +7,8 @@
 <script>
 import { mapActions } from 'vuex';
 import editorSvc from '../../services/editorSvc';
-import store from '../../store';
 import { useContentStore } from '../../stores/content';
+import { useLayoutStore } from '../../stores/layout';
 
 export default {
   data: () => ({
@@ -47,7 +47,7 @@ export default {
     this.$nextTick(() => {
       editorSvc.$on('previewSelectionRange', () => this.checkSelection());
       this.$watch(
-        () => store.getters['layout/styles'].previewWidth,
+        () => useLayoutStore().styles.previewWidth,
         () => this.checkSelection(),
       );
       this.checkSelection();

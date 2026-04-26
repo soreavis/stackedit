@@ -31,7 +31,6 @@ import networkSvc from '../../services/networkSvc';
 import editorSvc from '../../services/editorSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import modalTemplate from './common/modalTemplate';
-import store from '../../store';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useContentStore } from '../../stores/content';
 import { useFileStore } from '../../stores/file';
@@ -39,6 +38,7 @@ import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
+import { useDataStore } from '../../stores/data';
 
 export default modalTemplate({
   computedLocalSettings: {
@@ -61,7 +61,7 @@ export default modalTemplate({
             params: {
               idToken: sponsorToken && sponsorToken.idToken,
               format: selectedFormat,
-              options: JSON.stringify(store.getters['data/computedSettings'].pandoc),
+              options: JSON.stringify(useDataStore().computedSettings.pandoc),
               metadata: JSON.stringify(currentContent.properties),
             },
             body: JSON.stringify(editorSvc.getPandocAst()),

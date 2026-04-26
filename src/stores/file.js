@@ -3,6 +3,7 @@ import empty from '../data/empties/emptyFile';
 import utils from '../services/utils';
 import vuexStore from '../store';
 import { useFolderStore } from './folder';
+import { useDataStore } from './data';
 
 // `file` doesn't reuse the itemStoreFactory because it adds currentId
 // state, plus three custom getters (current, isCurrentTemp, lastOpened
@@ -52,7 +53,7 @@ export const useFileStore = defineStore('file', {
         return false;
       };
       const acceptable = f => f && !isUnderTrash(f) && !isHidden(f);
-      const ids = vuexStore.getters['data/lastOpenedIds'];
+      const ids = useDataStore().lastOpenedIds;
       for (let i = 0; i < ids.length; i += 1) {
         const f = this.itemsById[ids[i]];
         if (acceptable(f)) return f;

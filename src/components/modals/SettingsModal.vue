@@ -42,8 +42,8 @@ import ModalInner from './common/ModalInner';
 import Tab from './common/Tab';
 import CodeEditor from '../CodeEditor';
 import defaultSettings from '../../data/defaults/defaultSettings.yml?raw';
-import store from '../../store';
 import badgeSvc from '../../services/badgeSvc';
+import { useDataStore } from '../../stores/data';
 
 const emptySettings = `# Add your custom settings here to override the
 # default settings.
@@ -70,7 +70,7 @@ export default {
     },
   },
   created() {
-    const settings = store.getters['data/settings'];
+    const settings = useDataStore().settings;
     this.setCustomSettings(settings === '\n' ? emptySettings : settings);
   },
   methods: {
@@ -86,12 +86,12 @@ export default {
     async resolve() {
       if (!this.error) {
         const settings = this.strippedCustomSettings;
-        await store.dispatch('data/setSettings', settings);
+        await useDataStore().setSettings(settings);
         const customSettings = yaml.load(settings);
         if (customSettings.shortcuts) {
           badgeSvc.addBadge('changeShortcuts');
         }
-        const computedSettings = store.getters['data/computedSettings'];
+        const computedSettings = useDataStore().computedSettings;
         const customSettingsCount = Object
           .keys(customSettings)
           .filter(key => key !== 'shortcuts' && computedSettings[key])

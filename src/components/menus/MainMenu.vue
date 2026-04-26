@@ -121,20 +121,20 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
-import { mapState as mapPiniaState } from 'pinia';
+import { mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import MenuEntry from './common/MenuEntry';
 import providerRegistry from '../../services/providers/common/providerRegistry';
 import UserImage from '../UserImage';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import userSvc from '../../services/userSvc';
-import store from '../../store';
 import { useSyncLocationStore } from '../../stores/syncLocation';
 import { usePublishLocationStore } from '../../stores/publishLocation';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
+import { useDataStore } from '../../stores/data';
 
 export default {
   components: {
@@ -167,21 +167,21 @@ export default {
       return !!useFileStore().current.id;
     },
     templateCount() {
-      return Object.keys(store.getters['data/allTemplatesById']).length;
+      return Object.keys(useDataStore().allTemplatesById).length;
     },
     accountCount() {
-      return Object.values(store.getters['data/tokensByType'])
+      return Object.values(useDataStore().tokensByType)
         .reduce((count, tokensBySub) => count + Object.values(tokensBySub).length, 0);
     },
     badgeCount() {
-      return store.getters['data/allBadges'].filter(badge => badge.isEarned).length;
+      return useDataStore().allBadges.filter(badge => badge.isEarned).length;
     },
     featureCount() {
-      return store.getters['data/allBadges'].length;
+      return useDataStore().allBadges.length;
     },
   },
   methods: {
-    ...mapActions('data', {
+    ...mapPiniaActions(useDataStore, {
       setPanel: 'setSideBarPanel',
     }),
     async signin() {

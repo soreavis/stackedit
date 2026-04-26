@@ -9,6 +9,7 @@ import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import utils from './utils';
 import workspaceSvc from './workspaceSvc';
+import { useDataStore } from '../stores/data';
 
 const cledit = cleditRaw as any;
 const editorSvc = editorSvcRaw as any;
@@ -65,7 +66,7 @@ const svc: TempFileSvc = {
     // Sanitize file creations
     const lastCreated: Record<string, { created: number }> = {};
     const fileItemsById: Record<string, any> = useFileStore().itemsById;
-    const lastCreatedSource: Record<string, { created: number }> = store.getters['data/lastCreated'] || {};
+    const lastCreatedSource: Record<string, { created: number }> = useDataStore().lastCreated || {};
     Object.entries(lastCreatedSource).forEach(([id, value]) => {
       if (fileItemsById[id] && fileItemsById[id].parentId === 'temp') {
         lastCreated[id] = value;
@@ -87,7 +88,7 @@ const svc: TempFileSvc = {
       });
 
     // Store file creations and open the file
-    store.dispatch('data/setLastCreated', lastCreated);
+    useDataStore().setLastCreated(lastCreated);
     useFileStore().setCurrentId(file.id);
 
     const onChange = cledit.Utils.debounce(() => {

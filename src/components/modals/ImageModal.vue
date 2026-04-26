@@ -26,8 +26,8 @@
 import modalTemplate from './common/modalTemplate';
 import MenuEntry from '../menus/common/MenuEntry';
 import googleHelper from '../../services/providers/helpers/googleHelper';
-import store from '../../store';
 import { useModalStore } from '../../stores/modal';
+import { useDataStore } from '../../stores/data';
 
 export default modalTemplate({
   components: {
@@ -38,7 +38,7 @@ export default modalTemplate({
   }),
   computed: {
     googleDriveTokens() {
-      const googleTokensBySub = store.getters['data/googleTokensBySub'];
+      const googleTokensBySub = useDataStore().googleTokensBySub;
       return Object.values(googleTokensBySub)
         .filter(token => token.isDrive)
         .sort((token1, token2) => token1.name.localeCompare(token2.name));
@@ -62,7 +62,7 @@ export default modalTemplate({
     },
     async addGoogleDriveAccount() {
       try {
-        await googleHelper.addDriveAccount(!store.getters['data/localSettings'].googleDriveRestrictedAccess);
+        await googleHelper.addDriveAccount(!useDataStore().localSettings.googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async openGoogleDrive(token) {

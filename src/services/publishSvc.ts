@@ -11,6 +11,7 @@ import providerRegistry from './providers/common/providerRegistry';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
 import { useQueueStore } from '../stores/queue';
+import { useDataStore } from '../stores/data';
 
 interface PublishLocation {
   fileId?: string;
@@ -55,7 +56,7 @@ const ensureDate = (value: unknown, defaultValue: Date): Date => {
 
 const publish = async (publishLocation: PublishLocation): Promise<PublishLocation> => {
   const { fileId } = publishLocation;
-  const template = store.getters['data/allTemplatesById'][publishLocation.templateId];
+  const template = (useDataStore().allTemplatesById as Record<string, any>)[publishLocation.templateId];
   const html = await exportSvc.applyTemplate(fileId as string, template);
   const content = await (localDbSvc as any).loadItem(`${fileId}/content`);
   const file = (useFileStore().itemsById as Record<string, any>)[fileId as string];

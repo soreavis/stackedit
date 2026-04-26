@@ -9,6 +9,7 @@ import dropboxHelper from './helpers/dropboxHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
 import workspaceSvc from '../workspaceSvc';
+import { useDataStore } from '../../stores/data';
 
 const makePathAbsolute = (token, path) => {
   if (!token.fullAccess) {
@@ -27,7 +28,7 @@ export default new Provider({
   id: 'dropbox',
   name: 'Dropbox',
   getToken({ sub }) {
-    return store.getters['data/dropboxTokensBySub'][sub];
+    return useDataStore().dropboxTokensBySub[sub];
   },
   getLocationUrl({ path }) {
     const pathComponents = path.split('/').map(encodeURIComponent);
