@@ -6,7 +6,7 @@ import { useSyncLocationStore } from './syncLocation';
 import { usePublishLocationStore } from './publishLocation';
 import { useDataStore } from './data';
 import { useDiscussionStore } from './discussion';
-import vuexStore from '../store';
+import { useGlobalStore } from './global';
 
 let buttonCount = 2;
 let spacerCount = 0;
@@ -47,15 +47,15 @@ function computeStyles(state, layoutSettings, styles) {
       showNavigationBar: layoutSettings.showNavigationBar
         || !layoutSettings.showEditor
         || useContentStore().revisionContent
-        || vuexStore.state.light,
+        || useGlobalStore().light,
       showStatusBar: layoutSettings.showStatusBar,
       showEditor: layoutSettings.showEditor,
       showSidePreview: layoutSettings.showSidePreview && layoutSettings.showEditor,
       showPreview: layoutSettings.showSidePreview || !layoutSettings.showEditor,
-      showSideBar: layoutSettings.showSideBar && !vuexStore.state.light,
-      showExplorer: layoutSettings.showExplorer && !vuexStore.state.light,
+      showSideBar: layoutSettings.showSideBar && !useGlobalStore().light,
+      showExplorer: layoutSettings.showExplorer && !useGlobalStore().light,
       layoutOverflow: false,
-      hideLocations: vuexStore.state.light,
+      hideLocations: useGlobalStore().light,
     };
   }
   styles.innerHeight = state.bodyHeight;

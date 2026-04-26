@@ -18,13 +18,11 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
 import simpleModals from '../data/simpleModals';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
 import googleHelper from '../services/providers/helpers/googleHelper';
 import { mapState as mapPiniaState } from 'pinia';
-import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useModalStore } from '../stores/modal';
 
@@ -74,6 +72,7 @@ import ZendeskAccountModal from './modals/providers/ZendeskAccountModal';
 import ZendeskPublishModal from './modals/providers/ZendeskPublishModal';
 import CouchdbWorkspaceModal from './modals/providers/CouchdbWorkspaceModal';
 import CouchdbCredentialsModal from './modals/providers/CouchdbCredentialsModal';
+import { useGlobalStore } from '../stores/global';
 
 const getTabbables = container => Array.from(container.querySelectorAll('a[href], button, .textfield, input[type=checkbox]'))
   // Filter enabled and visible element
@@ -128,7 +127,7 @@ export default {
     CouchdbCredentialsModal,
   },
   computed: {
-    ...mapGetters([
+    ...mapPiniaState(useGlobalStore, [
       'isSponsor',
     ]),
     ...mapPiniaState(useModalStore, [
@@ -172,7 +171,7 @@ export default {
           await googleHelper.signin();
           syncSvc.requestSync();
         }
-        if (!store.getters.isSponsor) {
+        if (!useGlobalStore().isSponsor) {
           await useModalStore().open('sponsor');
         }
       } catch (e) { /* cancel */ }

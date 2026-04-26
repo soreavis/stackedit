@@ -1,7 +1,6 @@
 import DiffMatchPatch from 'diff-match-patch';
 import cleditRaw from './cledit';
 import animationSvc from '../animationSvc';
-import store from '../../store';
 import { useContentStateStore } from '../../stores/contentState';
 import { useLayoutStore } from '../../stores/layout';
 

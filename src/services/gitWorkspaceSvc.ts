@@ -1,7 +1,7 @@
-import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
 import utils from '../services/utils';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 interface TreeEntry {
   type: string;
@@ -75,7 +75,7 @@ export default {
     const changes: Change[] = [];
     const idsByPath: Record<string, string> = {};
     const syncDataByPath: Record<string, SyncDataLike> = useDataStore().syncDataById;
-    const { itemIdsByGitPath }: { itemIdsByGitPath: Record<string, string> } = store.getters;
+    const itemIdsByGitPath: Record<string, string> = useGlobalStore().itemIdsByGitPath as any;
     const getIdFromPath = (path: string, isFile = false): string => {
       let itemId = idsByPath[path];
       if (!itemId) {

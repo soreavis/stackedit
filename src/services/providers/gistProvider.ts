@@ -3,7 +3,6 @@
 // sync service. Typed boundary work pending: response shapes vary by
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
-import store from '../../store';
 import { useFileStore } from '../../stores/file';
 import githubHelper from './helpers/githubHelper';
 import Provider from './common/Provider';

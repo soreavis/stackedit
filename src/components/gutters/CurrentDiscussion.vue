@@ -28,7 +28,6 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
 import { mapActions as mapPiniaActions, mapState as mapPiniaState } from 'pinia';
 import { useNotificationStore } from '../../stores/notification';
 import editorSvc from '../../services/editorSvc';
