@@ -1,6 +1,8 @@
 import pagedownButtons from '../data/pagedownButtons';
 import { useFileStore } from '../stores/file';
 import { useContentStore } from '../stores/content';
+import { useSyncLocationStore } from '../stores/syncLocation';
+import { usePublishLocationStore } from '../stores/publishLocation';
 
 let buttonCount = 2; // 2 for undo/redo
 let spacerCount = 0;
@@ -142,8 +144,8 @@ function computeStyles(state, getters, layoutSettings = getters['data/layoutSett
     navigationBarRightButtonWidth -
     navigationBarSpinnerWidth;
   if (styles.showEditor) {
-    const syncLocations = getters['syncLocation/current'];
-    const publishLocations = getters['publishLocation/current'];
+    const syncLocations = useSyncLocationStore().current;
+    const publishLocations = usePublishLocationStore().current;
     styles.titleMaxWidth -= navigationBarEditButtonsWidth +
       (navigationBarLocationWidth * (syncLocations.length + publishLocations.length)) +
       (navigationBarSyncPublishButtonsWidth * 2) +

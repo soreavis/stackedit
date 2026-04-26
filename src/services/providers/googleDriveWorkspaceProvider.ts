@@ -4,6 +4,7 @@
 // provider, error handling is dynamic. .ts rename is for migration
 // tracking; full typing requires per-provider response interfaces.
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useFileStore } from '../../stores/file';
 import { useFolderStore } from '../../stores/folder';
 import { useModalStore } from '../../stores/modal';
@@ -20,7 +21,7 @@ export default new Provider({
   id: 'googleDriveWorkspace',
   name: 'Google Drive',
   getToken() {
-    return store.getters['workspace/syncToken'];
+    return useWorkspaceStore().syncToken;
   },
   getWorkspaceParams({ folderId }) {
     return {
@@ -42,7 +43,7 @@ export default new Provider({
       && utils.makeWorkspaceId(this.getWorkspaceParams({ folderId }));
 
     const getWorkspace = folderId =>
-      store.getters['workspace/workspacesById'][makeWorkspaceId(folderId)];
+      useWorkspaceStore().workspacesById[makeWorkspaceId(folderId)];
 
     const initFolder = async (token, folder) => {
       const appProperties = {
@@ -90,7 +91,7 @@ export default new Provider({
 
       // Update workspace in the store
       const workspaceId = makeWorkspaceId(folder.id);
-      store.dispatch('workspace/patchWorkspacesById', {
+      useWorkspaceStore().patchWorkspacesById({
         [workspaceId]: {
           id: workspaceId,
           sub: token.sub,
@@ -195,8 +196,8 @@ export default new Provider({
     }
   },
   async getChanges() {
-    const workspace = store.getters['workspace/currentWorkspace'];
-    const syncToken = store.getters['workspace/syncToken'];
+    const workspace = useWorkspaceStore().currentWorkspace;
+    const syncToken = useWorkspaceStore().syncToken;
     const lastStartPageToken = store.getters['data/localSettings'].syncStartPageToken;
     const { changes, startPageToken } = await googleHelper
       .getChanges(syncToken, lastStartPageToken, false, workspace.teamDriveId);
@@ -218,7 +219,7 @@ export default new Provider({
     });
 
     // Collect changes
-    const workspace = store.getters['workspace/currentWorkspace'];
+    const workspace = useWorkspaceStore().currentWorkspace;
     const result = [];
     changes.forEach((change) => {
       // Ignore changes on StackEdit own folders
@@ -330,8 +331,8 @@ export default new Provider({
     });
   },
   async saveWorkspaceItem({ item, syncData, ifNotTooLate }) {
-    const workspace = store.getters['workspace/currentWorkspace'];
-    const syncToken = store.getters['workspace/syncToken'];
+    const workspace = useWorkspaceStore().currentWorkspace;
+    const syncToken = useWorkspaceStore().syncToken;
     let file;
     if (item.type !== 'file' && item.type !== 'folder') {
       // For sync/publish locations, store item as filename
@@ -387,7 +388,7 @@ export default new Provider({
   async removeWorkspaceItem({ syncData, ifNotTooLate }) {
     // Ignore content deletion
     if (syncData.type !== 'content') {
-      const syncToken = store.getters['workspace/syncToken'];
+      const syncToken = useWorkspaceStore().syncToken;
       await googleHelper.removeFile(syncToken, syncData.id, ifNotTooLate);
     }
   },
@@ -447,7 +448,7 @@ export default new Provider({
       });
     } else {
       // Create file with media
-      const workspace = store.getters['workspace/currentWorkspace'];
+      const workspace = useWorkspaceStore().currentWorkspace;
       const parentSyncData = store.getters['data/syncDataByItemId'][file.parentId];
       gdriveFile = await googleHelper.uploadFile({
         token,
@@ -488,7 +489,7 @@ export default new Provider({
     syncData,
     ifNotTooLate,
   }) {
-    const workspace = store.getters['workspace/currentWorkspace'];
+    const workspace = useWorkspaceStore().currentWorkspace;
     const file = await googleHelper.uploadFile({
       token,
       name: JSON.stringify({

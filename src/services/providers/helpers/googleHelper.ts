@@ -6,6 +6,7 @@
 import utils from '../../utils';
 import networkSvc from '../../networkSvc';
 import store from '../../../store';
+import { useWorkspaceStore } from '../../../stores/workspace';
 import { useModalStore } from '../../../stores/modal';
 import userSvc from '../../userSvc';
 import badgeSvc from '../../badgeSvc';
@@ -160,7 +161,7 @@ export default {
       idToken,
       sub: body.sub,
       name: (existingToken || {}).name || 'Someone',
-      isLogin: !store.getters['workspace/mainWorkspaceToken'] &&
+      isLogin: !useWorkspaceStore().mainWorkspaceToken &&
         scopes.includes('https://www.googleapis.com/auth/drive.appdata'),
       isSponsor: false,
       isDrive: scopes.includes('https://www.googleapis.com/auth/drive') ||

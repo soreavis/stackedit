@@ -12,10 +12,9 @@ import { useSyncedContentStore } from '../stores/syncedContent';
 import { useContentStateStore } from '../stores/contentState';
 import { useFileStore } from '../stores/file';
 import { useContentStore } from '../stores/content';
-import workspace from './workspace';
-import locationTemplate from './locationTemplate';
-import emptyPublishLocation from '../data/empties/emptyPublishLocation';
-import emptySyncLocation from '../data/empties/emptySyncLocation';
+import { usePublishLocationStore } from '../stores/publishLocation';
+import { useSyncLocationStore } from '../stores/syncLocation';
+import { useWorkspaceStore } from '../stores/workspace';
 import constants from '../data/constants';
 
 Vue.use(Vuex);
@@ -28,9 +27,6 @@ const store = new Vuex.Store({
     discussion,
     explorer,
     layout,
-    publishLocation: locationTemplate(emptyPublishLocation),
-    syncLocation: locationTemplate(emptySyncLocation),
-    workspace,
   },
   state: {
     light: false,
@@ -64,6 +60,8 @@ const store = new Vuex.Store({
         contentState: useContentStateStore,
         file: useFileStore,
         content: useContentStore,
+        publishLocation: usePublishLocationStore,
+        syncLocation: useSyncLocationStore,
       };
       constants.types.forEach((type) => {
         if (piniaStores[type]) {
@@ -161,7 +159,7 @@ const store = new Vuex.Store({
       if (!getters['data/serverConf'].allowSponsorship) {
         return true;
       }
-      const sponsorToken = getters['workspace/sponsorToken'];
+      const sponsorToken = useWorkspaceStore().sponsorToken;
       return sponsorToken ? sponsorToken.isSponsor : false;
     },
   },

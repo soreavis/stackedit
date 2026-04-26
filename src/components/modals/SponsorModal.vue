@@ -21,13 +21,14 @@ import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
 import utils from '../../services/utils';
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 
 export default {
   components: {
     ModalInner,
   },
   data() {
-    const sponsorToken = store.getters['workspace/sponsorToken'];
+    const sponsorToken = useWorkspaceStore().sponsorToken;
     const makeButton = (id, price, description, offer) => {
       const params = {
         cmd: '_s-xclick',
