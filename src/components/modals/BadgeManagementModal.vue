@@ -37,7 +37,7 @@
 <script>
 import Vue from 'vue';
 
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
 import { useDataStore } from '../../stores/data';

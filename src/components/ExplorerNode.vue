@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapActions as mapPiniaActions } from 'pinia';
 import workspaceSvc from '../services/workspaceSvc';
 import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
