@@ -45,7 +45,6 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import providerRegistry from '../../services/providers/common/providerRegistry';
 import UserImage from '../UserImage';

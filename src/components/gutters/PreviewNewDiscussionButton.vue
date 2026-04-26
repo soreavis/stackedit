@@ -5,10 +5,11 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../../services/editorSvc';
 import { useContentStore } from '../../stores/content';
 import { useLayoutStore } from '../../stores/layout';
+import { useDiscussionStore } from '../../stores/discussion';
 
 export default {
   data: () => ({
@@ -16,7 +17,7 @@ export default {
     coordinates: null,
   }),
   methods: {
-    ...mapActions('discussion', [
+    ...mapPiniaActions(useDiscussionStore, [
       'createNewDiscussion',
     ]),
     checkSelection() {

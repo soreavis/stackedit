@@ -3,6 +3,7 @@
 // editorSvcUtils onto a Vue instance via Object.assign — typing the
 // composite shape requires editor-state interface design that's out
 // of scope for this incremental migration.
+import { watch } from 'vue';
 import Vue from 'vue';
 import DiffMatchPatch from 'diff-match-patch';
 import Prism from 'prismjs';
@@ -17,7 +18,6 @@ import extensionSvc from './extensionSvc';
 import editorSvcDiscussions from './editor/editorSvcDiscussions';
 import editorSvcUtils from './editor/editorSvcUtils';
 import utils from './utils';
-import store from '../store';
 import { useContentStore } from '../stores/content';
 import { useContentStateStore } from '../stores/contentState';
 import { useModalStore } from '../stores/modal';
@@ -548,7 +548,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     // Watch file content changes
     let lastContentId = null;
     let lastProperties;
-    store.watch(
+    watch(
       () => useContentStore().currentChangeTrigger,
       () => {
         const content = useContentStore().current;
@@ -581,14 +581,14 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     );
 
     // Disable editor if hidden or if no content is loaded
-    store.watch(
+    watch(
       () => useContentStore().isCurrentEditable,
       editable => this.clEditor.toggleEditable(!!editable), {
         immediate: true,
       },
     );
 
-    store.watch(
+    watch(
       () => utils.serializeObject(useLayoutStore().styles),
       () => this.measureSectionDimensions(false, true, true),
     );

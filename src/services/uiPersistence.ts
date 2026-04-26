@@ -1,10 +1,8 @@
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 // Persist a small amount of UI state (open folders + current file id)
 // across page reloads via localStorage so the user lands back where they
 // left off. Intentionally NOT using IndexedDB — this is session/UI state,
 // not documents, and synchronous reads during boot are preferable.
 
-import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useDataStore } from '../stores/data';
 import { useExplorerStore } from '../stores/explorer';
@@ -50,21 +48,12 @@ function restoreCurrentId(): void {
   }
 }
 
-interface MutationLike {
-  type: string;
-  payload?: unknown;
-}
-
 function bindSubscriptions(): void {
   if (bound) return;
   bound = true;
-  // explorer is still Vuex.
-  store.subscribe((mutation: MutationLike) => {
-    if (mutation.type === 'explorer/toggleOpenNode'
-      || mutation.type === 'explorer/setOpenNodes'
-    ) {
-      writeJson(OPEN_NODES_KEY, useExplorerStore().openNodes || {});
-    }
+  // Persist openNodes whenever the explorer state changes.
+  useExplorerStore().$subscribe(() => {
+    writeJson(OPEN_NODES_KEY, useExplorerStore().openNodes || {});
   });
   // file is in Pinia. Watch currentId via $subscribe.
   let lastCurrentId = useFileStore().currentId;

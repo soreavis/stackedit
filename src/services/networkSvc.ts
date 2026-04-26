@@ -1,9 +1,9 @@
 import utils from './utils';
-import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useNotificationStore } from '../stores/notification';
 import constants from '../data/constants';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 interface RequestConfig {
   url: string;
@@ -93,10 +93,10 @@ export default {
     const checkOffline = async () => {
       const isBrowserOffline = window.navigator.onLine === false;
       if (!isBrowserOffline
-        && store.state.lastOfflineCheck + networkTimeout + 5000 < Date.now()
+        && useGlobalStore().lastOfflineCheck + networkTimeout + 5000 < Date.now()
         && this.isUserActive()
       ) {
-        store.commit('updateLastOfflineCheck');
+        useGlobalStore().updateLastOfflineCheck();
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), networkTimeout);
         try {
@@ -113,8 +113,8 @@ export default {
         }
       }
       const offline = isBrowserOffline || isConnectionDown;
-      if (store.state.offline !== offline) {
-        store.commit('setOffline', offline);
+      if (useGlobalStore().offline !== offline) {
+        useGlobalStore().setOfflineRaw(offline);
         if (offline) {
           useNotificationStore().error('You are offline.');
         } else {
@@ -135,7 +135,7 @@ export default {
   },
 
   async getServerConf(): Promise<void> {
-    if (!store.state.offline && !isConfLoading && !isConfLoaded) {
+    if (!useGlobalStore().offline && !isConfLoading && !isConfLoaded) {
       try {
         isConfLoading = true;
         const res = await this.request({ url: 'conf' });
@@ -236,8 +236,8 @@ export default {
                 reject(new Error('REATTEMPT'));
               } else {
                 isConnectionDown = true;
-                store.commit('setOffline', true);
-                store.commit('updateLastOfflineCheck');
+                useGlobalStore().setOfflineRaw(true);
+                useGlobalStore().updateLastOfflineCheck();
                 reject(new Error('You are offline.'));
               }
             }, silentAuthorizeTimeout);
@@ -308,7 +308,7 @@ export default {
       try {
         return await new Promise<RequestResult>((resolve, reject) => {
           if (offlineCheck) {
-            store.commit('updateLastOfflineCheck');
+            useGlobalStore().updateLastOfflineCheck();
           }
 
           const xhr = new window.XMLHttpRequest();
@@ -318,7 +318,7 @@ export default {
             xhr.abort();
             if (offlineCheck) {
               isConnectionDown = true;
-              store.commit('setOffline', true);
+              useGlobalStore().setOfflineRaw(true);
               reject(new Error('You are offline.'));
             } else {
               reject(new Error('Network request timeout.'));
@@ -353,7 +353,7 @@ export default {
             clearTimeout(timeoutId);
             if (offlineCheck) {
               isConnectionDown = true;
-              store.commit('setOffline', true);
+              useGlobalStore().setOfflineRaw(true);
               reject(new Error('You are offline.'));
             } else {
               reject(new Error('Network request failed.'));

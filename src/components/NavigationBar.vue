@@ -56,7 +56,6 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
@@ -66,7 +65,6 @@ import tempFileSvc from '../services/tempFileSvc';
 import utils from '../services/utils';
 import pagedownButtons from '../data/pagedownButtons';
 import customToolbarButtons from '../data/customToolbarButtons';
-import store from '../store';
 import { usePublishLocationStore } from '../stores/publishLocation';
 import { useSyncLocationStore } from '../stores/syncLocation';
 import { useWorkspaceStore } from '../stores/workspace';
@@ -80,6 +78,7 @@ import { useQueueStore } from '../stores/queue';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
 import { useExplorerStore } from '../stores/explorer';
+import { useGlobalStore } from '../stores/global';
 
 // According to mousetrap
 const mod = /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'Meta' : 'Ctrl';
@@ -127,11 +126,11 @@ export default {
     titleHover: false,
   }),
   computed: {
-    ...mapState([
+    ...mapPiniaState(useGlobalStore, [
       'light',
       'offline',
     ]),
-    ...mapState('queue', [
+    ...mapPiniaState(useQueueStore, [
       'isSyncRequested',
       'isPublishRequested',
       'currentLocation',
@@ -221,7 +220,7 @@ export default {
       const bytes = new Blob([text]).size;
       const words = text.trim() ? text.trim().split(/\s+/).length : 0;
       const lines = text ? text.split(/\r\n|\r|\n/).length : 0;
-      const path = store.getters.pathsByItemId[current.id] || '';
+      const path = useGlobalStore().pathsByItemId[current.id] || '';
       const parent = path.replace(/[^/]*$/, '').replace(/\/$/, '') || '/';
       const lastOpenedMap = useDataStore().lastOpened || {};
       const lastOpenedTs = lastOpenedMap[current.id];
@@ -319,7 +318,7 @@ export default {
     async copyCurrentFilePath() {
       const id = useFileStore().current.id;
       if (!id) return;
-      const path = store.getters.pathsByItemId[id] || useFileStore().current.name || '';
+      const path = useGlobalStore().pathsByItemId[id] || useFileStore().current.name || '';
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(path);

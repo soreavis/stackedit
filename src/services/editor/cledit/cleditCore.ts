@@ -5,7 +5,6 @@
 import DiffMatchPatch from 'diff-match-patch';
 import TurndownService from 'turndown/lib/turndown.browser.umd';
 import htmlSanitizer from '../../../libs/htmlSanitizer';
-import store from '../../../store';
 import { useDataStore } from '../../../stores/data';
 
 function cledit(contentElt, scrollEltOpt, isMarkdown = false) {

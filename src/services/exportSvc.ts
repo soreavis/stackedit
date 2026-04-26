@@ -7,7 +7,6 @@ import localDbSvc from './localDbSvc';
 import markdownConversionSvc from './markdownConversionSvc';
 import extensionSvc from './extensionSvc';
 import utils from './utils';
-import store from '../store';
 import { useFileStore } from '../stores/file';
 import htmlSanitizer from '../libs/htmlSanitizer';
 

@@ -1,4 +1,3 @@
-import store from '../store';
 import { useContentStore } from '../stores/content';
 import workspaceSvc from './workspaceSvc';
 

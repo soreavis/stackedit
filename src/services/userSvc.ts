@@ -1,8 +1,8 @@
-import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useUserInfoStore } from '../stores/userInfo';
 import utils from './utils';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 const refreshUserInfoAfter = 60 * 60 * 1000; // 60 minutes
 
@@ -35,7 +35,7 @@ const parseUserId = (userId: string): [string, string] => [
 ];
 
 const refreshUserInfos = (): void => {
-  if (store.state.offline) {
+  if (useGlobalStore().offline) {
     return;
   }
 
