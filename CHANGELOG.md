@@ -6,6 +6,9 @@ This project follows [Keep a Changelog](https://keepachangelog.com/) and [Semant
 
 ## [Unreleased]
 
+### Changed
+- **Stores → TypeScript, batch 1: simple state stores** — converts `findReplace`, `contextMenu`, `queue`, `notification`, `modal`, `global`, `layout` from `.js` to `.ts`. Each gets a typed `State` interface, typed action parameters, typed getter return values. Cross-store reads (`useDataStore` / `useFileStore` / `useDiscussionStore` / etc.) cast at the call site (`as unknown as { ... }`) since those stores haven't been ported yet. The `pagedownButtons` data file is typed inline with a local `PagedownButton` interface. Pinia's `defineStore` infers the rest. No runtime change. Lint 0/0, typecheck clean, unit 479/479, build clean, main bundle 138.79 kB brotli (limit 200; unchanged — TS files compile to similar-size JS).
+
 ### Added
 - **YAML syntax highlighting restored in CodeEditor** — installs `@codemirror/lang-yaml`. `cm6SmallEditor` gains a `'yaml'` language option that wires the lang extension into the small-editor extension list. `CodeEditor.vue` maps its `lang` prop (e.g. `'yaml'`, `'handlebars'`) to the matching CM6 language ('yaml' / 'markdown' / 'plain'). Closes a feature regression from PR #130, which dropped Prism's per-language syntax highlighting when porting CodeEditor to CM6. Lint 0/0, typecheck clean, unit 479/479, build clean, main bundle 138.89 kB brotli (limit 200; +0.3 kB from the lang import — negligible since it lands in the lazy CM6 chunk).
 
