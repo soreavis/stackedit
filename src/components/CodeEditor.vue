@@ -3,12 +3,17 @@
 </template>
 
 <script>
+// `lang` is the upstream prop value (e.g. 'yaml', 'handlebars') —
+// map it to one of the CM6 small-editor language values. YAML is
+// the only non-trivial mapping today; everything else falls through
+// to plain monospace.
+function mapLang(value) {
+  if (value === 'yaml') return 'yaml';
+  if (value === 'markdown') return 'markdown';
+  return 'plain';
+}
+
 export default {
-  // `lang` is accepted for API compatibility with the previous Prism-
-  // based implementation but currently unused — CM6's small editor
-  // ships without per-language syntax highlighting for settings /
-  // template editing. Adding @codemirror/lang-yaml + lang-handlebars
-  // is a follow-up if we miss the colors.
   props: ['value', 'lang', 'disabled'],
   async mounted() {
     const preElt = this.$el;
@@ -18,7 +23,7 @@ export default {
     const { mountSmallEditor } = await import('../services/editor/cm6/cm6SmallEditor');
     const clEditor = mountSmallEditor(preElt, {
       content: this.value || '',
-      language: 'plain',
+      language: mapLang(this.lang),
       readOnly: !!this.disabled,
     });
     clEditor.on('contentChanged', value => this.$emit('changed', value));
