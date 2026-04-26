@@ -65,6 +65,11 @@ import tempFileSvc from '../services/tempFileSvc';
 import utils from '../services/utils';
 import pagedownButtons from '../data/pagedownButtons';
 import customToolbarButtons from '../data/customToolbarButtons';
+import {
+  cm6Commands,
+  linkCommand as makeCm6LinkCommand,
+  imageCommand as makeCm6ImageCommand,
+} from '../services/editor/cm6/cm6Commands';
 import { usePublishLocationStore } from '../stores/publishLocation';
 import { useSyncLocationStore } from '../stores/syncLocation';
 import { useWorkspaceStore } from '../stores/workspace';
@@ -333,9 +338,21 @@ export default {
       if (name === 'heading') {
         return this.openHeadingMenu(evt);
       }
-      const text = editorSvc.clEditor.getContent();
-      editorSvc.pagedownEditor.uiManager.doClick(name);
-      if (text !== editorSvc.clEditor.getContent()) {
+      const before = editorSvc.clEditor.getContent();
+      // Stage 3 batch 10: when the CM6 bridge is active, dispatch
+      // through cm6Commands. Falls back to pagedown for the cledit path.
+      const view = editorSvc.clEditor && editorSvc.clEditor.view;
+      if (view) {
+        const command = name === 'link'
+          ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
+          : name === 'image'
+            ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
+            : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
+        if (command) command(view);
+      } else {
+        editorSvc.pagedownEditor.uiManager.doClick(name);
+      }
+      if (before !== editorSvc.clEditor.getContent()) {
         badgeSvc.addBadge('formatButtons');
       }
       return undefined;
@@ -353,6 +370,14 @@ export default {
       if (item) item.perform();
     },
     applyHeading(level) {
+      // CM6 bridge path: dispatch via cm6Commands.headingN (which also
+      // strips the existing prefix before re-applying).
+      const view = editorSvc.clEditor && editorSvc.clEditor.view;
+      if (view) {
+        const command = cm6Commands[`heading${level}`];
+        if (command) command(view);
+        return;
+      }
       const sel = editorSvc.clEditor.selectionMgr;
       const content = editorSvc.clEditor.getContent();
       const cursor = Math.min(sel.selectionStart, sel.selectionEnd);
