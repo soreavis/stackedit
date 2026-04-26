@@ -61,7 +61,7 @@ import ModalInner from './common/ModalInner';
 import CodeEditor from '../CodeEditor';
 import emptyTemplateValue from '../../data/empties/emptyTemplateValue.html?raw';
 import emptyTemplateHelpers from '../../data/empties/emptyTemplateHelpers.js?raw';
-import store from '../../store';
+import { useDataStore } from '../../stores/data';
 
 const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
 
@@ -99,7 +99,7 @@ export default {
   },
   created() {
     this.$watch(
-      () => store.getters['data/allTemplatesById'],
+      () => useDataStore().allTemplatesById,
       (allTemplatesById) => {
         const templates = {};
         // Sort templates by name
@@ -161,9 +161,9 @@ export default {
       }, 1);
     },
     async resolve() {
-      const oldTemplateIds = Object.keys(store.getters['data/templatesById']);
-      await store.dispatch('data/setTemplatesById', this.templates);
-      const newTemplateIds = Object.keys(store.getters['data/templatesById']);
+      const oldTemplateIds = Object.keys(useDataStore().templatesById);
+      await useDataStore().setTemplatesById(this.templates);
+      const newTemplateIds = Object.keys(useDataStore().templatesById);
       const createdCount = newTemplateIds
         .filter(id => !oldTemplateIds.includes(id))
         .length;

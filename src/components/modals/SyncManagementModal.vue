@@ -47,10 +47,9 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
-import store from '../../store';
 import { useSyncLocationStore } from '../../stores/syncLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';

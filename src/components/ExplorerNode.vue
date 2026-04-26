@@ -39,6 +39,7 @@ import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { useContextMenuStore } from '../stores/contextMenu';
 import badgeSvc from '../services/badgeSvc';
+import { useDataStore } from '../stores/data';
 
 export default {
   name: 'explorer-node', // Required for recursivity
@@ -84,7 +85,7 @@ export default {
       if (!this.node.isFolder || this.node.isTrash || this.node.isTemp || this.node.isRecent || this.node.isRoot) {
         return false;
       }
-      const pinned = (store.getters['data/localSettings'] || {}).pinnedFolderIds || {};
+      const pinned = (useDataStore().localSettings || {}).pinnedFolderIds || {};
       return !!pinned[this.node.item.id];
     },
     showNerdInfo() {
@@ -124,7 +125,7 @@ export default {
           rows.push({ k: 'Size', v: '(open file to load)' });
         }
       }
-      const lastOpened = (store.getters['data/lastOpened'] || {})[id];
+      const lastOpened = (useDataStore().lastOpened || {})[id];
       if (lastOpened) {
         rows.push({ k: 'Opened', v: new Date(lastOpened).toLocaleString() });
       }
@@ -495,11 +496,11 @@ export default {
       this.infoOpen = false;
     },
     togglePin() {
-      const pinned = { ...((store.getters['data/localSettings'] || {}).pinnedFolderIds || {}) };
+      const pinned = { ...((useDataStore().localSettings || {}).pinnedFolderIds || {}) };
       const id = this.node.item.id;
       if (pinned[id]) delete pinned[id];
       else pinned[id] = true;
-      store.dispatch('data/patchLocalSettings', { pinnedFolderIds: pinned });
+      useDataStore().patchLocalSettings({ pinnedFolderIds: pinned });
     },
     // Folder expand/collapse easing. Vue's <transition> needs JS hooks to
     // animate variable-height content: read the natural height after the

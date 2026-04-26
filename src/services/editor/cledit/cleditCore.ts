@@ -6,6 +6,7 @@ import DiffMatchPatch from 'diff-match-patch';
 import TurndownService from 'turndown/lib/turndown.browser.umd';
 import htmlSanitizer from '../../../libs/htmlSanitizer';
 import store from '../../../store';
+import { useDataStore } from '../../../stores/data';
 
 function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
   const scrollElt = scrollEltOpt || contentElt;
@@ -343,7 +344,7 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
       adjustCursorPosition();
     });
 
-    turndownService = new TurndownService(store.getters['data/computedSettings'].turndown);
+    turndownService = new TurndownService(useDataStore().computedSettings.turndown);
     turndownService.escape = str => str; // Disable escaping
   }
 

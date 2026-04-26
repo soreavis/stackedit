@@ -7,6 +7,8 @@ import store from '../../store';
 import { useFileStore } from '../../stores/file';
 import animationSvc from '../animationSvc';
 import editorSvc from '../editorSvc';
+import { useDataStore } from '../../stores/data';
+import { useLayoutStore } from '../../stores/layout';
 
 let editorScrollerElt;
 let previewScrollerElt;
@@ -38,9 +40,9 @@ function throttle(func, wait) {
 }
 
 const doScrollSync = () => {
-  const localSkipAnimation = skipAnimation || !store.getters['layout/styles'].showSidePreview;
+  const localSkipAnimation = skipAnimation || !useLayoutStore().styles.showSidePreview;
   skipAnimation = false;
-  if (!store.getters['data/layoutSettings'].scrollSync || sectionDescList.length === 0) {
+  if (!useDataStore().layoutSettings.scrollSync || sectionDescList.length === 0) {
     return;
   }
   let editorScrollTop = editorScrollerElt.scrollTop;
@@ -80,7 +82,7 @@ const doScrollSync = () => {
           isPreviewMoving = true;
         });
     }, localSkipAnimation ? 500 : 50);
-  } else if (!store.getters['layout/styles'].showEditor || isScrollPreview) {
+  } else if (!useLayoutStore().styles.showEditor || isScrollPreview) {
     // Scroll the editor
     isScrollPreview = false;
     sectionDescList.some((sectionDesc) => {
@@ -122,7 +124,7 @@ const forceScrollSync = () => {
     doScrollSync();
   }
 };
-store.watch(() => store.getters['data/layoutSettings'].scrollSync, forceScrollSync);
+store.watch(() => useDataStore().layoutSettings.scrollSync, forceScrollSync);
 
 editorSvc.$on('inited', () => {
   editorScrollerElt = editorSvc.editorElt.parentNode;
@@ -155,7 +157,7 @@ editorSvc.$on('sectionList', () => {
 
 editorSvc.$on('previewCtx', () => {
   // Assume the user is writing in the editor
-  isScrollEditor = store.getters['layout/styles'].showEditor;
+  isScrollEditor = useLayoutStore().styles.showEditor;
   // A preview scrolling event can occur if height is smaller
   timeoutId = setTimeout(() => {
     isPreviewRefreshing = false;
@@ -163,7 +165,7 @@ editorSvc.$on('previewCtx', () => {
 });
 
 store.watch(
-  () => store.getters['layout/styles'].showEditor,
+  () => useLayoutStore().styles.showEditor,
   (showEditor) => {
     isScrollEditor = showEditor;
     isScrollPreview = !showEditor;

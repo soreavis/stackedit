@@ -8,6 +8,7 @@ import welcomeFile from '../data/welcomeFile.md?raw';
 import workspaceSvc from './workspaceSvc';
 import draftFilesSvc from './draftFilesSvc';
 import constants from '../data/constants';
+import { useDataStore } from '../stores/data';
 
 interface DbItem {
   id: string;
@@ -155,7 +156,7 @@ const localDbSvc: LocalDbSvc = {
           const storedItem = JSON.parse(localStorage.getItem(key) || 'null');
           if (storedItem && storedItem.hash && lsHashMap[id] !== storedItem.hash) {
             // Item has changed, replace it in the store
-            store.commit('data/setItem', storedItem);
+            useDataStore().setItem(storedItem);
             lsHashMap[id] = storedItem.hash;
           }
         } catch {
@@ -164,7 +165,7 @@ const localDbSvc: LocalDbSvc = {
       }
 
       // Write item if different from stored one
-      const item = store.state.data.lsItemsById[id];
+      const item = (useDataStore().lsItemsById as Record<string, any>)[id];
       if (item && item.hash !== lsHashMap[id]) {
         localStorage.setItem(key, JSON.stringify(item));
         lsHashMap[id] = item.hash;
@@ -362,7 +363,7 @@ const localDbSvc: LocalDbSvc = {
   async unloadContents(): Promise<void> {
     await this.sync();
     // Keep only last opened files in memory
-    const lastOpenedFileIdSet = new Set<string>(store.getters['data/lastOpenedIds']);
+    const lastOpenedFileIdSet = new Set<string>(useDataStore().lastOpenedIds);
     Object.keys(contentTypes).forEach((type) => {
       (store.getters[`${type}/items`] as DbItem[]).forEach((item) => {
         const [fileId] = item.id.split('/');
@@ -398,15 +399,15 @@ const localDbSvc: LocalDbSvc = {
     // Watch workspace deletions and persist them as soon as possible
     // to make the changes available to reloading workspace tabs.
     store.watch(
-      () => store.getters['data/workspaces'],
+      () => useDataStore().workspaces,
       () => this.syncLocalStorage(),
     );
 
     // Save welcome file content hash if not done already
     const hash = utils.hash(welcomeFile);
-    const { welcomeFileHashes } = store.getters['data/localSettings'];
+    const { welcomeFileHashes } = useDataStore().localSettings;
     if (!welcomeFileHashes[hash]) {
-      store.dispatch('data/patchLocalSettings', {
+      useDataStore().patchLocalSettings({
         welcomeFileHashes: {
           ...welcomeFileHashes,
           [hash]: 1,
@@ -484,7 +485,7 @@ const localDbSvc: LocalDbSvc = {
               throw err;
             }
             // Set last opened file
-            store.dispatch('data/setLastOpenedId', currentFile.id);
+            useDataStore().setLastOpenedId(currentFile.id);
             // Cancel new discussion and open the gutter if file contains discussions
             store.commit(
               'discussion/setCurrentDiscussionId',

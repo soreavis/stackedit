@@ -12,6 +12,7 @@ import { useModalStore } from '../stores/modal';
 import utils from './utils';
 import constants from '../data/constants';
 import badgeSvc from './badgeSvc';
+import { useDataStore } from '../stores/data';
 
 interface Item {
   id: string;
@@ -65,9 +66,9 @@ export default {
     };
     const content = {
       id: `${id}/content`,
-      text: utils.sanitizeText(text || store.getters['data/computedSettings'].newFileContent),
+      text: utils.sanitizeText(text || useDataStore().computedSettings.newFileContent),
       properties: utils
-        .sanitizeText(properties || store.getters['data/computedSettings'].newFileProperties),
+        .sanitizeText(properties || useDataStore().computedSettings.newFileProperties),
       discussions: discussions || {},
       comments: comments || {},
     };
@@ -334,7 +335,7 @@ export default {
   async removeWorkspace(id: string): Promise<void> {
     // Remove from the store first as workspace tabs will reload.
     // Workspace deletion will be persisted as soon as possible
-    // by the store.getters['data/workspaces'] watcher in localDbSvc.
+    // by the useDataStore().workspaces watcher in localDbSvc.
     useWorkspaceStore().removeWorkspace(id);
 
     // Drop the database

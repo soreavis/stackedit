@@ -10,6 +10,7 @@ import Provider from './common/Provider';
 import utils from '../utils';
 import workspaceSvc from '../workspaceSvc';
 import userSvc from '../userSvc';
+import { useDataStore } from '../../stores/data';
 
 const savedSha = {};
 
@@ -17,7 +18,7 @@ export default new Provider({
   id: 'gitlab',
   name: 'GitLab',
   getToken({ sub }) {
-    return store.getters['data/gitlabTokensBySub'][sub];
+    return useDataStore().gitlabTokensBySub[sub];
   },
   getLocationUrl({
     sub,

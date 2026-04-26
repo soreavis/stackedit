@@ -29,18 +29,20 @@
 </template>
 
 <script>
-import { mapState, mapGetters, mapActions } from 'vuex';
+import { mapState, mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { useDataStore } from '../stores/data';
 
 export default {
   computed: {
     ...mapState([
       'light',
     ]),
-    ...mapGetters('data', [
+    ...mapPiniaState(useDataStore, [
       'layoutSettings',
     ]),
   },
-  methods: mapActions('data', [
+  methods: mapPiniaActions(useDataStore, [
     'toggleNavigationBar',
     'toggleEditor',
     'toggleSidePreview',
