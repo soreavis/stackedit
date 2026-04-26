@@ -1,8 +1,5 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for WordPress.com publish. Method params +
+// response payloads kept loose (`any`).
 import wordpressHelper from './helpers/wordpressHelper';
 import Provider from './common/Provider';
 import { useDataStore } from '../../stores/data';
@@ -10,17 +7,17 @@ import { useDataStore } from '../../stores/data';
 export default new Provider({
   id: 'wordpress',
   name: 'WordPress',
-  getToken({ sub }) {
+  getToken({ sub }: any): any {
     return useDataStore().wordpressTokensBySub[sub];
   },
-  getLocationUrl({ siteId, postId }) {
+  getLocationUrl({ siteId, postId }: any): string {
     return `https://wordpress.com/post/${siteId}/${postId}`;
   },
-  getLocationDescription({ postId }) {
+  getLocationDescription({ postId }: any): string {
     return postId;
   },
-  async publish(token, html, metadata, publishLocation) {
-    const post = await wordpressHelper.uploadPost({
+  async publish(token: any, html: string, metadata: any, publishLocation: any): Promise<any> {
+    const post = await (wordpressHelper as any).uploadPost({
       ...publishLocation,
       ...metadata,
       token,
@@ -32,9 +29,9 @@ export default new Provider({
       postId: `${post.ID}`,
     };
   },
-  makeLocation(token, domain, postId) {
-    const location = {
-      providerId: this.id,
+  makeLocation(token: any, domain: string, postId?: string): any {
+    const location: any = {
+      providerId: (this as any).id,
       sub: token.sub,
       domain,
     };

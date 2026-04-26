@@ -1,8 +1,6 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for GitHub repo sync. Method params + response
+// payloads kept loose (`any`) — the GitHub v3 API returns dynamic shapes
+// per endpoint that aren't worth typing in this batch.
 import { useNotificationStore } from '../../stores/notification';
 import githubHelper from './helpers/githubHelper';
 import Provider from './common/Provider';
@@ -10,13 +8,14 @@ import utils from '../utils';
 import workspaceSvc from '../workspaceSvc';
 import userSvc from '../userSvc';
 import { useDataStore } from '../../stores/data';
+import { useFileStore } from '../../stores/file';
 
-const savedSha = {};
+const savedSha: Record<string, string> = {};
 
 export default new Provider({
   id: 'github',
   name: 'GitHub',
-  getToken({ sub }) {
+  getToken({ sub }: any): any {
     return useDataStore().githubTokensBySub[sub];
   },
   getLocationUrl({
@@ -24,32 +23,33 @@ export default new Provider({
     repo,
     branch,
     path,
-  }) {
-    return `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/tree/${encodeURIComponent(branch)}/${utils.encodeUrlPath(path)}`;
+  }: any): string {
+    return `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/tree/${encodeURIComponent(branch)}/${(utils as any).encodeUrlPath(path)}`;
   },
-  getLocationDescription({ path }) {
+  getLocationDescription({ path }: any): string {
     return path;
   },
-  async downloadContent(token, syncLocation) {
-    const { sha, data } = await githubHelper.downloadFile({
+  async downloadContent(token: any, syncLocation: any): Promise<any> {
+    const { sha, data } = await (githubHelper as any).downloadFile({
       ...syncLocation,
       token,
     });
     savedSha[syncLocation.id] = sha;
     return Provider.parseContent(data, `${syncLocation.fileId}/content`);
   },
-  async uploadContent(token, content, syncLocation) {
+  async uploadContent(token: any, content: any, syncLocation: any): Promise<any> {
+    const self = this as any;
     if (!savedSha[syncLocation.id]) {
       try {
         // Get the last sha
-        await this.downloadContent(token, syncLocation);
+        await self.downloadContent(token, syncLocation);
       } catch (e) {
         // Ignore error
       }
     }
     const sha = savedSha[syncLocation.id];
     delete savedSha[syncLocation.id];
-    await githubHelper.uploadFile({
+    await (githubHelper as any).uploadFile({
       ...syncLocation,
       token,
       content: Provider.serializeContent(content),
@@ -57,16 +57,17 @@ export default new Provider({
     });
     return syncLocation;
   },
-  async publish(token, html, metadata, publishLocation) {
+  async publish(token: any, html: string, metadata: any, publishLocation: any): Promise<any> {
+    const self = this as any;
     try {
       // Get the last sha
-      await this.downloadContent(token, publishLocation);
+      await self.downloadContent(token, publishLocation);
     } catch (e) {
       // Ignore error
     }
     const sha = savedSha[publishLocation.id];
     delete savedSha[publishLocation.id];
-    await githubHelper.uploadFile({
+    await (githubHelper as any).uploadFile({
       ...publishLocation,
       token,
       content: html,
@@ -74,13 +75,14 @@ export default new Provider({
     });
     return publishLocation;
   },
-  async openFile(token, syncLocation) {
+  async openFile(token: any, syncLocation: any): Promise<void> {
+    const self = this as any;
     // Check if the file exists and open it
     if (!Provider.openFileWithLocation(syncLocation)) {
       // Download content from GitHub
       let content;
       try {
-        content = await this.downloadContent(token, syncLocation);
+        content = await self.downloadContent(token, syncLocation);
       } catch (e) {
         useNotificationStore().error(`Could not open file ${syncLocation.path}.`);
         return;
@@ -96,7 +98,7 @@ export default new Provider({
       if (dotPos > 0 && slashPos < name.length) {
         name = name.slice(0, dotPos);
       }
-      const item = await workspaceSvc.createFile({
+      const item = await (workspaceSvc as any).createFile({
         name,
         parentId: useFileStore().current.parentId,
         text: content.text,
@@ -105,16 +107,16 @@ export default new Provider({
         comments: content.comments,
       }, true);
       useFileStore().setCurrentId(item.id);
-      workspaceSvc.addSyncLocation({
+      (workspaceSvc as any).addSyncLocation({
         ...syncLocation,
         fileId: item.id,
       });
       useNotificationStore().info(`${useFileStore().current.name} was imported from GitHub.`);
     }
   },
-  makeLocation(token, owner, repo, branch, path) {
+  makeLocation(token: any, owner: string, repo: string, branch: string, path: string): any {
     return {
-      providerId: this.id,
+      providerId: (this as any).id,
       sub: token.sub,
       owner,
       repo,
@@ -122,8 +124,8 @@ export default new Provider({
       path,
     };
   },
-  async listFileRevisions({ token, syncLocation }) {
-    const entries = await githubHelper.getCommits({
+  async listFileRevisions({ token, syncLocation }: any): Promise<any[]> {
+    const entries = await (githubHelper as any).getCommits({
       ...syncLocation,
       token,
     });
@@ -133,15 +135,15 @@ export default new Provider({
       committer,
       commit,
       sha,
-    }) => {
-      let user;
+    }: any) => {
+      let user: any;
       if (author && author.login) {
         user = author;
       } else if (committer && committer.login) {
         user = committer;
       }
-      const sub = `${githubHelper.subPrefix}:${user.id}`;
-      userSvc.addUserInfo({ id: sub, name: user.login, imageUrl: user.avatar_url });
+      const sub = `${(githubHelper as any).subPrefix}:${user.id}`;
+      (userSvc as any).addUserInfo({ id: sub, name: user.login, imageUrl: user.avatar_url });
       const date = (commit.author && commit.author.date)
         || (commit.committer && commit.committer.date);
       return {
@@ -151,7 +153,7 @@ export default new Provider({
       };
     });
   },
-  async loadFileRevision() {
+  async loadFileRevision(): Promise<boolean> {
     // Revision are already loaded
     return false;
   },
@@ -160,8 +162,8 @@ export default new Provider({
     contentId,
     syncLocation,
     revisionId,
-  }) {
-    const { data } = await githubHelper.downloadFile({
+  }: any): Promise<any> {
+    const { data } = await (githubHelper as any).downloadFile({
       ...syncLocation,
       token,
       branch: revisionId,

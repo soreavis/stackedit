@@ -1,8 +1,5 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for Google Drive sync. Method params + response
+// payloads kept loose (`any`) — Drive v3 API returns dynamic shapes.
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
@@ -12,35 +9,36 @@ import utils from '../utils';
 import workspaceSvc from '../workspaceSvc';
 import { useQueueStore } from '../../stores/queue';
 import { useDataStore } from '../../stores/data';
+import { useFileStore } from '../../stores/file';
 
 export default new Provider({
   id: 'googleDrive',
   name: 'Google Drive',
-  getToken({ sub }) {
-    const token = useDataStore().googleTokensBySub[sub];
+  getToken({ sub }: any): any {
+    const token = useDataStore().googleTokensBySub[sub] as any;
     return token && token.isDrive ? token : null;
   },
-  getLocationUrl({ driveFileId }) {
+  getLocationUrl({ driveFileId }: any): string {
     return `https://docs.google.com/file/d/${driveFileId}/edit`;
   },
-  getLocationDescription({ driveFileId }) {
+  getLocationDescription({ driveFileId }: any): string {
     return driveFileId;
   },
-  async initAction() {
-    const state = googleHelper.driveState || {};
+  async initAction(): Promise<void> {
+    const state = (googleHelper as any).driveState || {};
     if (state.userId) {
       // Try to find the token corresponding to the user ID
-      let token = useDataStore().googleTokensBySub[state.userId];
+      let token = useDataStore().googleTokensBySub[state.userId] as any;
       // If not found or not enough permission, popup an OAuth2 window
       if (!token || !token.isDrive) {
         await useModalStore().open({ type: 'googleDriveAccount' });
-        token = await googleHelper.addDriveAccount(
-          !useDataStore().localSettings.googleDriveRestrictedAccess,
+        token = await (googleHelper as any).addDriveAccount(
+          !(useDataStore().localSettings as any).googleDriveRestrictedAccess,
           state.userId,
         );
       }
 
-      const openWorkspaceIfExists = (file) => {
+      const openWorkspaceIfExists = (file: any): void => {
         const folderId = file
           && file.appProperties
           && file.appProperties.folderId;
@@ -50,11 +48,11 @@ export default new Provider({
             providerId: 'googleDriveWorkspace',
             folderId,
           };
-          const workspaceId = utils.makeWorkspaceId(workspaceParams);
+          const workspaceId = (utils as any).makeWorkspaceId(workspaceParams);
           const workspace = useWorkspaceStore().workspacesById[workspaceId];
           // If we have the workspace, open it by changing the current URL
           if (workspace) {
-            utils.setQueryParams(workspaceParams);
+            (utils as any).setQueryParams(workspaceParams);
           }
         }
       };
@@ -64,63 +62,64 @@ export default new Provider({
         default:
           // See if folder is part of a workspace we can open
           try {
-            const folder = await googleHelper.getFile(token, state.folderId);
+            const folder = await (googleHelper as any).getFile(token, state.folderId);
             folder.appProperties = folder.appProperties || {};
-            googleHelper.driveActionFolder = folder;
+            (googleHelper as any).driveActionFolder = folder;
             openWorkspaceIfExists(folder);
-          } catch (err) {
+          } catch (err: any) {
             if (!err || err.status !== 404) {
               throw err;
             }
             // We received an HTTP 404 meaning we have no permission to read the folder
-            googleHelper.driveActionFolder = { id: state.folderId };
+            (googleHelper as any).driveActionFolder = { id: state.folderId };
           }
           break;
 
         case 'open': {
-          await utils.awaitSequence(state.ids || [], async (id) => {
-            const file = await googleHelper.getFile(token, id);
+          await (utils as any).awaitSequence(state.ids || [], async (id: string) => {
+            const file = await (googleHelper as any).getFile(token, id);
             file.appProperties = file.appProperties || {};
-            googleHelper.driveActionFiles.push(file);
+            (googleHelper as any).driveActionFiles.push(file);
           });
 
           // Check if first file is part of a workspace
-          openWorkspaceIfExists(googleHelper.driveActionFiles[0]);
+          openWorkspaceIfExists((googleHelper as any).driveActionFiles[0]);
         }
       }
     }
   },
-  async performAction() {
-    const state = googleHelper.driveState || {};
+  async performAction(): Promise<any> {
+    const self = this as any;
+    const state = (googleHelper as any).driveState || {};
     const token = useDataStore().googleTokensBySub[state.userId];
     switch (token && state.action) {
       case 'create': {
-        const file = await workspaceSvc.createFile({}, true);
+        const file = await (workspaceSvc as any).createFile({}, true);
         useFileStore().setCurrentId(file.id);
         // Return a new syncLocation
-        return this.makeLocation(token, null, googleHelper.driveActionFolder.id);
+        return self.makeLocation(token, null, (googleHelper as any).driveActionFolder.id);
       }
       case 'open':
         useQueueStore().enqueue(
-          () => this.openFiles(token, googleHelper.driveActionFiles),
+          () => self.openFiles(token, (googleHelper as any).driveActionFiles),
         );
         return null;
       default:
         return null;
     }
   },
-  async downloadContent(token, syncLocation) {
-    const content = await googleHelper.downloadFile(token, syncLocation.driveFileId);
+  async downloadContent(token: any, syncLocation: any): Promise<any> {
+    const content = await (googleHelper as any).downloadFile(token, syncLocation.driveFileId);
     return Provider.parseContent(content, `${syncLocation.fileId}/content`);
   },
-  async uploadContent(token, content, syncLocation, ifNotTooLate) {
+  async uploadContent(token: any, content: any, syncLocation: any, ifNotTooLate?: any): Promise<any> {
     const file = useFileStore().itemsById[syncLocation.fileId];
-    const name = utils.sanitizeName(file && file.name);
-    const parents = [];
+    const name = (utils as any).sanitizeName(file && file.name);
+    const parents: string[] = [];
     if (syncLocation.driveParentId) {
       parents.push(syncLocation.driveParentId);
     }
-    const driveFile = await googleHelper.uploadFile({
+    const driveFile = await (googleHelper as any).uploadFile({
       token,
       name,
       parents,
@@ -133,8 +132,8 @@ export default new Provider({
       driveFileId: driveFile.id,
     };
   },
-  async publish(token, html, metadata, publishLocation) {
-    const driveFile = await googleHelper.uploadFile({
+  async publish(token: any, html: string, metadata: any, publishLocation: any): Promise<any> {
+    const driveFile = await (googleHelper as any).uploadFile({
       token,
       name: metadata.title,
       parents: [],
@@ -147,29 +146,30 @@ export default new Provider({
       driveFileId: driveFile.id,
     };
   },
-  async openFiles(token, driveFiles) {
-    return utils.awaitSequence(driveFiles, async (driveFile) => {
+  async openFiles(token: any, driveFiles: any[]): Promise<any> {
+    const self = this as any;
+    return (utils as any).awaitSequence(driveFiles, async (driveFile: any) => {
       // Check if the file exists and open it
       if (!Provider.openFileWithLocation({
-        providerId: this.id,
+        providerId: self.id,
         driveFileId: driveFile.id,
       })) {
         // Download content from Google Drive
         const syncLocation = {
           driveFileId: driveFile.id,
-          providerId: this.id,
+          providerId: self.id,
           sub: token.sub,
         };
         let content;
         try {
-          content = await this.downloadContent(token, syncLocation);
+          content = await self.downloadContent(token, syncLocation);
         } catch (e) {
           useNotificationStore().error(`Could not open file ${driveFile.id}.`);
           return;
         }
 
         // Create the file
-        const item = await workspaceSvc.createFile({
+        const item = await (workspaceSvc as any).createFile({
           name: driveFile.name,
           parentId: useFileStore().current.parentId,
           text: content.text,
@@ -178,7 +178,7 @@ export default new Provider({
           comments: content.comments,
         }, true);
         useFileStore().setCurrentId(item.id);
-        workspaceSvc.addSyncLocation({
+        (workspaceSvc as any).addSyncLocation({
           ...syncLocation,
           fileId: item.id,
         });
@@ -186,9 +186,9 @@ export default new Provider({
       }
     });
   },
-  makeLocation(token, fileId, folderId) {
-    const location = {
-      providerId: this.id,
+  makeLocation(token: any, fileId: string | null, folderId?: string | null): any {
+    const location: any = {
+      providerId: (this as any).id,
       sub: token.sub,
     };
     if (fileId) {
@@ -199,15 +199,15 @@ export default new Provider({
     }
     return location;
   },
-  async listFileRevisions({ token, syncLocation }) {
-    const revisions = await googleHelper.getFileRevisions(token, syncLocation.driveFileId);
-    return revisions.map(revision => ({
+  async listFileRevisions({ token, syncLocation }: any): Promise<any[]> {
+    const revisions = await (googleHelper as any).getFileRevisions(token, syncLocation.driveFileId);
+    return revisions.map((revision: any) => ({
       id: revision.id,
-      sub: `${googleHelper.subPrefix}:${revision.lastModifyingUser.permissionId}`,
+      sub: `${(googleHelper as any).subPrefix}:${revision.lastModifyingUser.permissionId}`,
       created: new Date(revision.modifiedTime).getTime(),
     }));
   },
-  async loadFileRevision() {
+  async loadFileRevision(): Promise<boolean> {
     // Revision are already loaded
     return false;
   },
@@ -216,8 +216,8 @@ export default new Provider({
     contentId,
     syncLocation,
     revisionId,
-  }) {
-    const content = await googleHelper
+  }: any): Promise<any> {
+    const content = await (googleHelper as any)
       .downloadFileRevision(token, syncLocation.driveFileId, revisionId);
     return Provider.parseContent(content, contentId);
   },

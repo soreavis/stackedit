@@ -1,22 +1,22 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for Dropbox sync. Token + response shapes are
+// dynamic across the Dropbox v2 API; method params and return values
+// are typed loosely (`any`) since per-call response shape design is
+// out of scope.
 import { useNotificationStore } from '../../stores/notification';
 import dropboxHelper from './helpers/dropboxHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
 import workspaceSvc from '../workspaceSvc';
 import { useDataStore } from '../../stores/data';
+import { useFileStore } from '../../stores/file';
 
-const makePathAbsolute = (token, path) => {
+const makePathAbsolute = (token: any, path: string): string => {
   if (!token.fullAccess) {
     return `/Applications/StackEdit (restricted)${path}`;
   }
   return path;
 };
-const makePathRelative = (token, path) => {
+const makePathRelative = (token: any, path: string): string => {
   if (!token.fullAccess) {
     return path.replace(/^\/Applications\/StackEdit \(restricted\)/, '');
   }
@@ -26,30 +26,30 @@ const makePathRelative = (token, path) => {
 export default new Provider({
   id: 'dropbox',
   name: 'Dropbox',
-  getToken({ sub }) {
+  getToken({ sub }: any): any {
     return useDataStore().dropboxTokensBySub[sub];
   },
-  getLocationUrl({ path }) {
+  getLocationUrl({ path }: any): string {
     const pathComponents = path.split('/').map(encodeURIComponent);
     const filename = pathComponents.pop();
     return `https://www.dropbox.com/home${pathComponents.join('/')}?preview=${filename}`;
   },
-  getLocationDescription({ path, dropboxFileId }) {
+  getLocationDescription({ path, dropboxFileId }: any): string {
     return dropboxFileId || path;
   },
-  checkPath(path) {
-    return path && path.match(/^\/[^\\<>:"|?*]+$/);
+  checkPath(path: string): RegExpMatchArray | null {
+    return (path && path.match(/^\/[^\\<>:"|?*]+$/)) || null;
   },
-  async downloadContent(token, syncLocation) {
-    const { content } = await dropboxHelper.downloadFile({
+  async downloadContent(token: any, syncLocation: any): Promise<any> {
+    const { content } = await (dropboxHelper as any).downloadFile({
       token,
       path: makePathRelative(token, syncLocation.path),
       fileId: syncLocation.dropboxFileId,
     });
     return Provider.parseContent(content, `${syncLocation.fileId}/content`);
   },
-  async uploadContent(token, content, syncLocation) {
-    const dropboxFile = await dropboxHelper.uploadFile({
+  async uploadContent(token: any, content: any, syncLocation: any): Promise<any> {
+    const dropboxFile = await (dropboxHelper as any).uploadFile({
       token,
       path: makePathRelative(token, syncLocation.path),
       content: Provider.serializeContent(content),
@@ -61,8 +61,8 @@ export default new Provider({
       dropboxFileId: dropboxFile.id,
     };
   },
-  async publish(token, html, metadata, publishLocation) {
-    const dropboxFile = await dropboxHelper.uploadFile({
+  async publish(token: any, html: string, metadata: any, publishLocation: any): Promise<any> {
+    const dropboxFile = await (dropboxHelper as any).uploadFile({
       token,
       path: publishLocation.path,
       content: html,
@@ -74,22 +74,23 @@ export default new Provider({
       dropboxFileId: dropboxFile.id,
     };
   },
-  async openFiles(token, paths) {
-    await utils.awaitSequence(paths, async (path) => {
+  async openFiles(token: any, paths: string[]): Promise<void> {
+    const self = this as any;
+    await (utils as any).awaitSequence(paths, async (path: string) => {
       // Check if the file exists and open it
       if (!Provider.openFileWithLocation({
-        providerId: this.id,
+        providerId: self.id,
         path,
       })) {
         // Download content from Dropbox
         const syncLocation = {
           path,
-          providerId: this.id,
+          providerId: self.id,
           sub: token.sub,
         };
         let content;
         try {
-          content = await this.downloadContent(token, syncLocation);
+          content = await self.downloadContent(token, syncLocation);
         } catch (e) {
           useNotificationStore().error(`Could not open file ${path}.`);
           return;
@@ -105,7 +106,7 @@ export default new Provider({
         if (dotPos > 0 && slashPos < name.length) {
           name = name.slice(0, dotPos);
         }
-        const item = await workspaceSvc.createFile({
+        const item = await (workspaceSvc as any).createFile({
           name,
           parentId: useFileStore().current.parentId,
           text: content.text,
@@ -114,7 +115,7 @@ export default new Provider({
           comments: content.comments,
         }, true);
         useFileStore().setCurrentId(item.id);
-        workspaceSvc.addSyncLocation({
+        (workspaceSvc as any).addSyncLocation({
           ...syncLocation,
           fileId: item.id,
         });
@@ -122,26 +123,26 @@ export default new Provider({
       }
     });
   },
-  makeLocation(token, path) {
+  makeLocation(token: any, path: string): any {
     return {
-      providerId: this.id,
+      providerId: (this as any).id,
       sub: token.sub,
       path,
     };
   },
-  async listFileRevisions({ token, syncLocation }) {
-    const entries = await dropboxHelper.listRevisions({
+  async listFileRevisions({ token, syncLocation }: any): Promise<any[]> {
+    const entries = await (dropboxHelper as any).listRevisions({
       token,
       path: makePathRelative(token, syncLocation.path),
       fileId: syncLocation.dropboxFileId,
     });
-    return entries.map(entry => ({
+    return entries.map((entry: any) => ({
       id: entry.rev,
-      sub: `${dropboxHelper.subPrefix}:${(entry.sharing_info || {}).modified_by || token.sub}`,
+      sub: `${(dropboxHelper as any).subPrefix}:${(entry.sharing_info || {}).modified_by || token.sub}`,
       created: new Date(entry.server_modified).getTime(),
     }));
   },
-  async loadFileRevision() {
+  async loadFileRevision(): Promise<boolean> {
     // Revision are already loaded
     return false;
   },
@@ -149,8 +150,8 @@ export default new Provider({
     token,
     contentId,
     revisionId,
-  }) {
-    const { content } = await dropboxHelper.downloadFile({
+  }: any): Promise<any> {
+    const { content } = await (dropboxHelper as any).downloadFile({
       token,
       path: `rev:${revisionId}`,
     });
