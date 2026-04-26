@@ -173,7 +173,7 @@ export default {
     }
 
     // Save item in the store
-    setItemByType(item.type, item);
+    setItemByType(item.type as string, item);
 
     // Remove circular reference
     this.removeCircularReference(item);
@@ -279,7 +279,7 @@ export default {
         pathWithSuffix += '/';
       }
       if (!itemsByPath[pathWithSuffix]) {
-        patchItemByType(item.type, {
+        patchItemByType(item.type as string, {
           id: item.id,
           name: `${item.name}.${suffix}`,
         });
@@ -325,7 +325,7 @@ export default {
         if (!idsToKeep[item.id]
           && ((getGroupedByFileIdAndHashByType(type) as any)[item.fileId as string][item.hash as number] as Item[]).length > 1
         ) {
-          deleteItemByType(item.type, item.id);
+          deleteItemByType(item.type as string, item.id);
         }
       });
     });
