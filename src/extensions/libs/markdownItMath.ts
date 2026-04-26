@@ -1,4 +1,11 @@
-function texMath(state, silent) {
+// In-tree math plugin: parses TeX-flavored `$inline$` and `$$display$$`
+// math spans (per pandoc's math syntax) and emits `inline_math` /
+// `display_math` tokens. Rendering is done elsewhere by the KaTeX
+// extension.
+import type MarkdownIt from 'markdown-it';
+import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
+
+function texMath(state: StateInline, silent: boolean): boolean {
   let startMathPos = state.pos;
   if (state.src.charCodeAt(startMathPos) !== 0x24 /* $ */) {
     return false;
@@ -47,13 +54,17 @@ function texMath(state, silent) {
   }
 
   if (!silent) {
-    const token = state.push(endMarker.length === 1 ? 'inline_math' : 'display_math', '', 0);
+    const token = state.push(
+      endMarker.length === 1 ? 'inline_math' : 'display_math',
+      '',
+      0,
+    );
     token.content = state.src.slice(startMathPos, endMarkerPos);
   }
   state.pos = nextPos;
   return true;
 }
 
-export default (md) => {
+export default function markdownItMath(md: MarkdownIt): void {
   md.inline.ruler.push('texMath', texMath);
-};
+}
