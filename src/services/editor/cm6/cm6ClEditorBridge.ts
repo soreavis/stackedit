@@ -37,6 +37,12 @@ import {
   markerField, addMarkerEffect, removeMarkerEffect,
   type MarkerEntry,
 } from './cm6Marker';
+import {
+  classRangeField,
+  addClassRange,
+  removeClassRange,
+  updateClassRange,
+} from './cm6Decorations';
 
 const dmp = new DiffMatchPatch();
 
@@ -126,6 +132,12 @@ export interface Cm6ClEditorBridge {
   addKeystroke(_k: unknown): void;
   on(evt: string, fn: (...args: any[]) => void): void;
   off(evt: string, fn?: (...args: any[]) => void): void;
+  // Stage 3 batch 8: CM6-native class range API. Replaces the
+  // EditorClassApplier DOM-mutation path. Each call returns an id
+  // the caller passes back to update / remove.
+  addClassRange(from: number, to: number, className: string, attrs?: Record<string, string>): number;
+  removeClassRange(id: number): void;
+  updateClassRange(id: number, from: number, to: number, className: string): void;
 }
 
 interface SelectionMgrShim {
@@ -164,6 +176,7 @@ function baseExtensions(editableCompartment: Compartment): Extension[] {
     stackeditHighlight(),
     markdown(),
     markerField,
+    classRangeField,
     keymap.of([
       ...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab,
     ]),
@@ -406,6 +419,14 @@ export function createCm6ClEditorBridge(
 
     on(evt, fn) { editorEmitter.on(evt, fn); },
     off(evt, fn) { editorEmitter.off(evt, fn); },
+
+    addClassRange(from, to, className, attrs) {
+      return addClassRange(view, from, to, className, attrs);
+    },
+    removeClassRange(id) { removeClassRange(view, id); },
+    updateClassRange(id, from, to, className) {
+      updateClassRange(view, id, from, to, className);
+    },
   };
 
   // Wire marker offset sync: every transaction, mirror the StateField
