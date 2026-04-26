@@ -21,6 +21,8 @@ import syncSvc from '../services/syncSvc';
 import networkSvc from '../services/networkSvc';
 import tempFileSvc from '../services/tempFileSvc';
 import uiPersistence from '../services/uiPersistence';
+import { setCm6BridgeFactory } from '../services/editor/editorSvcDiscussions';
+import { isCm6LiveFlagEnabled } from '../services/editor/cm6/cm6Flag';
 import { useFileStore } from '../stores/file';
 import { useNotificationStore } from '../stores/notification';
 import { useDataStore } from '../stores/data';
@@ -59,6 +61,14 @@ export default {
       // had open before the reload.
       uiPersistence.restoreCurrentFile();
       await networkSvc.init();
+      // Stage 3 batch 6: when ?cm6live=1 is set, dynamic-import the CM6
+      // bridge module BEFORE Layout mounts so editorSvc.createClEditor
+      // can use the bridge factory synchronously. Dynamic import keeps
+      // the heavy CM6 chunk out of the main bundle on the flag-off path.
+      if (isCm6LiveFlagEnabled()) {
+        const mod = await import('../services/editor/cm6/cm6ClEditorBridge');
+        setCm6BridgeFactory(mod.createCm6ClEditorBridge, mod.Cm6Marker);
+      }
       this.ready = true;
       tempFileSvc.setReady();
     } catch (err) {
