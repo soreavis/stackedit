@@ -129,6 +129,8 @@ export {
   getClassRangeEntries,
 } from './cm6Decorations';
 export type { ClassRangeEntry } from './cm6Decorations';
+export { mountSmallEditor } from './cm6SmallEditor';
+export type { SmallEditorOptions, SmallEditorHandle, SmallEditorSelectionMgr } from './cm6SmallEditor';
 
 export interface Cm6Handle {
   view: EditorView;
