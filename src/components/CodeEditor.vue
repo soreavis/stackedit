@@ -3,29 +3,27 @@
 </template>
 
 <script>
-import Prism from 'prismjs';
-import cledit from '../services/editor/cledit';
-
 export default {
+  // `lang` is accepted for API compatibility with the previous Prism-
+  // based implementation but currently unused — CM6's small editor
+  // ships without per-language syntax highlighting for settings /
+  // template editing. Adding @codemirror/lang-yaml + lang-handlebars
+  // is a follow-up if we miss the colors.
   props: ['value', 'lang', 'disabled'],
-  mounted() {
+  async mounted() {
     const preElt = this.$el;
-    let scrollElt = preElt;
-    while (scrollElt && !scrollElt.classList.contains('modal')) {
-      scrollElt = scrollElt.parentNode;
-    }
-    if (scrollElt) {
-      const clEditor = cledit(preElt, scrollElt);
-      clEditor.on('contentChanged', value => this.$emit('changed', value));
-      clEditor.init({
-        content: this.value,
-        sectionHighlighter: section => Prism.highlight(section.text, Prism.languages[this.lang]),
-      });
-      clEditor.toggleEditable(!this.disabled);
-    }
+    // Lazy-load the CM6 small-editor builder so the flag-off main
+    // bundle stays small. CodeEditor is only mounted from settings
+    // / properties modals, well after app boot.
+    const { mountSmallEditor } = await import('../services/editor/cm6/cm6SmallEditor');
+    const clEditor = mountSmallEditor(preElt, {
+      content: this.value || '',
+      language: 'plain',
+      readOnly: !!this.disabled,
+    });
+    clEditor.on('contentChanged', value => this.$emit('changed', value));
   },
-};
-</script>
+};</script>
 
 <style lang="scss">
 @use '../styles/variables.scss' as *;
