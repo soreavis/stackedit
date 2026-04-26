@@ -79,8 +79,11 @@ export default {
     const onDiscussionEvt = cb => (evt) => {
       let elt = evt.target;
       while (elt && elt !== editorElt) {
-        if (elt.discussionId) {
-          cb(elt.discussionId);
+        // Cledit path: discussionId is a JS property on the wrap span.
+        // CM6 path: data-discussion-id attribute on the decorated span.
+        const id = elt.discussionId || (elt.dataset && elt.dataset.discussionId);
+        if (id) {
+          cb(id);
           return;
         }
         elt = elt.parentNode;
