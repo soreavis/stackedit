@@ -13,6 +13,25 @@ import { useContentStateStore } from '../../stores/contentState';
 import EditorClassApplier from '../../components/common/EditorClassApplier';
 import PreviewClassApplier from '../../components/common/PreviewClassApplier';
 import { useDiscussionStore } from '../../stores/discussion';
+import { isCm6LiveFlagEnabled } from './cm6/cm6Flag';
+
+// CM6 bridge is dynamically imported (Layout.vue's mount calls
+// `setCm6BridgeFactory` before invoking editorSvc.init) so the
+// flag-off path never loads the heavy CM6 chunk. Without this
+// indirection a static import would inline the entire CM6 stack
+// into the main bundle and blow the size-limit gate.
+type Cm6BridgeFactory = (parent: HTMLElement, scroll: HTMLElement) => any;
+type Cm6MarkerCtor = new (offset: number, trailing?: boolean) => any;
+let cm6BridgeFactory: Cm6BridgeFactory | null = null;
+let cm6MarkerCtor: Cm6MarkerCtor | null = null;
+
+export function setCm6BridgeFactory(
+  factory: Cm6BridgeFactory,
+  MarkerCtor: Cm6MarkerCtor,
+): void {
+  cm6BridgeFactory = factory;
+  cm6MarkerCtor = MarkerCtor;
+}
 
 // editorSvcDiscussions plugs into a discussions/markers/class-applier
 // pipeline that has very dynamic shapes — type the module-level state
@@ -130,7 +149,24 @@ function reversePatches(patches: any) {
 export default {
   clEditor: undefined as any,
   createClEditor(editorElt: HTMLElement) {
-    this.clEditor = cledit(editorElt, editorElt.parentNode, true);
+    if (isCm6LiveFlagEnabled() && cm6BridgeFactory && cm6MarkerCtor) {
+      // Stage 3 batch 6: behind ?cm6live=1, route the live editor through
+      // the CM6 bridge instead of cledit. Layout.vue's async mount has
+      // already loaded the bridge module and called setCm6BridgeFactory
+      // by the time editorSvc.init runs. Bridge mounts CM6 inside the
+      // existing .editor__inner <pre> so editorSvc.editorElt remains the
+      // same node external consumers reach for.
+      this.clEditor = cm6BridgeFactory(
+        editorElt,
+        editorElt.parentNode as HTMLElement,
+      );
+      // Route `new cledit.Marker(offset, trailing)` to the bridge-aware
+      // Cm6Marker so the ~15 existing call sites work unchanged until
+      // batch 7 cleanup.
+      (cledit as any).Marker = cm6MarkerCtor;
+    } else {
+      this.clEditor = cledit(editorElt, editorElt.parentNode, true);
+    }
     ({ clEditor } = this);
     clEditor.on('contentChanged', (text: string) => {
       const oldContent = useContentStore().current;
