@@ -56,6 +56,7 @@ import htmlSanitizer from '../../libs/htmlSanitizer';
 import MenuEntry from './common/MenuEntry';
 import Provider from '../../services/providers/common/Provider';
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import workspaceSvc from '../../services/workspaceSvc';
@@ -105,7 +106,7 @@ export default {
   computed: {
     ...mapGetters(['isSponsor']),
     hasCurrentFile() {
-      return !!store.getters['file/current'].id;
+      return !!useFileStore().current.id;
     },
   },
   methods: {
@@ -116,7 +117,7 @@ export default {
         ...Provider.parseContent(content),
         name: file.name,
       });
-      store.commit('file/setCurrentId', item.id);
+      useFileStore().setCurrentId(item.id);
       badgeSvc.addBadge('importMarkdown');
     },
     async onImportHtml(evt) {
@@ -128,7 +129,7 @@ export default {
         ...Provider.parseContent(turndownService.turndown(sanitizedContent)),
         name: file.name,
       });
-      store.commit('file/setCurrentId', item.id);
+      useFileStore().setCurrentId(item.id);
       badgeSvc.addBadge('importHtml');
     },
     async onImportClipboard() {
@@ -179,7 +180,7 @@ export default {
           ...Provider.parseContent(markdown),
           name,
         });
-        store.commit('file/setCurrentId', item.id);
+        useFileStore().setCurrentId(item.id);
         badgeSvc.addBadge('importClipboard');
       } catch (err) {
         if (err && err.name === 'NotAllowedError') {
@@ -190,7 +191,7 @@ export default {
       }
     },
     async exportMarkdown() {
-      const currentFile = store.getters['file/current'];
+      const currentFile = useFileStore().current;
       try {
         await exportSvc.exportToDisk(currentFile.id, 'md');
         badgeSvc.addBadge('exportMarkdown');
