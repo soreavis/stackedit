@@ -17,15 +17,14 @@ import {
   crosshairCursor,
 } from '@codemirror/view';
 import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
-import {
-  syntaxHighlighting,
-  defaultHighlightStyle,
-  bracketMatching,
-} from '@codemirror/language';
+import { bracketMatching } from '@codemirror/language';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { markdown } from '@codemirror/lang-markdown';
+import { stackeditHighlight } from './cm6Highlighter';
 
 export { isCm6FlagEnabled } from './cm6Flag';
+export { parseSectionsForCm6 } from './cm6SectionParser';
+export type { SectionEntry } from './cm6SectionParser';
 
 export interface Cm6Handle {
   view: EditorView;
@@ -49,7 +48,7 @@ function baseExtensions(): Extension[] {
     bracketMatching(),
     highlightSelectionMatches(),
     EditorView.lineWrapping,
-    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    stackeditHighlight(),
     markdown(),
     keymap.of([
       ...defaultKeymap,
