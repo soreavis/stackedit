@@ -32,6 +32,7 @@ import editorSvc from '../../services/editorSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import modalTemplate from './common/modalTemplate';
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useContentStore } from '../../stores/content';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
@@ -50,7 +51,7 @@ export default modalTemplate({
       const currentContent = useContentStore().current;
       const { selectedFormat } = this;
       useQueueStore().enqueue(async () => {
-        const tokenToRefresh = store.getters['workspace/sponsorToken'];
+        const tokenToRefresh = useWorkspaceStore().sponsorToken;
         const sponsorToken = tokenToRefresh && await googleHelper.refreshToken(tokenToRefresh);
 
         try {

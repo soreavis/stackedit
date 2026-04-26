@@ -122,6 +122,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
+import { mapState as mapPiniaState } from 'pinia';
 import MenuEntry from './common/MenuEntry';
 import providerRegistry from '../../services/providers/common/providerRegistry';
 import UserImage from '../UserImage';
@@ -129,6 +130,9 @@ import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import userSvc from '../../services/userSvc';
 import store from '../../store';
+import { useSyncLocationStore } from '../../stores/syncLocation';
+import { usePublishLocationStore } from '../../stores/publishLocation';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 
@@ -138,7 +142,7 @@ export default {
     UserImage,
   },
   computed: {
-    ...mapGetters('workspace', [
+    ...mapPiniaState(useWorkspaceStore, [
       'currentWorkspace',
       'syncToken',
       'loginToken',
@@ -151,13 +155,13 @@ export default {
       return provider.getWorkspaceLocationUrl(this.currentWorkspace);
     },
     workspaceCount() {
-      return Object.keys(store.getters['workspace/workspacesById']).length;
+      return Object.keys(useWorkspaceStore().workspacesById).length;
     },
     syncLocationCount() {
-      return Object.keys(store.getters['syncLocation/currentWithWorkspaceSyncLocation']).length;
+      return Object.keys(useSyncLocationStore().currentWithWorkspaceSyncLocation).length;
     },
     publishLocationCount() {
-      return Object.keys(store.getters['publishLocation/current']).length;
+      return Object.keys(usePublishLocationStore().current).length;
     },
     hasCurrentFile() {
       return !!useFileStore().current.id;

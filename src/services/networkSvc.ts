@@ -1,5 +1,6 @@
 import utils from './utils';
 import store from '../store';
+import { useWorkspaceStore } from '../stores/workspace';
 import { useNotificationStore } from '../stores/notification';
 import constants from '../data/constants';
 
@@ -79,7 +80,7 @@ export default {
     lastFocus = 0;
     const setLastFocus = () => {
       lastFocus = Date.now();
-      localStorage.setItem(store.getters['workspace/lastFocusKey'], String(lastFocus));
+      localStorage.setItem(useWorkspaceStore().lastFocusKey, String(lastFocus));
       setLastActivity();
     };
     if (document.hasFocus()) {
@@ -147,7 +148,7 @@ export default {
 
   isWindowFocused(): boolean {
     // We don't use state.workspace.lastFocus as it's not reactive
-    const storedLastFocus = localStorage.getItem(store.getters['workspace/lastFocusKey']);
+    const storedLastFocus = localStorage.getItem(useWorkspaceStore().lastFocusKey);
     return parseInt(storedLastFocus || '0', 10) === lastFocus;
   },
 

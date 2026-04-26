@@ -6,6 +6,9 @@
 // this incremental migration.
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { useSyncLocationStore } from '../stores/syncLocation';
+import { usePublishLocationStore } from '../stores/publishLocation';
+import { useWorkspaceStore } from '../stores/workspace';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
@@ -47,17 +50,17 @@ let workspaceProvider;
  */
 let lastSyncActivity;
 const getLastStoredSyncActivity = () =>
-  parseInt(localStorage.getItem(store.getters['workspace/lastSyncActivityKey']), 10) || 0;
+  parseInt(localStorage.getItem(useWorkspaceStore().lastSyncActivityKey), 10) || 0;
 
 /**
  * Return true if workspace sync is possible.
  */
-const isWorkspaceSyncPossible = () => !!store.getters['workspace/syncToken'];
+const isWorkspaceSyncPossible = () => !!useWorkspaceStore().syncToken;
 
 /**
  * Return true if file has at least one explicit sync location.
  */
-const hasCurrentFileSyncLocations = () => !!store.getters['syncLocation/current'].length;
+const hasCurrentFileSyncLocations = () => !!(useSyncLocationStore() as any).current.length;
 
 /**
  * Return true if we are online and we have something to sync.
@@ -91,7 +94,7 @@ const isAutoSyncReady = () => {
 const setLastSyncActivity = () => {
   const currentDate = Date.now();
   lastSyncActivity = currentDate;
-  localStorage.setItem(store.getters['workspace/lastSyncActivityKey'], currentDate);
+  localStorage.setItem(useWorkspaceStore().lastSyncActivityKey, currentDate);
 };
 
 /**
@@ -126,7 +129,7 @@ const upgradeSyncedContent = (syncedContent) => {
 const cleanSyncedContent = (syncedContent) => {
   // Clean syncHistory from removed syncLocations
   Object.keys(syncedContent.syncHistory).forEach((syncLocationId) => {
-    if (syncLocationId !== 'main' && !store.state.syncLocation.itemsById[syncLocationId]) {
+    if (syncLocationId !== 'main' && !useSyncLocationStore().itemsById[syncLocationId]) {
       delete syncedContent.syncHistory[syncLocationId];
     }
   });
@@ -154,7 +157,7 @@ const applyChanges = (changes) => {
   const idsToKeep = {};
   let saveSyncData = false;
   let getExistingItem;
-  if (store.getters['workspace/currentWorkspaceIsGit']) {
+  if (useWorkspaceStore().currentWorkspaceIsGit) {
     const itemsByGitPath = { ...store.getters.itemsByGitPath };
     getExistingItem = existingSyncData => existingSyncData && itemsByGitPath[existingSyncData.id];
   } else {
@@ -269,8 +272,8 @@ const isTempFile = (fileId) => {
     return true;
   }
   const locations = [
-    ...store.getters['syncLocation/filteredGroupedByFileId'][fileId] || [],
-    ...store.getters['publishLocation/filteredGroupedByFileId'][fileId] || [],
+    ...(useSyncLocationStore() as any).filteredGroupedByFileId[fileId] || [],
+    ...(usePublishLocationStore() as any).filteredGroupedByFileId[fileId] || [],
   ];
   if (locations.length) {
     // If file has sync/publish locations, it's not a temp file
@@ -332,7 +335,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
     }
 
     const syncLocations = [
-      ...store.getters['syncLocation/filteredGroupedByFileId'][fileId] || [],
+      ...(useSyncLocationStore() as any).filteredGroupedByFileId[fileId] || [],
     ];
     if (isWorkspaceSyncPossible()) {
       syncLocations.unshift({ id: 'main', providerId: workspaceProvider.id, fileId });
@@ -520,7 +523,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
         if (utils.serializeObject(syncLocation) !==
           utils.serializeObject(syncLocationToStore)
         ) {
-          store.commit('syncLocation/patchItem', syncLocationToStore);
+          useSyncLocationStore().patchItem(syncLocationToStore);
           workspaceSvc.ensureUniqueLocations();
         }
       };
@@ -640,11 +643,11 @@ const syncDataItem = async (dataId) => {
  */
 const syncWorkspace = async (skipContents = false) => {
   try {
-    const workspace = store.getters['workspace/currentWorkspace'];
+    const workspace = useWorkspaceStore().currentWorkspace;
     const syncContext = new SyncContext();
 
     // Store the sub in the DB since it's not safely stored in the token
-    const syncToken = store.getters['workspace/syncToken'];
+    const syncToken = useWorkspaceStore().syncToken;
     const localSettings = store.getters['data/localSettings'];
     if (!localSettings.syncSub) {
       store.dispatch('data/patchLocalSettings', {
@@ -668,13 +671,13 @@ const syncWorkspace = async (skipContents = false) => {
       const storeItemMap = {
         ...useFileStore().itemsById,
         ...useFolderStore().itemsById,
-        ...store.state.syncLocation.itemsById,
-        ...store.state.publishLocation.itemsById,
+        ...useSyncLocationStore().itemsById,
+        ...usePublishLocationStore().itemsById,
         // Deal with contents and data later
       };
 
       const syncDataByItemId = store.getters['data/syncDataByItemId'];
-      const isGit = !!store.getters['workspace/currentWorkspaceIsGit'];
+      const isGit = !!useWorkspaceStore().currentWorkspaceIsGit;
       const [changedItem, syncDataToUpdate] = utils.someResult(
         Object.entries(storeItemMap),
         ([id, item]) => {
@@ -709,7 +712,7 @@ const syncWorkspace = async (skipContents = false) => {
     await utils.awaitSome(() => ifNotTooLate(async () => {
       let getItem;
       let getFileItem;
-      if (store.getters['workspace/currentWorkspaceIsGit']) {
+      if (useWorkspaceStore().currentWorkspaceIsGit) {
         const { itemsByGitPath } = store.getters;
         getItem = syncData => itemsByGitPath[syncData.id];
         getFileItem = syncData => itemsByGitPath[syncData.id.slice(1)]; // Remove leading /
@@ -765,7 +768,7 @@ const syncWorkspace = async (skipContents = false) => {
       // Find and sync one file out of sync
       await utils.awaitSome(async () => {
         let getSyncData;
-        if (store.getters['workspace/currentWorkspaceIsGit']) {
+        if (useWorkspaceStore().currentWorkspaceIsGit) {
           const { gitPathsByItemId } = store.getters;
           const syncDataById = store.getters['data/syncDataById'];
           getSyncData = contentId => syncDataById[gitPathsByItemId[contentId]];
@@ -916,14 +919,14 @@ export default {
     const { paymentSuccess } = utils.queryParams;
     utils.setQueryParams(workspaceProvider.getWorkspaceParams(workspace));
 
-    store.dispatch('workspace/setCurrentWorkspaceId', workspace.id);
+    useWorkspaceStore().setCurrentWorkspaceId(workspace.id);
     await localDbSvc.init();
 
     // Enable sponsorship
     if (paymentSuccess) {
       useModalStore().open('paymentSuccess')
         .catch(() => { /* Cancel */ });
-      const sponsorToken = store.getters['workspace/sponsorToken'];
+      const sponsorToken = useWorkspaceStore().sponsorToken;
       // Force check sponsorship after a few seconds
       const currentDate = Date.now();
       if (sponsorToken && sponsorToken.expiresOn > currentDate - checkSponsorshipAfter) {
