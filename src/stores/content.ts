@@ -60,7 +60,7 @@ export const useContentStore = defineStore('content', {
         current.id,
         current.text,
         current.hash,
-      ]);
+      ]) as string;
     },
     currentProperties(): Record<string, unknown> {
       return utils.computeProperties(this.current.properties);
