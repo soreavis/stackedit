@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../../services/editorSvc';
 import { useContentStore } from '../../stores/content';
 import { useLayoutStore } from '../../stores/layout';
