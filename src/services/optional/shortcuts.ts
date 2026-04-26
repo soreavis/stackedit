@@ -5,6 +5,7 @@
 // properly typed.
 import { tinykeys } from 'tinykeys';
 import store from '../../store';
+import { useContentStore } from '../../stores/content';
 import { useModalStore } from '../../stores/modal';
 import editorSvc from '../../services/editorSvc';
 import syncSvc from '../../services/syncSvc';
@@ -91,7 +92,7 @@ function toTinykeys(chord) {
 }
 
 const shortcutsAllowed = () => !useModalStore().config
-  && store.getters['content/isCurrentEditable'];
+  && useContentStore().isCurrentEditable;
 
 const guard = fn => (event) => {
   if (!shortcutsAllowed()) return;
