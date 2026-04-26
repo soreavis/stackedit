@@ -67,6 +67,9 @@ import utils from '../services/utils';
 import pagedownButtons from '../data/pagedownButtons';
 import customToolbarButtons from '../data/customToolbarButtons';
 import store from '../store';
+import { usePublishLocationStore } from '../stores/publishLocation';
+import { useSyncLocationStore } from '../stores/syncLocation';
+import { useWorkspaceStore } from '../stores/workspace';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { useModalStore } from '../stores/modal';
@@ -140,10 +143,10 @@ export default {
     ...mapGetters('layout', [
       'styles',
     ]),
-    ...mapGetters('syncLocation', {
+    ...mapPiniaState(useSyncLocationStore, {
       syncLocations: 'current',
     }),
-    ...mapGetters('publishLocation', {
+    ...mapPiniaState(usePublishLocationStore, {
       publishLocations: 'current',
     }),
     pagedownButtons() {
@@ -160,8 +163,8 @@ export default {
       }));
     },
     isSyncPossible() {
-      return store.getters['workspace/syncToken'] ||
-        store.getters['syncLocation/current'].length;
+      return useWorkspaceStore().syncToken ||
+        useSyncLocationStore().current.length;
     },
     showSpinner() {
       return !useQueueStore().isEmpty;

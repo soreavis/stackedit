@@ -51,6 +51,7 @@ import { mapGetters } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
 import store from '../../store';
+import { usePublishLocationStore } from '../../stores/publishLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
@@ -64,7 +65,7 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
-    ...mapGetters('publishLocation', {
+    ...mapPiniaState(usePublishLocationStore, {
       publishLocations: 'current',
     }),
     currentFileName() {
@@ -76,7 +77,7 @@ export default {
       'info',
     ]),
     remove(location) {
-      store.commit('publishLocation/deleteItem', location.id);
+      usePublishLocationStore().deleteItem(location.id);
       badgeSvc.addBadge('removePublishLocation');
     },
   },

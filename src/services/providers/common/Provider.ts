@@ -7,6 +7,7 @@ import providerRegistry from './providerRegistry';
 import emptyContent from '../../../data/empties/emptyContent';
 import utils from '../../utils';
 import store from '../../../store';
+import { useSyncLocationStore } from '../../../stores/syncLocation';
 import { useContentStore } from '../../../stores/content';
 import { useFileStore } from '../../../stores/file';
 import workspaceSvc from '../../workspaceSvc';
@@ -88,7 +89,7 @@ export default class Provider {
    * Find and open a file with location that meets the criteria
    */
   static openFileWithLocation(criteria) {
-    const location = utils.search(store.getters['syncLocation/items'], criteria);
+    const location = utils.search(useSyncLocationStore().items, criteria);
     if (location) {
       // Found one, open it if it exists
       const item = useFileStore().itemsById[location.fileId];

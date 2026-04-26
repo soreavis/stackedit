@@ -11,6 +11,8 @@ import { useSyncedContentStore } from './syncedContent';
 import { useContentStateStore } from './contentState';
 import { useFileStore } from './file';
 import { useContentStore } from './content';
+import { usePublishLocationStore } from './publishLocation';
+import { useSyncLocationStore } from './syncLocation';
 
 const piniaStores = {
   folder: useFolderStore,
@@ -18,6 +20,8 @@ const piniaStores = {
   contentState: useContentStateStore,
   file: useFileStore,
   content: useContentStore,
+  publishLocation: usePublishLocationStore,
+  syncLocation: useSyncLocationStore,
 };
 
 export function setItemByType(type, value) {

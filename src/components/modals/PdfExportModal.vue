@@ -30,6 +30,7 @@ import networkSvc from '../../services/networkSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import modalTemplate from './common/modalTemplate';
 import store from '../../store';
+import { useWorkspaceStore } from '../../stores/workspace';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
@@ -47,7 +48,7 @@ export default modalTemplate({
       useQueueStore().enqueue(async () => {
         const [sponsorToken, html] = await Promise.all([
           Promise.resolve().then(() => {
-            const tokenToRefresh = store.getters['workspace/sponsorToken'];
+            const tokenToRefresh = useWorkspaceStore().sponsorToken;
             return tokenToRefresh && googleHelper.refreshToken(tokenToRefresh);
           }),
           exportSvc.applyTemplate(
