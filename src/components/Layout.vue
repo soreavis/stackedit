@@ -153,9 +153,13 @@ export default {
     window.addEventListener('contextmenu', this.saveSelection);
   },
   mounted() {
+    // Layout.mounted MUST be synchronous so Toc / gutters can reach
+    // editorSvc.editorElt as soon as their own `mounted` runs. CM6
+    // preload happens in App.vue.created (before ready=true).
     const editorElt = this.$el.querySelector('.editor__inner');
     const previewElt = this.$el.querySelector('.preview__inner-2');
     const tocElt = this.$el.querySelector('.toc__inner');
+
     editorSvc.init(editorElt, previewElt, tocElt);
 
     // Focus on the editor every time reader mode is disabled
