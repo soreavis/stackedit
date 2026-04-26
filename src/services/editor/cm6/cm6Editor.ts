@@ -43,6 +43,21 @@ export {
   focusEditor,
 } from './cm6Selection';
 export type { SelectionRange } from './cm6Selection';
+export {
+  wrapSelection,
+  insertBlock,
+  insertText,
+  cm6Commands,
+  boldCommand,
+  italicCommand,
+  inlineCodeCommand,
+  highlightCommand,
+  subscriptCommand,
+  superscriptCommand,
+  strikethroughCommand,
+  horizontalRuleCommand,
+} from './cm6Commands';
+export type { Cm6Command, WrapOptions } from './cm6Commands';
 
 export interface Cm6Handle {
   view: EditorView;
