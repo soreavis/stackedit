@@ -125,10 +125,10 @@ import gitlabHelper from '../../services/providers/helpers/gitlabHelper';
 import wordpressHelper from '../../services/providers/helpers/wordpressHelper';
 import zendeskHelper from '../../services/providers/helpers/zendeskHelper';
 import publishSvc from '../../services/publishSvc';
-import store from '../../store';
 import { usePublishLocationStore } from '../../stores/publishLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
+import { useDataStore } from '../../stores/data';
 
 const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
   .filter(token => filter(token))
@@ -165,25 +165,25 @@ export default {
       return `"${useFileStore().current.name}"`;
     },
     bloggerTokens() {
-      return tokensToArray(store.getters['data/googleTokensBySub'], token => token.isBlogger);
+      return tokensToArray(useDataStore().googleTokensBySub, token => token.isBlogger);
     },
     dropboxTokens() {
-      return tokensToArray(store.getters['data/dropboxTokensBySub']);
+      return tokensToArray(useDataStore().dropboxTokensBySub);
     },
     githubTokens() {
-      return tokensToArray(store.getters['data/githubTokensBySub']);
+      return tokensToArray(useDataStore().githubTokensBySub);
     },
     gitlabTokens() {
-      return tokensToArray(store.getters['data/gitlabTokensBySub']);
+      return tokensToArray(useDataStore().gitlabTokensBySub);
     },
     googleDriveTokens() {
-      return tokensToArray(store.getters['data/googleTokensBySub'], token => token.isDrive);
+      return tokensToArray(useDataStore().googleTokensBySub, token => token.isDrive);
     },
     wordpressTokens() {
-      return tokensToArray(store.getters['data/wordpressTokensBySub']);
+      return tokensToArray(useDataStore().wordpressTokensBySub);
     },
     zendeskTokens() {
-      return tokensToArray(store.getters['data/zendeskTokensBySub']);
+      return tokensToArray(useDataStore().zendeskTokensBySub);
     },
     noToken() {
       return !this.bloggerTokens.length
@@ -214,13 +214,13 @@ export default {
     async addDropboxAccount() {
       try {
         await useModalStore().open({ type: 'dropboxAccount' });
-        await dropboxHelper.addAccount(!store.getters['data/localSettings'].dropboxRestrictedAccess);
+        await dropboxHelper.addAccount(!useDataStore().localSettings.dropboxRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async addGithubAccount() {
       try {
         await useModalStore().open({ type: 'githubAccount' });
-        await githubHelper.addAccount(store.getters['data/localSettings'].githubRepoFullAccess);
+        await githubHelper.addAccount(useDataStore().localSettings.githubRepoFullAccess);
       } catch (e) { /* cancel */ }
     },
     async addGitlabAccount() {
@@ -232,7 +232,7 @@ export default {
     async addGoogleDriveAccount() {
       try {
         await useModalStore().open({ type: 'googleDriveAccount' });
-        await googleHelper.addDriveAccount(!store.getters['data/localSettings'].googleDriveRestrictedAccess);
+        await googleHelper.addDriveAccount(!useDataStore().localSettings.googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
     async addWordpressAccount() {

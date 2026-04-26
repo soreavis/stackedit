@@ -51,7 +51,8 @@
 
 <script>
 import Vue from 'vue';
-import store from '../store';
+import { useDataStore } from '../stores/data';
+import { useLayoutStore } from '../stores/layout';
 
 const steps = [
   'welcome',
@@ -76,7 +77,7 @@ export default {
   },
   mounted() {
     this.$watch(
-      () => store.getters['layout/styles'],
+      () => useLayoutStore().styles,
       () => this.updatePositions(),
       { immediate: true },
     );
@@ -114,7 +115,7 @@ export default {
       });
     },
     finish() {
-      store.dispatch('data/patchLayoutSettings', {
+      useDataStore().patchLayoutSettings({
         welcomeTourFinished: true,
       });
     },
@@ -124,7 +125,6 @@ export default {
   },
 };
 </script>
-
 
 <style lang="scss">
 @use 'sass:color';

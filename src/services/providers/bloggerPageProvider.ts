@@ -6,12 +6,13 @@
 import store from '../../store';
 import googleHelper from './helpers/googleHelper';
 import Provider from './common/Provider';
+import { useDataStore } from '../../stores/data';
 
 export default new Provider({
   id: 'bloggerPage',
   name: 'Blogger Page',
   getToken({ sub }) {
-    const token = store.getters['data/googleTokensBySub'][sub];
+    const token = useDataStore().googleTokensBySub[sub];
     return token && token.isBlogger ? token : null;
   },
   getLocationUrl({ blogId, pageId }) {

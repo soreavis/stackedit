@@ -25,7 +25,6 @@
 import { mapActions as mapPiniaActions } from 'pinia';
 import exportSvc from '../../services/exportSvc';
 import modalTemplate from './common/modalTemplate';
-import store from '../../store';
 import { useFileStore } from '../../stores/file';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';

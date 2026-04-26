@@ -6,12 +6,13 @@
 import store from '../../store';
 import wordpressHelper from './helpers/wordpressHelper';
 import Provider from './common/Provider';
+import { useDataStore } from '../../stores/data';
 
 export default new Provider({
   id: 'wordpress',
   name: 'WordPress',
   getToken({ sub }) {
-    return store.getters['data/wordpressTokensBySub'][sub];
+    return useDataStore().wordpressTokensBySub[sub];
   },
   getLocationUrl({ siteId, postId }) {
     return `https://wordpress.com/post/${siteId}/${postId}`;

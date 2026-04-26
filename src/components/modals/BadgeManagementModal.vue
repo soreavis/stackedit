@@ -36,11 +36,11 @@
 
 <script>
 import Vue from 'vue';
-import { mapGetters } from 'vuex';
-import { mapState as mapPiniaState } from 'pinia';
+
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import { useModalStore } from '../../stores/modal';
 import ModalInner from './common/ModalInner';
-import store from '../../store';
+import { useDataStore } from '../../stores/data';
 
 export default {
   components: {
@@ -53,14 +53,14 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
-    ...mapGetters('data', [
+    ...mapPiniaState(useDataStore, [
       'badgeTree',
     ]),
     badgeCount() {
-      return store.getters['data/allBadges'].filter(badge => badge.isEarned).length;
+      return useDataStore().allBadges.filter(badge => badge.isEarned).length;
     },
     featureCount() {
-      return store.getters['data/allBadges'].length;
+      return useDataStore().allBadges.length;
     },
   },
   methods: {

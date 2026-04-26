@@ -9,12 +9,13 @@ import githubHelper from './helpers/githubHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
 import userSvc from '../userSvc';
+import { useDataStore } from '../../stores/data';
 
 export default new Provider({
   id: 'gist',
   name: 'Gist',
   getToken({ sub }) {
-    return store.getters['data/githubTokensBySub'][sub];
+    return useDataStore().githubTokensBySub[sub];
   },
   getLocationUrl({ gistId }) {
     return `https://gist.github.com/${gistId}`;

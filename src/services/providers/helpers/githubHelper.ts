@@ -8,6 +8,7 @@ import networkSvc from '../../networkSvc';
 import store from '../../../store';
 import userSvc from '../../userSvc';
 import badgeSvc from '../../badgeSvc';
+import { useDataStore } from '../../../stores/data';
 
 const getScopes = token => [token.repoFullAccess ? 'repo' : 'public_repo', 'gist'];
 
@@ -30,7 +31,7 @@ const repoRequest = (token, owner, repo, options) => request(token, {
   .then(res => res.body);
 
 const getCommitMessage = (name, path) => {
-  const message = store.getters['data/computedSettings'].git[name];
+  const message = useDataStore().computedSettings.git[name];
   return message.replace(/{{path}}/g, path);
 };
 
@@ -68,7 +69,7 @@ export default {
    * https://developer.github.com/apps/building-oauth-apps/authorization-options-for-oauth-apps/
    */
   async startOauth2(scopes, sub = null, silent = false) {
-    const clientId = store.getters['data/serverConf'].githubClientId;
+    const clientId = useDataStore().serverConf.githubClientId;
 
     // Get an OAuth2 code (PKCE-protected)
     const { code, codeVerifier } = await networkSvc.startOauth2(
@@ -121,7 +122,7 @@ export default {
     };
 
     // Add token to github tokens
-    store.dispatch('data/addGithubToken', token);
+    useDataStore().addGithubToken(token);
     return token;
   },
   async addAccount(repoFullAccess = false) {
