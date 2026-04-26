@@ -81,6 +81,7 @@ import { useContentStore } from '../stores/content';
 import { useFindReplaceStore } from '../stores/findReplace';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
+import { useDiscussionStore } from '../stores/discussion';
 
 export default {
   components: {
@@ -103,7 +104,7 @@ export default {
     ...mapPiniaState(useContentStore, [
       'revisionContent',
     ]),
-    ...mapState('discussion', [
+    ...mapPiniaState(useDiscussionStore, [
       'stickyComment',
     ]),
     ...mapPiniaState(useLayoutStore, [

@@ -29,7 +29,8 @@
 </template>
 
 <script>
-import { mapMutations, mapActions } from 'vuex';
+import { mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import workspaceSvc from '../services/workspaceSvc';
 import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
@@ -40,6 +41,7 @@ import { useFileStore } from '../stores/file';
 import { useContextMenuStore } from '../stores/contextMenu';
 import badgeSvc from '../services/badgeSvc';
 import { useDataStore } from '../stores/data';
+import { useExplorerStore } from '../stores/explorer';
 
 export default {
   name: 'explorer-node', // Required for recursivity
@@ -57,11 +59,11 @@ export default {
       return `${(this.depth + 1) * 15}px`;
     },
     isSelected() {
-      return !!store.state.explorer.selectedIds[this.node.item.id]
-        || store.getters['explorer/selectedNode'] === this.node;
+      return !!useExplorerStore().selectedIds[this.node.item.id]
+        || useExplorerStore().selectedNode === this.node;
     },
     isPrimary() {
-      return store.getters['explorer/selectedNode'] === this.node;
+      return useExplorerStore().selectedNode === this.node;
     },
     showCaret() {
       // Real clickable caret for regular folders only. Sentinels (Trash /
@@ -132,14 +134,14 @@ export default {
       return rows;
     },
     isVisible() {
-      const matchIds = store.getters['explorer/searchMatchIds'];
+      const matchIds = useExplorerStore().searchMatchIds;
       if (!matchIds) return true;
       if (this.node.isRoot) return true;
       return matchIds.has(this.node.item.id);
     },
     nameParts() {
       const name = this.node.item.name || '';
-      const q = (store.state.explorer.searchQuery || '').trim();
+      const q = (useExplorerStore().searchQuery || '').trim();
       if (!q) return [{ text: name, match: false }];
       const lowerName = name.toLowerCase();
       const lowerQ = q.toLowerCase();
@@ -159,39 +161,39 @@ export default {
       return parts;
     },
     isEditing() {
-      return store.getters['explorer/editingNode'] === this.node;
+      return useExplorerStore().editingNode === this.node;
     },
     isDragTarget() {
-      return store.getters['explorer/dragTargetNode'] === this.node;
+      return useExplorerStore().dragTargetNode === this.node;
     },
     isDragTargetFolder() {
-      return store.getters['explorer/dragTargetNodeFolder'] === this.node;
+      return useExplorerStore().dragTargetNodeFolder === this.node;
     },
     isOpen() {
       if (this.node.isRoot) return true;
       // While searching, any folder that contains a match expands automatically
       // so the user can see the match without manually drilling in.
-      const matchIds = store.getters['explorer/searchMatchIds'];
+      const matchIds = useExplorerStore().searchMatchIds;
       if (matchIds && this.node.isFolder && matchIds.has(this.node.item.id)) {
         return true;
       }
-      return !!store.state.explorer.openNodes[this.node.item.id];
+      return !!useExplorerStore().openNodes[this.node.item.id];
     },
     newChild() {
-      return store.getters['explorer/newChildNodeParent'] === this.node
-        && store.state.explorer.newChildNode;
+      return useExplorerStore().newChildNodeParent === this.node
+        && useExplorerStore().newChildNode;
     },
     newChildName: {
       get() {
-        return store.state.explorer.newChildNode.item.name;
+        return useExplorerStore().newChildNode.item.name;
       },
       set(value) {
-        store.commit('explorer/setNewItemName', value);
+        useExplorerStore().setNewItemName(value);
       },
     },
     editingNodeName: {
       get() {
-        return store.getters['explorer/editingNode'].item.name;
+        return useExplorerStore().editingNode.item.name;
       },
       set(value) {
         this.editingValue = value.trim();
@@ -199,18 +201,18 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('explorer', [
+    ...mapPiniaActions(useExplorerStore, [
       'setEditingId',
     ]),
-    ...mapActions('explorer', [
+    ...mapPiniaActions(useExplorerStore, [
       'setDragTarget',
     ]),
     select(id = this.node.item.id, doOpen = true) {
-      const node = store.getters['explorer/nodeMap'][id];
+      const node = useExplorerStore().nodeMap[id];
       if (!node) {
         return false;
       }
-      store.commit('explorer/setSelectedIds', [id]);
+      useExplorerStore().setSelectedIds([id]);
       if (doOpen) {
         // Files open in the editor. Regular folders are selected but no
         // longer toggle open on a plain click — the caret or a second
@@ -218,7 +220,7 @@ export default {
         setTimeout(() => {
           if (node.isFolder) {
             if (node.isTrash || node.isTemp || node.isRoot) {
-              store.commit('explorer/toggleOpenNode', id);
+              useExplorerStore().toggleOpenNode(id);
             }
           } else if (useFileStore().currentId !== id) {
             useFileStore().setCurrentId(id);
@@ -237,29 +239,29 @@ export default {
         return;
       }
       if (this.node.isRecent) {
-        store.commit('explorer/toggleOpenNode', id);
+        useExplorerStore().toggleOpenNode(id);
         return;
       }
       if (evt.shiftKey) {
-        const ids = this.collectRange(store.state.explorer.selectedId, id);
-        store.commit('explorer/setSelectedIds', ids);
+        const ids = this.collectRange(useExplorerStore().selectedId, id);
+        useExplorerStore().setSelectedIds(ids);
         return;
       }
       if (evt.metaKey || evt.ctrlKey) {
-        store.commit('explorer/toggleSelectedId', id);
+        useExplorerStore().toggleSelectedId(id);
         return;
       }
       // Second plain click on an already-selected regular folder toggles
       // its open/close state. First click just selects.
-      if (this.node.isFolder && store.state.explorer.selectedId === id) {
-        store.commit('explorer/toggleOpenNode', id);
+      if (this.node.isFolder && useExplorerStore().selectedId === id) {
+        useExplorerStore().toggleOpenNode(id);
         return;
       }
       this.select();
     },
     onCaretClick() {
       // Caret toggles open/close independently of selection.
-      store.commit('explorer/toggleOpenNode', this.node.item.id);
+      useExplorerStore().toggleOpenNode(this.node.item.id);
     },
     collectRange(anchorId, targetId) {
       // Use the live DOM to get visible nodes in render order.
@@ -280,11 +282,11 @@ export default {
         return;
       }
       const id = this.node.item.id;
-      const selected = store.state.explorer.selectedIds;
+      const selected = useExplorerStore().selectedIds;
       const isInMulti = !!selected[id] && Object.keys(selected).length > 1;
       const ids = isInMulti ? Object.keys(selected) : [id];
-      store.commit('explorer/setDragSourceId', id);
-      store.commit('explorer/setDragSourceIds', ids);
+      useExplorerStore().setDragSourceId(id);
+      useExplorerStore().setDragSourceIds(ids);
       // Fix for Firefox
       // See https://stackoverflow.com/a/3977637/1333165
       evt.dataTransfer.setData('Text', '');
@@ -334,10 +336,10 @@ export default {
           // Cancel
         }
       }
-      store.commit('explorer/setNewItem', null);
+      useExplorerStore().setNewItem(null);
     },
     async submitEdit(cancel) {
-      const { item, isFolder } = store.getters['explorer/editingNode'];
+      const { item, isFolder } = useExplorerStore().editingNode;
       const value = this.editingValue;
       this.setEditingId(null);
       if (!cancel && item.id && value && item.name !== value) {
@@ -353,7 +355,7 @@ export default {
       }
     },
     async onDrop(evt) {
-      const targetNode = store.getters['explorer/dragTargetNodeFolder'];
+      const targetNode = useExplorerStore().dragTargetNodeFolder;
       this.setDragTarget();
       if (targetNode.isNil) return;
 
@@ -369,8 +371,8 @@ export default {
       }
 
       // Internal drag — move one or many workspace items into the target folder.
-      const sourceIds = store.state.explorer.dragSourceIds;
-      const { nodeMap } = store.getters['explorer/nodeStructure'];
+      const sourceIds = useExplorerStore().dragSourceIds;
+      const { nodeMap } = useExplorerStore().nodeStructure;
       let folderMoved = false;
       let fileMoved = false;
       sourceIds.forEach((sourceId) => {

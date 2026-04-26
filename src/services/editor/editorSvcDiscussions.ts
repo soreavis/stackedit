@@ -1,3 +1,4 @@
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 // @ts-nocheck
 // Tangled with cleditCore (still on JS) — full typing requires porting
 // cledit core first. .ts extension applied for migration tracking; nocheck
@@ -11,6 +12,7 @@ import { useContentStore } from '../../stores/content';
 import { useContentStateStore } from '../../stores/contentState';
 import EditorClassApplier from '../../components/common/EditorClassApplier';
 import PreviewClassApplier from '../../components/common/PreviewClassApplier';
+import { useDiscussionStore } from '../../stores/discussion';
 
 // editorSvcDiscussions plugs into a discussions/markers/class-applier
 // pipeline that has very dynamic shapes — type the module-level state
@@ -31,7 +33,7 @@ let editorClassAppliers: Record<string, any> = {};
 let previewClassAppliers: Record<string, any> = {};
 
 function getDiscussionMarkers(discussion: any, discussionId: string, onMarker: (marker: any) => void) {
-  const getMarker = (offsetName) => {
+  const getMarker = (offsetName: string) => {
     const markerKey = `${discussionId}:${offsetName}`;
     let marker = discussionMarkers[markerKey];
     if (!marker) {
@@ -47,14 +49,14 @@ function getDiscussionMarkers(discussion: any, discussionId: string, onMarker: (
   getMarker('end');
 }
 
-function syncDiscussionMarkers(content, writeOffsets) {
+function syncDiscussionMarkers(content: any, writeOffsets: boolean) {
   const discussions = {
     ...content.discussions,
   };
-  const newDiscussion = store.getters['discussion/newDiscussion'];
+  const newDiscussion = useDiscussionStore().newDiscussionFromCurrent;
   if (newDiscussion) {
-    discussions[store.state.discussion.newDiscussionId] = {
-      ...newDiscussion,
+    discussions[useDiscussionStore().newDiscussionId as unknown as string] = {
+      ...(newDiscussion as object),
     };
   }
   Object.entries(discussionMarkers).forEach(([markerKey, marker]) => {
@@ -77,9 +79,8 @@ function syncDiscussionMarkers(content, writeOffsets) {
   });
 
   if (writeOffsets && newDiscussion) {
-    store.commit(
-      'discussion/patchNewDiscussion',
-      discussions[store.state.discussion.newDiscussionId],
+    useDiscussionStore().patchNewDiscussion(
+      discussions[useDiscussionStore().newDiscussionId as unknown as string],
     );
   }
 }
@@ -150,13 +151,13 @@ export default {
       useContentStore().patchCurrent(newContent);
       isChangePatch = false;
     });
-    clEditor.on('focus', () => store.commit('discussion/setNewCommentFocus', false));
+    clEditor.on('focus', () => useDiscussionStore().setNewCommentFocus(false));
   },
   initClEditorInternal(opts: any) {
     const content = useContentStore().current;
     if (content) {
       removeDiscussionMarkers(); // Markers will be recreated on contentChanged
-      const contentState = useContentStateStore().current;
+      const contentState = (useContentStateStore() as any).current;
       const options = Object.assign({
         selectionStart: contentState.selectionStart,
         selectionEnd: contentState.selectionEnd,
@@ -204,16 +205,16 @@ export default {
   },
   initHighlighters() {
     store.watch(
-      () => store.getters['discussion/newDiscussion'],
+      () => useDiscussionStore().newDiscussionFromCurrent,
       () => syncDiscussionMarkers(useContentStore().current, false),
     );
 
     store.watch(
-      () => store.getters['discussion/currentFileDiscussions'],
+      () => useDiscussionStore().currentFileDiscussions,
       (discussions: Record<string, any>) => {
         const classGetter = (type: string, discussionId: string) => () => {
           const classes = [`discussion-${type}-highlighting--${discussionId}`, `discussion-${type}-highlighting`];
-          if (store.state.discussion.currentDiscussionId === discussionId) {
+          if (useDiscussionStore().currentDiscussionId === discussionId) {
             classes.push(`discussion-${type}-highlighting--selected`);
           }
           return classes;
