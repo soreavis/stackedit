@@ -91,6 +91,15 @@ export {
   table10x4Command,
 } from './cm6Commands';
 export type { Cm6Command, WrapOptions, CalloutType } from './cm6Commands';
+export {
+  createCm6ClEditorBridge,
+  Cm6Marker,
+  cm6CleditCompat,
+} from './cm6ClEditorBridge';
+export type {
+  Cm6ClEditorBridge,
+  BridgeInitOptions,
+} from './cm6ClEditorBridge';
 
 export interface Cm6Handle {
   view: EditorView;
