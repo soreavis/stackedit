@@ -1,23 +1,21 @@
-// @ts-nocheck
-// Utility module with dynamic-shape inputs (yaml properties, diff
-// tuples, marker offset maps). Full typing requires defining shared
-// content/discussion shapes — out of scope for this incremental
-// migration.
+// Heterogeneous helper bag (yaml, marker offsets, hashing). Typed
+// loosely with `any` at boundaries — full shapes would require shared
+// content/discussion types out of scope for this pass.
 import yaml from 'js-yaml';
 import presets from '../data/presets';
 import constants from '../data/constants';
 
 // For utils.uid()
 const uidLength = 16;
-const crypto = window.crypto || window.msCrypto;
-const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const crypto: Crypto = (window as any).crypto || (window as any).msCrypto;
+const alphabet: string[] = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const radix = alphabet.length;
 const array = new Uint32Array(uidLength);
 
 // For utils.parseQueryParams()
-const parseQueryParams = (params) => {
-  const result = {};
-  params.split('&').forEach((param) => {
+const parseQueryParams = (params: string): any => {
+  const result: any = {};
+  params.split('&').forEach((param: string) => {
     const [key, value] = param.split('=').map(decodeURIComponent);
     if (key && value != null) {
       result[key] = value;
@@ -27,8 +25,8 @@ const parseQueryParams = (params) => {
 };
 
 // For utils.setQueryParams()
-const filterParams = (params = {}) => {
-  const result = {};
+const filterParams = (params: any = {}): any => {
+  const result: any = {};
   Object.entries(params).forEach(([key, value]) => {
     if (key && value != null) {
       result[key] = value;
@@ -38,7 +36,7 @@ const filterParams = (params = {}) => {
 };
 
 // For utils.computeProperties()
-const deepOverride = (obj, opt) => {
+const deepOverride = (obj: any, opt: any): any => {
   if (obj === undefined) {
     return opt;
   }
@@ -53,7 +51,7 @@ const deepOverride = (obj, opt) => {
   Object.keys({
     ...obj,
     ...opt,
-  }).forEach((key) => {
+  }).forEach((key: string) => {
     obj[key] = deepOverride(obj[key], opt[key]);
   });
   return obj;
@@ -62,7 +60,7 @@ const deepOverride = (obj, opt) => {
 // For utils.addQueryParams()
 const urlParser = document.createElement('a');
 
-const deepCopy = (obj) => {
+const deepCopy = (obj: any): any => {
   if (obj == null) {
     return obj;
   }
@@ -70,59 +68,59 @@ const deepCopy = (obj) => {
 };
 
 // Compute presets
-const computedPresets = {};
-Object.keys(presets).forEach((key) => {
-  let preset = deepCopy(presets[key][0]);
-  if (presets[key][1]) {
-    preset = deepOverride(preset, presets[key][1]);
+const computedPresets: any = {};
+Object.keys(presets).forEach((key: string) => {
+  let preset = deepCopy((presets as any)[key][0]);
+  if ((presets as any)[key][1]) {
+    preset = deepOverride(preset, (presets as any)[key][1]);
   }
   computedPresets[key] = preset;
 });
 
 export default {
   computedPresets,
-  queryParams: parseQueryParams(window.location.hash.slice(1)),
-  setQueryParams(params = {}) {
+  queryParams: parseQueryParams(window.location.hash.slice(1)) as any,
+  setQueryParams(params: any = {}): void {
     this.queryParams = filterParams(params);
     const serializedParams = Object.entries(this.queryParams).map(([key, value]) =>
-      `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+      `${encodeURIComponent(key)}=${encodeURIComponent(value as any)}`).join('&');
     const hash = `#${serializedParams}`;
     if (window.location.hash !== hash) {
       window.location.replace(hash);
     }
   },
-  sanitizeText(text) {
-    const result = `${text || ''}`.slice(0, constants.textMaxLength);
+  sanitizeText(text: any): string {
+    const result = `${text || ''}`.slice(0, (constants as any).textMaxLength);
     // last char must be a `\n`.
     return `${result}\n`.replace(/\n\n$/, '\n');
   },
-  sanitizeName(name) {
+  sanitizeName(name: any): string {
     return `${name || ''}`
       // Keep only 250 characters
-      .slice(0, 250) || constants.defaultName;
+      .slice(0, 250) || (constants as any).defaultName;
   },
-  sanitizeFilename(name) {
+  sanitizeFilename(name: any): string {
     return this.sanitizeName(`${name || ''}`
       // Replace `/`, control characters and other kind of spaces with a space
       .replace(/[/\x00-\x1F\x7f-\xa0\s]+/g, ' ') // eslint-disable-line no-control-regex
-      .trim()) || constants.defaultName;
+      .trim()) || (constants as any).defaultName;
   },
   deepCopy,
-  serializeObject(obj) {
-    return obj === undefined ? obj : JSON.stringify(obj, (key, value) => {
+  serializeObject(obj: any): any {
+    return obj === undefined ? obj : JSON.stringify(obj, (key: string, value: any) => {
       if (Object.prototype.toString.call(value) !== '[object Object]') {
         return value;
       }
       // Sort keys to have a predictable result
-      return Object.keys(value).sort().reduce((sorted, valueKey) => {
+      return Object.keys(value).sort().reduce((sorted: any, valueKey: string) => {
         sorted[valueKey] = value[valueKey];
         return sorted;
       }, {});
     });
   },
-  search(items, criteria) {
-    let result;
-    items.some((item) => {
+  search(items: any[], criteria: any): any {
+    let result: any;
+    items.some((item: any) => {
       // If every field fits the criteria
       if (Object.entries(criteria).every(([key, value]) => value === item[key])) {
         result = item;
@@ -131,25 +129,25 @@ export default {
     });
     return result;
   },
-  uid() {
+  uid(): string {
     crypto.getRandomValues(array);
     // Note: Uint32Array.map returns a Uint32Array, which would coerce
     // the string callback result back to 0. Array.from produces a
     // regular string[].
-    return Array.from(array, value => alphabet[value % radix]).join('');
+    return Array.from(array, (value: number) => alphabet[value % radix]).join('');
   },
-  hash(str) {
+  hash(str: any): number {
     // https://stackoverflow.com/a/7616484/1333165
     let hash = 0;
     if (!str) return hash;
     for (let i = 0; i < str.length; i += 1) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;  
-      hash |= 0;  
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
     }
     return hash;
   },
-  getItemHash(item) {
+  getItemHash(item: any): number {
     return this.hash(this.serializeObject({
       ...item,
       // These properties must not be part of the hash
@@ -158,27 +156,27 @@ export default {
       history: undefined,
     }));
   },
-  addItemHash(item) {
+  addItemHash(item: any): any {
     return {
       ...item,
       hash: this.getItemHash(item),
     };
   },
-  makeWorkspaceId(params) {
+  makeWorkspaceId(params: any): string {
     return Math.abs(this.hash(this.serializeObject(params))).toString(36);
   },
-  getDbName(workspaceId) {
+  getDbName(workspaceId: string): string {
     let dbName = 'stackedit-db';
     if (workspaceId !== 'main') {
       dbName += `-${workspaceId}`;
     }
     return dbName;
   },
-  encodeBase64(str, urlSafe = false) {
+  encodeBase64(str: string, urlSafe: boolean = false): string {
     const uriEncodedStr = encodeURIComponent(str);
     const utf8Str = uriEncodedStr.replace(
       /%([0-9A-F]{2})/g,
-      (match, p1) => String.fromCharCode(`0x${p1}`),
+      (match: string, p1: string) => String.fromCharCode(`0x${p1}` as any),
     );
     const result = btoa(utf8Str);
     if (!urlSafe) {
@@ -189,18 +187,18 @@ export default {
       .replace(/\+/g, '-') // Replace `+` with `-`
       .replace(/=+$/, ''); // Remove trailing `=`
   },
-  decodeBase64(str) {
+  decodeBase64(str: string): string {
     // In case of URL safe base64
     const sanitizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
     const utf8Str = atob(sanitizedStr);
     const uriEncodedStr = utf8Str
       .split('')
-      .map(c => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
+      .map((c: string) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
       .join('');
     return decodeURIComponent(uriEncodedStr);
   },
-  computeProperties(yamlProperties) {
-    let properties = {};
+  computeProperties(yamlProperties: any): any {
+    let properties: any = {};
     try {
       properties = yaml.load(yamlProperties) || {};
     } catch (e) {
@@ -213,16 +211,16 @@ export default {
     properties.extensions = computedExtensions;
     return properties;
   },
-  randomize(value) {
+  randomize(value: number): number {
     return Math.floor((1 + (Math.random() * 0.2)) * value);
   },
-  setInterval(func, interval) {
+  setInterval(func: () => any, interval: number): any {
     return setInterval(() => func(), this.randomize(interval));
   },
-  async awaitSequence(values, asyncFunc) {
-    const results = [];
+  async awaitSequence(values: any[], asyncFunc: (val: any) => Promise<any>): Promise<any[]> {
+    const results: any[] = [];
     const valuesLeft = values.slice().reverse();
-    const runWithNextValue = async () => {
+    const runWithNextValue = async (): Promise<any[]> => {
       if (!valuesLeft.length) {
         return results;
       }
@@ -231,28 +229,28 @@ export default {
     };
     return runWithNextValue();
   },
-  async awaitSome(asyncFunc) {
+  async awaitSome(asyncFunc: () => Promise<any>): Promise<any> {
     if (await asyncFunc()) {
       return this.awaitSome(asyncFunc);
     }
     return null;
   },
-  someResult(values, func) {
-    let result;
-    values.some((value) => {
+  someResult(values: any[], func: (val: any) => any): any {
+    let result: any;
+    values.some((value: any) => {
       result = func(value);
       return result;
     });
     return result;
   },
   parseQueryParams,
-  addQueryParams(url = '', params = {}, hash = false) {
-    const keys = Object.keys(params).filter(key => params[key] != null);
+  addQueryParams(url: string = '', params: any = {}, hash: boolean = false): string {
+    const keys = Object.keys(params).filter((key: string) => params[key] != null);
     urlParser.href = url;
     if (!keys.length) {
       return urlParser.href;
     }
-    const serializedParams = keys.map(key =>
+    const serializedParams = keys.map((key: string) =>
       `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&');
     if (hash) {
       if (urlParser.hash) {
@@ -271,7 +269,7 @@ export default {
     }
     return urlParser.href;
   },
-  resolveUrl(baseUrl, path) {
+  resolveUrl(baseUrl: string, path: string): string {
     const oldBaseElt = document.getElementsByTagName('base')[0];
     const oldHref = oldBaseElt && oldBaseElt.href;
     const newBaseElt = oldBaseElt || document.head.appendChild(document.createElement('base'));
@@ -285,25 +283,25 @@ export default {
     }
     return result;
   },
-  getHostname(url) {
+  getHostname(url: string): string {
     urlParser.href = url;
     return urlParser.hostname;
   },
-  encodeUrlPath(path) {
+  encodeUrlPath(path: string): string {
     return path ? path.split('/').map(encodeURIComponent).join('/') : '';
   },
-  parseGithubRepoUrl(url) {
+  parseGithubRepoUrl(url: any): any {
     const parsedRepo = url && url.match(/([^/:]+)\/([^/]+?)(?:\.git|\/)?$/);
     return parsedRepo && {
       owner: parsedRepo[1],
       repo: parsedRepo[2],
     };
   },
-  parseGitlabProjectPath(url) {
+  parseGitlabProjectPath(url: any): any {
     const parsedProject = url && url.match(/^https:\/\/[^/]+\/(.+?)(?:\.git|\/)?$/);
     return parsedProject && parsedProject[1];
   },
-  createHiddenIframe(url) {
+  createHiddenIframe(url: string): HTMLIFrameElement {
     const iframeElt = document.createElement('iframe');
     iframeElt.style.position = 'absolute';
     iframeElt.style.left = '-99px';
@@ -312,7 +310,7 @@ export default {
     iframeElt.src = url;
     return iframeElt;
   },
-  wrapRange(range, eltProperties) {
+  wrapRange(range: any, eltProperties: any): void {
     const rangeLength = `${range}`.length;
     let wrappedLength = 0;
     const treeWalker = document
@@ -323,22 +321,22 @@ export default {
       do {
         if (treeWalker.currentNode.nodeValue !== '\n') {
           if (treeWalker.currentNode === range.endContainer &&
-            range.endOffset < treeWalker.currentNode.nodeValue.length
+            range.endOffset < (treeWalker.currentNode.nodeValue as string).length
           ) {
-            treeWalker.currentNode.splitText(range.endOffset);
+            (treeWalker.currentNode as Text).splitText(range.endOffset);
           }
           if (startOffset) {
-            treeWalker.currentNode = treeWalker.currentNode.splitText(startOffset);
+            treeWalker.currentNode = (treeWalker.currentNode as Text).splitText(startOffset);
             startOffset = 0;
           }
-          const elt = document.createElement('span');
+          const elt: any = document.createElement('span');
           Object.entries(eltProperties).forEach(([key, value]) => {
             elt[key] = value;
           });
-          treeWalker.currentNode.parentNode.insertBefore(elt, treeWalker.currentNode);
+          (treeWalker.currentNode.parentNode as Node).insertBefore(elt, treeWalker.currentNode);
           elt.appendChild(treeWalker.currentNode);
         }
-        wrappedLength += treeWalker.currentNode.nodeValue.length;
+        wrappedLength += (treeWalker.currentNode.nodeValue as string).length;
         if (wrappedLength >= rangeLength) {
           break;
         }
@@ -346,8 +344,8 @@ export default {
       while (treeWalker.nextNode());
     }
   },
-  unwrapRange(eltCollection) {
-    Array.prototype.slice.call(eltCollection).forEach((elt) => {
+  unwrapRange(eltCollection: any): void {
+    Array.prototype.slice.call(eltCollection).forEach((elt: any) => {
       // Loop in case another wrapper has been added inside
       for (let child = elt.firstChild; child; child = elt.firstChild) {
         if (child.nodeType === 3) {
