@@ -1,8 +1,7 @@
 // @ts-nocheck
-// Optional editor service — keyboard / scroll-sync / shortcuts / task-change
-// glue. Tightly coupled to editorSvc + cledit dynamic surfaces. .ts rename
-// is for migration tracking; full typing comes after editorSvc/cledit are
-// properly typed.
+// Optional editor service — scroll-sync glue. animationSvc's fluent
+// chain API + the dimension descriptors carry too many dynamic shapes
+// to type cleanly without refactoring upstream. Tracked as a follow-up.
 import { watch } from 'vue';
 import { useFileStore } from '../../stores/file';
 import animationSvc from '../animationSvc';
