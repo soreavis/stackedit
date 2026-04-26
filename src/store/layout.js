@@ -1,5 +1,6 @@
 import pagedownButtons from '../data/pagedownButtons';
 import { useFileStore } from '../stores/file';
+import { useContentStore } from '../stores/content';
 
 let buttonCount = 2; // 2 for undo/redo
 let spacerCount = 0;
@@ -37,7 +38,7 @@ const constants = {
 function computeStyles(state, getters, layoutSettings = getters['data/layoutSettings'], styles = {
   showNavigationBar: layoutSettings.showNavigationBar
     || !layoutSettings.showEditor
-    || state.content.revisionContent
+    || useContentStore().revisionContent
     || state.light,
   showStatusBar: layoutSettings.showStatusBar,
   showEditor: layoutSettings.showEditor,

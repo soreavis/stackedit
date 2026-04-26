@@ -1,4 +1,5 @@
 import store from '../store';
+import { useContentStore } from '../stores/content';
 import workspaceSvc from './workspaceSvc';
 
 // Tracks just-created files whose content still matches the initial
@@ -7,7 +8,8 @@ import workspaceSvc from './workspaceSvc';
 const initialTextById = new Map<string, string>();
 
 function currentText(fileId: string): string {
-  const content = store.state.content.itemsById[`${fileId}/content`];
+  const itemsById = useContentStore().itemsById as Record<string, { text?: string }>;
+  const content = itemsById[`${fileId}/content`];
   return (content && content.text) || '';
 }
 

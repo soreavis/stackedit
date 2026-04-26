@@ -6,6 +6,7 @@
 // this incremental migration.
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useFolderStore } from '../stores/folder';
@@ -213,7 +214,7 @@ const createSyncLocation = (syncLocation) => {
   const fileId = currentFile.id;
   syncLocation.fileId = fileId;
   // Use deepCopy to freeze the item
-  const content = utils.deepCopy(store.getters['content/current']);
+  const content = utils.deepCopy(useContentStore().current);
   useQueueStore().enqueue(
     async () => {
       const provider = providerRegistry.providersById[syncLocation.providerId];
@@ -260,7 +261,7 @@ const isTempFile = (fileId) => {
     return false;
   }
   const file = useFileStore().itemsById[fileId];
-  const content = store.state.content.itemsById[contentId];
+  const content = useContentStore().itemsById[contentId];
   if (!file || !content) {
     return false;
   }
@@ -405,7 +406,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
 
         // Merge content
         let mergedContent;
-        const clientContent = utils.deepCopy(store.state.content.itemsById[contentId]);
+        const clientContent = utils.deepCopy(useContentStore().itemsById[contentId]);
         if (!clientContent) {
           mergedContent = utils.deepCopy(serverContent || null);
         } else if (!serverContent // If sync location has not been created yet
@@ -441,7 +442,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
         }
 
         // Update or set content in store
-        store.commit('content/setItem', {
+        useContentStore().setItem({
           id: contentId,
           text: utils.sanitizeText(mergedContent.text),
           properties: utils.sanitizeText(mergedContent.properties),
@@ -450,7 +451,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
         });
 
         // Retrieve content with its new hash value and freeze it
-        mergedContent = utils.deepCopy(store.state.content.itemsById[contentId]);
+        mergedContent = utils.deepCopy(useContentStore().itemsById[contentId]);
 
         // Make merged content history
         const mergedContentHistory = serverContent ? serverContent.history.slice() : [];
@@ -782,7 +783,7 @@ const syncWorkspace = async (skipContents = false) => {
         ];
 
         // Find the first content out of sync
-        const contentMap = store.state.content.itemsById;
+        const contentMap = useContentStore().itemsById;
         const fileIdToSync = utils.someResult(ids, ([fileId, contentId]) => {
           // Get the content hash from itemsById or from localDbSvc if not loaded
           const loadedContent = contentMap[contentId];

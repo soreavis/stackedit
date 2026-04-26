@@ -2,6 +2,7 @@ import utils from '../services/utils';
 import googleHelper from '../services/providers/helpers/googleHelper';
 import syncSvc from '../services/syncSvc';
 import { useModalStore } from '../stores/modal';
+import { useContentStore } from '../stores/content';
 
 const idShifter = offset => (state, getters) => {
   const ids = Object.keys(getters.currentFileDiscussions)
@@ -64,7 +65,7 @@ export default {
     newDiscussion: ({ currentDiscussionId, newDiscussionId, newDiscussion }) =>
       currentDiscussionId === newDiscussionId && newDiscussion,
     currentFileDiscussionLastComments: (state, getters, rootState, rootGetters) => {
-      const { discussions, comments } = rootGetters['content/current'];
+      const { discussions, comments } = useContentStore().current;
       const discussionLastComments = {};
       Object.entries(comments).forEach(([, comment]) => {
         if (discussions[comment.discussionId]) {
@@ -86,7 +87,7 @@ export default {
       if (newDiscussion) {
         currentFileDiscussions[newDiscussionId] = newDiscussion;
       }
-      const { discussions } = rootGetters['content/current'];
+      const { discussions } = useContentStore().current;
       Object.entries(currentFileDiscussionLastComments)
         .sort(([, lastComment1], [, lastComment2]) =>
           lastComment1.created - lastComment2.created)
@@ -107,7 +108,7 @@ export default {
     ) => {
       const comments = {};
       if (currentDiscussion) {
-        const contentComments = rootGetters['content/current'].comments;
+        const contentComments = useContentStore().current.comments;
         Object.entries(contentComments)
           .filter(([, comment]) =>
             comment.discussionId === currentDiscussionId)
@@ -143,7 +144,7 @@ export default {
           await dispatch('createNewDiscussion', selection);
         } catch (e) { /* cancel */ }
       } else if (selection) {
-        let text = rootGetters['content/current'].text.slice(selection.start, selection.end).trim();
+        let text = useContentStore().current.text.slice(selection.start, selection.end).trim();
         const maxLength = 80;
         if (text.length > maxLength) {
           text = `${text.slice(0, maxLength - 1).trim()}…`;
@@ -157,8 +158,8 @@ export default {
       commit,
       dispatch,
     }, { filterComment, filterDiscussion } = {}) {
-      const { discussions } = rootGetters['content/current'];
-      const { comments } = rootGetters['content/current'];
+      const { discussions } = useContentStore().current;
+      const { comments } = useContentStore().current;
       const patch = {
         discussions: {},
         comments: {},
@@ -172,7 +173,7 @@ export default {
       });
 
       const { nextDiscussionId } = getters;
-      dispatch('content/patchCurrent', patch, { root: true });
+      useContentStore().patchCurrent(patch);
       if (!getters.currentDiscussion) {
         // Keep the gutter open
         commit('setCurrentDiscussionId', nextDiscussionId);

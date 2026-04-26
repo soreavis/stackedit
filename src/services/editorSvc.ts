@@ -18,6 +18,7 @@ import editorSvcDiscussions from './editor/editorSvcDiscussions';
 import editorSvcUtils from './editor/editorSvcUtils';
 import utils from './utils';
 import store from '../store';
+import { useContentStore } from '../stores/content';
 import { useContentStateStore } from '../stores/contentState';
 import { useModalStore } from '../stores/modal';
 
@@ -546,9 +547,9 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     let lastContentId = null;
     let lastProperties;
     store.watch(
-      () => store.getters['content/currentChangeTrigger'],
+      () => useContentStore().currentChangeTrigger,
       () => {
-        const content = store.getters['content/current'];
+        const content = useContentStore().current;
         // Track ID changes
         let initClEditor = false;
         if (content.id !== lastContentId) {
@@ -559,7 +560,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
         // Track properties changes
         if (content.properties !== lastProperties) {
           lastProperties = content.properties;
-          const options = extensionSvc.getOptions(store.getters['content/currentProperties']);
+          const options = extensionSvc.getOptions(useContentStore().currentProperties);
           if (utils.serializeObject(options) !== utils.serializeObject(this.options)) {
             this.options = options;
             this.initPrism();
@@ -579,7 +580,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
 
     // Disable editor if hidden or if no content is loaded
     store.watch(
-      () => store.getters['content/isCurrentEditable'],
+      () => useContentStore().isCurrentEditable,
       editable => this.clEditor.toggleEditable(!!editable), {
         immediate: true,
       },
