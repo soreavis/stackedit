@@ -29,13 +29,13 @@ import exportSvc from '../../services/exportSvc';
 import networkSvc from '../../services/networkSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import modalTemplate from './common/modalTemplate';
-import store from '../../store';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
+import { useDataStore } from '../../stores/data';
 
 export default modalTemplate({
   computedLocalSettings: {
@@ -64,7 +64,7 @@ export default modalTemplate({
             url: 'pdfExport',
             params: {
               idToken: sponsorToken && sponsorToken.idToken,
-              options: JSON.stringify(store.getters['data/computedSettings'].wkhtmltopdf),
+              options: JSON.stringify(useDataStore().computedSettings.wkhtmltopdf),
             },
             body: html,
             blob: true,

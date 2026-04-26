@@ -5,6 +5,7 @@ import { useFolderStore } from '../stores/folder';
 import { useFileStore } from '../stores/file';
 import { useSyncLocationStore } from '../stores/syncLocation';
 import { usePublishLocationStore } from '../stores/publishLocation';
+import { useDataStore } from '../stores/data';
 
 const setter = propertyName => (state, value) => {
   state[propertyName] = value;
@@ -149,7 +150,7 @@ export default {
     },
   },
   getters: {
-    nodeStructure: (state, getters, rootState, rootGetters) => {
+    nodeStructure: (state) => {
       const rootNode = new Node(emptyFolder(), [], true);
       rootNode.isRoot = true;
 
@@ -206,11 +207,11 @@ export default {
       });
 
       // Sort honoring user's mode + pinned folders.
-      const localSettings = rootGetters['data/localSettings'] || {};
+      const localSettings = useDataStore().localSettings || {};
       const sortMode = localSettings.explorerSort || 'name';
       const pinnedFolderIds = localSettings.pinnedFolderIds || {};
-      const lastOpened = rootGetters['data/lastOpened'] || {};
-      const lastCreated = rootGetters['data/lastCreated'] || {};
+      const lastOpened = useDataStore().lastOpened || {};
+      const lastCreated = useDataStore().lastCreated || {};
       const comparator = makeComparator(sortMode, lastOpened, lastCreated, pinnedFolderIds);
       rootNode.sortChildren(comparator);
 

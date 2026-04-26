@@ -12,12 +12,13 @@ import Provider from './common/Provider';
 import utils from '../utils';
 import workspaceSvc from '../workspaceSvc';
 import { useQueueStore } from '../../stores/queue';
+import { useDataStore } from '../../stores/data';
 
 export default new Provider({
   id: 'googleDrive',
   name: 'Google Drive',
   getToken({ sub }) {
-    const token = store.getters['data/googleTokensBySub'][sub];
+    const token = useDataStore().googleTokensBySub[sub];
     return token && token.isDrive ? token : null;
   },
   getLocationUrl({ driveFileId }) {
@@ -30,12 +31,12 @@ export default new Provider({
     const state = googleHelper.driveState || {};
     if (state.userId) {
       // Try to find the token corresponding to the user ID
-      let token = store.getters['data/googleTokensBySub'][state.userId];
+      let token = useDataStore().googleTokensBySub[state.userId];
       // If not found or not enough permission, popup an OAuth2 window
       if (!token || !token.isDrive) {
         await useModalStore().open({ type: 'googleDriveAccount' });
         token = await googleHelper.addDriveAccount(
-          !store.getters['data/localSettings'].googleDriveRestrictedAccess,
+          !useDataStore().localSettings.googleDriveRestrictedAccess,
           state.userId,
         );
       }
@@ -92,7 +93,7 @@ export default new Provider({
   },
   async performAction() {
     const state = googleHelper.driveState || {};
-    const token = store.getters['data/googleTokensBySub'][state.userId];
+    const token = useDataStore().googleTokensBySub[state.userId];
     switch (token && state.action) {
       case 'create': {
         const file = await workspaceSvc.createFile({}, true);

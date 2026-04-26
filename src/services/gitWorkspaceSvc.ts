@@ -1,6 +1,7 @@
 import store from '../store';
 import { useWorkspaceStore } from '../stores/workspace';
 import utils from '../services/utils';
+import { useDataStore } from '../stores/data';
 
 interface TreeEntry {
   type: string;
@@ -73,7 +74,7 @@ export default {
     // Collect changes
     const changes: Change[] = [];
     const idsByPath: Record<string, string> = {};
-    const syncDataByPath: Record<string, SyncDataLike> = store.getters['data/syncDataById'];
+    const syncDataByPath: Record<string, SyncDataLike> = useDataStore().syncDataById;
     const { itemIdsByGitPath }: { itemIdsByGitPath: Record<string, string> } = store.getters;
     const getIdFromPath = (path: string, isFile = false): string => {
       let itemId = idsByPath[path];
@@ -178,7 +179,7 @@ export default {
     });
 
     // Data creations/updates
-    const syncDataByItemId: Record<string, SyncDataLike> = store.getters['data/syncDataByItemId'];
+    const syncDataByItemId: Record<string, SyncDataLike> = useDataStore().syncDataByItemId as Record<string, SyncDataLike>;
     Object.keys(treeDataMap).forEach((path) => {
       // Only template data are stored
       const [, id] = path.match(/^\.stackedit-data\/(templates)\.json$/) || [];

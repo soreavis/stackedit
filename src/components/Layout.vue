@@ -59,8 +59,8 @@
 </template>
 
 <script>
-import { mapState, mapGetters, mapActions } from 'vuex';
-import { mapState as mapPiniaState } from 'pinia';
+import { mapState, mapActions } from 'vuex';
+import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import NavigationBar from './NavigationBar';
 import ButtonBar from './ButtonBar';
 import StatusBar from './StatusBar';
@@ -76,10 +76,11 @@ import editorSvc from '../services/editorSvc';
 import markdownConversionSvc from '../services/markdownConversionSvc';
 import workspaceSvc from '../services/workspaceSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
-import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useContentStore } from '../stores/content';
 import { useFindReplaceStore } from '../stores/findReplace';
+import { useDataStore } from '../stores/data';
+import { useLayoutStore } from '../stores/layout';
 
 export default {
   components: {
@@ -105,11 +106,11 @@ export default {
     ...mapState('discussion', [
       'stickyComment',
     ]),
-    ...mapGetters('layout', [
+    ...mapPiniaState(useLayoutStore, [
       'constants',
       'styles',
     ]),
-    ...mapGetters('data', [
+    ...mapPiniaState(useDataStore, [
       'layoutSettings',
     ]),
     showFindReplace() {
@@ -125,7 +126,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('layout', [
+    ...mapPiniaActions(useLayoutStore, [
       'updateBodySize',
     ]),
     saveSelection: () => editorSvc.saveSelection(true),

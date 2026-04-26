@@ -12,6 +12,7 @@ import utils from '../utils';
 import userSvc from '../userSvc';
 import gitWorkspaceSvc from '../gitWorkspaceSvc';
 import badgeSvc from '../badgeSvc';
+import { useDataStore } from '../../stores/data';
 
 const getAbsolutePath = ({ id }) =>
   `${useWorkspaceStore().currentWorkspace.path || ''}${id}`;
@@ -80,7 +81,7 @@ export default new Provider({
 
     // See if we already have a token
     const sub = workspace ? workspace.sub : utils.queryParams.sub;
-    let token = store.getters['data/gitlabTokensBySub'][sub];
+    let token = useDataStore().gitlabTokensBySub[sub];
     if (!token) {
       const { applicationId } = await useModalStore().open({
         type: 'gitlabAccount',

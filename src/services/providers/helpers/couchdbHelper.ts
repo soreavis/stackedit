@@ -8,10 +8,11 @@ import utils from '../../utils';
 import store from '../../../store';
 import { useModalStore } from '../../../stores/modal';
 import userSvc from '../../userSvc';
+import { useDataStore } from '../../../stores/data';
 
 const request = async (token, options = {}) => {
   const baseUrl = `${token.dbUrl}/`;
-  const getLastToken = () => store.getters['data/couchdbTokensBySub'][token.sub];
+  const getLastToken = () => useDataStore().couchdbTokensBySub[token.sub];
 
   const assertUnauthorized = (err) => {
     if (err.status !== 401) {

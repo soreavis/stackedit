@@ -35,9 +35,9 @@
 import { mapState } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import cledit from '../services/editor/cledit';
-import store from '../store';
 import { useFindReplaceStore } from '../stores/findReplace';
 import EditorClassApplier from './common/EditorClassApplier';
+import { useDataStore } from '../stores/data';
 
 const accessor = (fieldName, setterName) => ({
   get() {
@@ -50,10 +50,10 @@ const accessor = (fieldName, setterName) => ({
 
 const computedLayoutSetting = key => ({
   get() {
-    return store.getters['data/layoutSettings'][key];
+    return useDataStore().layoutSettings[key];
   },
   set(value) {
-    store.dispatch('data/patchLayoutSettings', {
+    useDataStore().patchLayoutSettings({
       [key]: value,
     });
   },

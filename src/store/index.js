@@ -2,10 +2,8 @@ import createLogger from 'vuex/dist/logger';
 import Vue from 'vue';
 import Vuex from 'vuex';
 import utils from '../services/utils';
-import data from './data';
 import discussion from './discussion';
 import explorer from './explorer';
-import layout from './layout';
 import { useNotificationStore } from '../stores/notification';
 import { useFolderStore } from '../stores/folder';
 import { useSyncedContentStore } from '../stores/syncedContent';
@@ -15,6 +13,7 @@ import { useContentStore } from '../stores/content';
 import { usePublishLocationStore } from '../stores/publishLocation';
 import { useSyncLocationStore } from '../stores/syncLocation';
 import { useWorkspaceStore } from '../stores/workspace';
+import { useDataStore } from '../stores/data';
 import constants from '../data/constants';
 
 Vue.use(Vuex);
@@ -23,10 +22,8 @@ const debug = NODE_ENV !== 'production';
 
 const store = new Vuex.Store({
   modules: {
-    data,
     discussion,
     explorer,
-    layout,
   },
   state: {
     light: false,
@@ -152,11 +149,11 @@ const store = new Vuex.Store({
       });
       return result;
     },
-    isSponsor: ({ light }, getters) => {
+    isSponsor: ({ light }) => {
       if (light) {
         return true;
       }
-      if (!getters['data/serverConf'].allowSponsorship) {
+      if (!useDataStore().serverConf.allowSponsorship) {
         return true;
       }
       const sponsorToken = useWorkspaceStore().sponsorToken;
