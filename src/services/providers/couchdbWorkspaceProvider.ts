@@ -1,8 +1,5 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for CouchDB workspace sync. Method params +
+// response payloads kept loose (`any`) — vendor APIs return dynamic shapes.
 import { useWorkspaceStore } from '../../stores/workspace';
 import couchdbHelper from './helpers/couchdbHelper';
 import Provider from './common/Provider';
@@ -10,34 +7,35 @@ import utils from '../utils';
 import badgeSvc from '../badgeSvc';
 import { useDataStore } from '../../stores/data';
 
-let syncLastSeq;
+let syncLastSeq: any;
 
 export default new Provider({
   id: 'couchdbWorkspace',
   name: 'CouchDB',
-  getToken() {
+  getToken(): any {
     return useWorkspaceStore().syncToken;
   },
-  getWorkspaceParams({ dbUrl }) {
+  getWorkspaceParams({ dbUrl }: any): any {
     return {
-      providerId: this.id,
+      providerId: (this as any).id,
       dbUrl,
     };
   },
-  getWorkspaceLocationUrl({ dbUrl }) {
+  getWorkspaceLocationUrl({ dbUrl }: any): string {
     return dbUrl;
   },
-  getSyncDataUrl(fileSyncData, { id }) {
-    const { dbUrl } = this.getToken();
+  getSyncDataUrl(fileSyncData: any, { id }: any): string {
+    const { dbUrl } = (this as any).getToken();
     return `${dbUrl}/${id}/data`;
   },
-  getSyncDataDescription(fileSyncData, { id }) {
+  getSyncDataDescription(fileSyncData: any, { id }: any): string {
     return id;
   },
-  async initWorkspace() {
-    const dbUrl = (utils.queryParams.dbUrl || '').replace(/\/?$/, ''); // Remove trailing /
-    const workspaceParams = this.getWorkspaceParams({ dbUrl });
-    const workspaceId = utils.makeWorkspaceId(workspaceParams);
+  async initWorkspace(): Promise<any> {
+    const self = this as any;
+    const dbUrl = ((utils as any).queryParams.dbUrl || '').replace(/\/?$/, ''); // Remove trailing /
+    const workspaceParams: any = self.getWorkspaceParams({ dbUrl });
+    const workspaceId = (utils as any).makeWorkspaceId(workspaceParams);
 
     // Create the token if it doesn't exist
     if (!useDataStore().couchdbTokensBySub[workspaceId]) {
@@ -51,12 +49,12 @@ export default new Provider({
     if (!useWorkspaceStore().workspacesById[workspaceId]) {
       try {
         // Make sure the database exists and retrieve its name
-        const db = await couchdbHelper.getDb(useDataStore().couchdbTokensBySub[workspaceId]);
+        const db = await (couchdbHelper as any).getDb(useDataStore().couchdbTokensBySub[workspaceId]);
         useWorkspaceStore().patchWorkspacesById({
           [workspaceId]: {
             id: workspaceId,
             name: db.db_name,
-            providerId: this.id,
+            providerId: self.id,
             dbUrl,
           },
         });
@@ -65,14 +63,14 @@ export default new Provider({
       }
     }
 
-    badgeSvc.addBadge('addCouchdbWorkspace');
+    (badgeSvc as any).addBadge('addCouchdbWorkspace');
     return useWorkspaceStore().workspacesById[workspaceId];
   },
-  async getChanges() {
+  async getChanges(): Promise<any> {
     const syncToken = useWorkspaceStore().syncToken;
-    const lastSeq = useDataStore().localSettings.syncLastSeq;
-    const result = await couchdbHelper.getChanges(syncToken, lastSeq);
-    const changes = result.changes.filter((change) => {
+    const lastSeq = (useDataStore().localSettings as any).syncLastSeq;
+    const result = await (couchdbHelper as any).getChanges(syncToken, lastSeq);
+    const changes = result.changes.filter((change: any) => {
       if (!change.deleted && change.doc) {
         change.item = change.doc.item;
         if (!change.item || !change.item.id || !change.item.type) {
@@ -84,7 +82,7 @@ export default new Provider({
           itemId: change.item.id,
           type: change.item.type,
           hash: change.item.hash,
-          rev: change.doc._rev,  
+          rev: change.doc._rev,
         };
       }
       change.syncDataId = change.id;
@@ -93,14 +91,14 @@ export default new Provider({
     syncLastSeq = result.lastSeq;
     return changes;
   },
-  onChangesApplied() {
+  onChangesApplied(): void {
     useDataStore().patchLocalSettings({
       syncLastSeq,
     });
   },
-  async saveWorkspaceItem({ item, syncData }) {
+  async saveWorkspaceItem({ item, syncData }: any): Promise<any> {
     const syncToken = useWorkspaceStore().syncToken;
-    const { id, rev } = await couchdbHelper.uploadDocument({
+    const { id, rev } = await (couchdbHelper as any).uploadDocument({
       token: syncToken,
       item,
       documentId: syncData && syncData.id,
@@ -118,13 +116,13 @@ export default new Provider({
       },
     };
   },
-  removeWorkspaceItem({ syncData }) {
+  removeWorkspaceItem({ syncData }: any): any {
     const syncToken = useWorkspaceStore().syncToken;
-    return couchdbHelper.removeDocument(syncToken, syncData.id, syncData.rev);
+    return (couchdbHelper as any).removeDocument(syncToken, syncData.id, syncData.rev);
   },
-  async downloadWorkspaceContent({ token, contentSyncData }) {
-    const body = await couchdbHelper.retrieveDocumentWithAttachments(token, contentSyncData.id);
-    const rev = body._rev;  
+  async downloadWorkspaceContent({ token, contentSyncData }: any): Promise<any> {
+    const body = await (couchdbHelper as any).retrieveDocumentWithAttachments(token, contentSyncData.id);
+    const rev = body._rev;
     const content = Provider.parseContent(body.attachments.data, body.item.id);
     return {
       content,
@@ -135,14 +133,14 @@ export default new Provider({
       },
     };
   },
-  async downloadWorkspaceData({ token, syncData }) {
+  async downloadWorkspaceData({ token, syncData }: any): Promise<any> {
     if (!syncData) {
       return {};
     }
 
-    const body = await couchdbHelper.retrieveDocumentWithAttachments(token, syncData.id);
-    const item = utils.addItemHash(JSON.parse(body.attachments.data));
-    const rev = body._rev;  
+    const body = await (couchdbHelper as any).retrieveDocumentWithAttachments(token, syncData.id);
+    const item = (utils as any).addItemHash(JSON.parse(body.attachments.data));
+    const rev = body._rev;
     return {
       item,
       syncData: {
@@ -152,8 +150,8 @@ export default new Provider({
       },
     };
   },
-  async uploadWorkspaceContent({ token, content, contentSyncData }) {
-    const res = await couchdbHelper.uploadDocument({
+  async uploadWorkspaceContent({ token, content, contentSyncData }: any): Promise<any> {
+    const res = await (couchdbHelper as any).uploadDocument({
       token,
       item: {
         id: content.id,
@@ -177,8 +175,8 @@ export default new Provider({
       },
     };
   },
-  async uploadWorkspaceData({ token, item, syncData }) {
-    const res = await couchdbHelper.uploadDocument({
+  async uploadWorkspaceData({ token, item, syncData }: any): Promise<any> {
+    const res = await (couchdbHelper as any).uploadDocument({
       token,
       item: {
         id: item.id,
@@ -202,10 +200,10 @@ export default new Provider({
       },
     };
   },
-  async listFileRevisions({ token, contentSyncDataId }) {
-    const body = await couchdbHelper.retrieveDocumentWithRevisions(token, contentSyncDataId);
-    const revisions = [];
-    body._revs_info.forEach((revInfo, idx) => {  
+  async listFileRevisions({ token, contentSyncDataId }: any): Promise<any[]> {
+    const body = await (couchdbHelper as any).retrieveDocumentWithRevisions(token, contentSyncDataId);
+    const revisions: any[] = [];
+    body._revs_info.forEach((revInfo: any, idx: number) => {
       if (revInfo.status === 'available') {
         revisions.push({
           id: revInfo.rev,
@@ -217,18 +215,18 @@ export default new Provider({
     });
     return revisions;
   },
-  async loadFileRevision({ token, contentSyncDataId, revision }) {
+  async loadFileRevision({ token, contentSyncDataId, revision }: any): Promise<boolean> {
     if (revision.loaded) {
       return false;
     }
-    const body = await couchdbHelper.retrieveDocument(token, contentSyncDataId, revision.id);
+    const body = await (couchdbHelper as any).retrieveDocument(token, contentSyncDataId, revision.id);
     revision.sub = body.sub;
     revision.created = body.time;
     revision.loaded = true;
     return true;
   },
-  async getFileRevisionContent({ token, contentSyncDataId, revisionId }) {
-    const body = await couchdbHelper
+  async getFileRevisionContent({ token, contentSyncDataId, revisionId }: any): Promise<any> {
+    const body = await (couchdbHelper as any)
       .retrieveDocumentWithAttachments(token, contentSyncDataId, revisionId);
     return Provider.parseContent(body.attachments.data, body.item.id);
   },

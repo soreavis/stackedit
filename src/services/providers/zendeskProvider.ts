@@ -1,8 +1,5 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for Zendesk Help Center publish. Method params
+// + response payloads kept loose (`any`).
 import zendeskHelper from './helpers/zendeskHelper';
 import Provider from './common/Provider';
 import { useDataStore } from '../../stores/data';
@@ -10,18 +7,18 @@ import { useDataStore } from '../../stores/data';
 export default new Provider({
   id: 'zendesk',
   name: 'Zendesk',
-  getToken({ sub }) {
+  getToken({ sub }: any): any {
     return useDataStore().zendeskTokensBySub[sub];
   },
-  getLocationUrl({ sub, locale, articleId }) {
-    const token = this.getToken({ sub });
+  getLocationUrl({ sub, locale, articleId }: any): string {
+    const token = (this as any).getToken({ sub });
     return `https://${token.subdomain}.zendesk.com/hc/${locale}/articles/${articleId}`;
   },
-  getLocationDescription({ articleId }) {
+  getLocationDescription({ articleId }: any): string {
     return articleId;
   },
-  async publish(token, html, metadata, publishLocation) {
-    const articleId = await zendeskHelper.uploadArticle({
+  async publish(token: any, html: string, metadata: any, publishLocation: any): Promise<any> {
+    const articleId = await (zendeskHelper as any).uploadArticle({
       ...publishLocation,
       token,
       title: metadata.title,
@@ -34,9 +31,9 @@ export default new Provider({
       articleId,
     };
   },
-  makeLocation(token, sectionId, locale, articleId) {
-    const location = {
-      providerId: this.id,
+  makeLocation(token: any, sectionId: string, locale: string, articleId?: string): any {
+    const location: any = {
+      providerId: (this as any).id,
       sub: token.sub,
       sectionId,
       locale,

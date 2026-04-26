@@ -1,47 +1,45 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for Google Drive AppData (the main workspace).
+// Method params + response payloads kept loose (`any`) — Drive v3 API
+// returns dynamic shapes per endpoint.
 import { useWorkspaceStore } from '../../stores/workspace';
 import googleHelper from './helpers/googleHelper';
 import Provider from './common/Provider';
 import utils from '../utils';
 import { useDataStore } from '../../stores/data';
 
-let syncStartPageToken;
+let syncStartPageToken: string | undefined;
 
 export default new Provider({
   id: 'googleDriveAppData',
   name: 'Google Drive app data',
-  getToken() {
-    return useWorkspaceStore().syncToken;
+  getToken(): any {
+    return (useWorkspaceStore() as any).syncToken;
   },
-  getWorkspaceParams() {
+  getWorkspaceParams(): any {
     // No param as it's the main workspace
     return {};
   },
-  getWorkspaceLocationUrl() {
+  getWorkspaceLocationUrl(): string | null {
     // No direct link to app data
     return null;
   },
-  getSyncDataUrl() {
+  getSyncDataUrl(): string | null {
     // No direct link to app data
     return null;
   },
-  getSyncDataDescription({ id }) {
+  getSyncDataDescription({ id }: any): string {
     return id;
   },
-  async initWorkspace() {
+  async initWorkspace(): Promise<any> {
     // Nothing much to do since the main workspace isn't necessarily synchronized
     // Return the main workspace
     return useWorkspaceStore().workspacesById.main;
   },
-  async getChanges() {
-    const syncToken = useWorkspaceStore().syncToken;
-    const startPageToken = useDataStore().localSettings.syncStartPageToken;
-    const result = await googleHelper.getChanges(syncToken, startPageToken, true);
-    const changes = result.changes.filter((change) => {
+  async getChanges(): Promise<any[]> {
+    const syncToken = (useWorkspaceStore() as any).syncToken;
+    const startPageToken = (useDataStore().localSettings as any).syncStartPageToken;
+    const result = await (googleHelper as any).getChanges(syncToken, startPageToken, true);
+    const changes = result.changes.filter((change: any) => {
       if (change.file) {
         // Parse item from file name
         try {
@@ -63,14 +61,14 @@ export default new Provider({
     syncStartPageToken = result.startPageToken;
     return changes;
   },
-  onChangesApplied() {
+  onChangesApplied(): void {
     useDataStore().patchLocalSettings({
       syncStartPageToken,
     });
   },
-  async saveWorkspaceItem({ item, syncData, ifNotTooLate }) {
-    const syncToken = useWorkspaceStore().syncToken;
-    const file = await googleHelper.uploadAppDataFile({
+  async saveWorkspaceItem({ item, syncData, ifNotTooLate }: any): Promise<any> {
+    const syncToken = (useWorkspaceStore() as any).syncToken;
+    const file = await (googleHelper as any).uploadAppDataFile({
       token: syncToken,
       name: JSON.stringify(item),
       fileId: syncData && syncData.id,
@@ -87,13 +85,13 @@ export default new Provider({
       },
     };
   },
-  removeWorkspaceItem({ syncData, ifNotTooLate }) {
-    const syncToken = useWorkspaceStore().syncToken;
-    return googleHelper.removeAppDataFile(syncToken, syncData.id, ifNotTooLate);
+  removeWorkspaceItem({ syncData, ifNotTooLate }: any): any {
+    const syncToken = (useWorkspaceStore() as any).syncToken;
+    return (googleHelper as any).removeAppDataFile(syncToken, syncData.id, ifNotTooLate);
   },
-  async downloadWorkspaceContent({ token, contentSyncData }) {
-    const data = await googleHelper.downloadAppDataFile(token, contentSyncData.id);
-    const content = utils.addItemHash(JSON.parse(data));
+  async downloadWorkspaceContent({ token, contentSyncData }: any): Promise<any> {
+    const data = await (googleHelper as any).downloadAppDataFile(token, contentSyncData.id);
+    const content = (utils as any).addItemHash(JSON.parse(data));
     return {
       content,
       contentSyncData: {
@@ -102,13 +100,13 @@ export default new Provider({
       },
     };
   },
-  async downloadWorkspaceData({ token, syncData }) {
+  async downloadWorkspaceData({ token, syncData }: any): Promise<any> {
     if (!syncData) {
       return {};
     }
 
-    const data = await googleHelper.downloadAppDataFile(token, syncData.id);
-    const item = utils.addItemHash(JSON.parse(data));
+    const data = await (googleHelper as any).downloadAppDataFile(token, syncData.id);
+    const item = (utils as any).addItemHash(JSON.parse(data));
     return {
       item,
       syncData: {
@@ -122,8 +120,8 @@ export default new Provider({
     content,
     contentSyncData,
     ifNotTooLate,
-  }) {
-    const gdriveFile = await googleHelper.uploadAppDataFile({
+  }: any): Promise<any> {
+    const gdriveFile = await (googleHelper as any).uploadAppDataFile({
       token,
       name: JSON.stringify({
         id: content.id,
@@ -150,8 +148,8 @@ export default new Provider({
     item,
     syncData,
     ifNotTooLate,
-  }) {
-    const file = await googleHelper.uploadAppDataFile({
+  }: any): Promise<any> {
+    const file = await (googleHelper as any).uploadAppDataFile({
       token,
       name: JSON.stringify({
         id: item.id,
@@ -173,20 +171,20 @@ export default new Provider({
       },
     };
   },
-  async listFileRevisions({ token, contentSyncDataId }) {
-    const revisions = await googleHelper.getAppDataFileRevisions(token, contentSyncDataId);
-    return revisions.map(revision => ({
+  async listFileRevisions({ token, contentSyncDataId }: any): Promise<any[]> {
+    const revisions = await (googleHelper as any).getAppDataFileRevisions(token, contentSyncDataId);
+    return revisions.map((revision: any) => ({
       id: revision.id,
-      sub: `${googleHelper.subPrefix}:${revision.lastModifyingUser.permissionId}`,
+      sub: `${(googleHelper as any).subPrefix}:${revision.lastModifyingUser.permissionId}`,
       created: new Date(revision.modifiedTime).getTime(),
     }));
   },
-  async loadFileRevision() {
+  async loadFileRevision(): Promise<boolean> {
     // Revisions are already loaded
     return false;
   },
-  async getFileRevisionContent({ token, contentSyncDataId, revisionId }) {
-    const content = await googleHelper
+  async getFileRevisionContent({ token, contentSyncDataId, revisionId }: any): Promise<any> {
+    const content = await (googleHelper as any)
       .downloadAppDataFileRevision(token, contentSyncDataId, revisionId);
     return JSON.parse(content);
   },

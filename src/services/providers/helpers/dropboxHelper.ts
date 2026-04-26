@@ -1,24 +1,21 @@
-// @ts-nocheck
-// Provider/helper module — HTTP / OAuth / API plumbing for an external
-// sync service. Typed boundary work pending: response shapes vary by
-// provider, error handling is dynamic. .ts rename is for migration
-// tracking; full typing requires per-provider response interfaces.
+// HTTP / OAuth plumbing for Dropbox. Method params + response payloads
+// kept loose (`any`) — vendor APIs return dynamic shapes.
 import networkSvc from '../../networkSvc';
 import userSvc from '../../userSvc';
 import badgeSvc from '../../badgeSvc';
 import { useDataStore } from '../../../stores/data';
 
-const getAppKey = (fullAccess) => {
+const getAppKey = (fullAccess: any): any => {
   if (fullAccess) {
-    return useDataStore().serverConf.dropboxAppKeyFull;
+    return (useDataStore().serverConf as any).dropboxAppKeyFull;
   }
-  return useDataStore().serverConf.dropboxAppKey;
+  return (useDataStore().serverConf as any).dropboxAppKey;
 };
 
-const httpHeaderSafeJson = args => args && JSON.stringify(args)
+const httpHeaderSafeJson = (args: any): any => args && JSON.stringify(args)
   .replace(/[\u007f-\uffff]/g, c => `\\u${`000${c.charCodeAt(0).toString(16)}`.slice(-4)}`);
 
-const request = ({ accessToken }, options, args) => networkSvc.request({
+const request = ({ accessToken }: any, options: any, args?: any): Promise<any> => (networkSvc as any).request({
   ...options,
   headers: {
     ...options.headers || {},
@@ -33,8 +30,8 @@ const request = ({ accessToken }, options, args) => networkSvc.request({
  * https://www.dropbox.com/developers/documentation/http/documentation#users-get_account
  */
 const subPrefix = 'db';
-userSvc.setInfoResolver('dropbox', subPrefix, async (sub) => {
-  const dropboxToken = Object.values(useDataStore().dropboxTokensBySub)[0];
+(userSvc as any).setInfoResolver('dropbox', subPrefix, async (sub: any) => {
+  const dropboxToken: any = Object.values(useDataStore().dropboxTokensBySub)[0];
   try {
     const { body } = await request(dropboxToken, {
       method: 'POST',
@@ -49,7 +46,7 @@ userSvc.setInfoResolver('dropbox', subPrefix, async (sub) => {
       name: body.name.display_name,
       imageUrl: body.profile_photo_url || '',
     };
-  } catch (err) {
+  } catch (err: any) {
     if (!dropboxToken || err.status !== 404) {
       throw new Error('RETRY');
     }
@@ -64,9 +61,9 @@ export default {
    * https://www.dropbox.com/developers/documentation/http/documentation#oauth2-authorize
    * https://www.dropbox.com/developers/documentation/http/documentation#users-get_current_account
    */
-  async startOauth2(fullAccess, sub = null, silent = false) {
+  async startOauth2(fullAccess: any, sub: any = null, silent: boolean = false): Promise<any> {
     // Get an OAuth2 code
-    const { accessToken } = await networkSvc.startOauth2(
+    const { accessToken } = await (networkSvc as any).startOauth2(
       'https://www.dropbox.com/oauth2/authorize',
       {
         client_id: getAppKey(fullAccess),
@@ -80,7 +77,7 @@ export default {
       method: 'POST',
       url: 'https://api.dropboxapi.com/2/users/get_current_account',
     });
-    userSvc.addUserInfo({
+    (userSvc as any).addUserInfo({
       id: `${subPrefix}:${body.account_id}`,
       name: body.name.display_name,
       imageUrl: body.profile_photo_url || '',
@@ -103,9 +100,9 @@ export default {
     useDataStore().addDropboxToken(token);
     return token;
   },
-  async addAccount(fullAccess = false) {
+  async addAccount(fullAccess: any = false): Promise<any> {
     const token = await this.startOauth2(fullAccess);
-    badgeSvc.addBadge('addDropboxAccount');
+    (badgeSvc as any).addBadge('addDropboxAccount');
     return token;
   },
 
@@ -117,7 +114,7 @@ export default {
     path,
     content,
     fileId,
-  }) {
+  }: any): Promise<any> {
     return (await request(token, {
       method: 'POST',
       url: 'https://content.dropboxapi.com/2/files/upload',
@@ -135,7 +132,7 @@ export default {
     token,
     path,
     fileId,
-  }) {
+  }: any): Promise<any> {
     const res = await request(token, {
       method: 'POST',
       url: 'https://content.dropboxapi.com/2/files/download',
@@ -156,7 +153,7 @@ export default {
     token,
     path,
     fileId,
-  }) {
+  }: any): Promise<any[]> {
     const res = await request(token, {
       method: 'POST',
       url: 'https://api.dropboxapi.com/2/files/list_revisions',
@@ -175,16 +172,16 @@ export default {
   /**
    * https://www.dropbox.com/developers/chooser
    */
-  async openChooser(token) {
-    if (!window.Dropbox) {
-      await networkSvc.loadScript('https://www.dropbox.com/static/api/2/dropins.js');
+  async openChooser(token: any): Promise<any> {
+    if (!(window as any).Dropbox) {
+      await (networkSvc as any).loadScript('https://www.dropbox.com/static/api/2/dropins.js');
     }
     return new Promise((resolve) => {
-      window.Dropbox.appKey = getAppKey(token.fullAccess);
-      window.Dropbox.choose({
+      (window as any).Dropbox.appKey = getAppKey(token.fullAccess);
+      (window as any).Dropbox.choose({
         multiselect: true,
         linkType: 'direct',
-        success: files => resolve(files.map((file) => {
+        success: (files: any) => resolve(files.map((file: any) => {
           const path = file.link.replace(/.*\/view\/[^/]*/, '');
           return decodeURI(path);
         })),
