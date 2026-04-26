@@ -11,6 +11,11 @@ import editorSvc from '../../services/editorSvc';
 import syncSvc from '../../services/syncSvc';
 import { useFindReplaceStore } from '../../stores/findReplace';
 import { useDataStore } from '../../stores/data';
+import {
+  cm6Commands,
+  linkCommand as makeCm6LinkCommand,
+  imageCommand as makeCm6ImageCommand,
+} from '../editor/cm6/cm6Commands';
 
 // -----------------------------------------------------------------------------
 // Keyboard shortcuts — chord bindings via tinykeys
@@ -26,7 +31,19 @@ import { useDataStore } from '../../stores/data';
 //     below. That's a cleaner separation — text-expansion is a content concern,
 //     not a keyboard concern, and now works on any keyboard layout.
 
+// Route through cm6Commands when the bridge is active; fall back to
+// pagedown for the cledit path. Mirrors NavigationBar.pagedownClick.
 const pagedownHandler = name => () => {
+  const view = editorSvc.clEditor && editorSvc.clEditor.view;
+  if (view) {
+    const command = name === 'link'
+      ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
+      : name === 'image'
+        ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
+        : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
+    if (command) command(view);
+    return;
+  }
   editorSvc.pagedownEditor.uiManager.doClick(name);
 };
 

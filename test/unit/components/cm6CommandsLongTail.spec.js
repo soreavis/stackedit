@@ -271,15 +271,22 @@ describe('cm6Commands tableInsert', () => {
 });
 
 describe('cm6Commands registry coverage', () => {
-  it('exposes 35 named commands keyed by method', () => {
+  it('exposes the full named-command registry', () => {
     const keys = Object.keys(cm6Commands).sort();
     expect(keys).toEqual([
       'bold', 'calloutCaution', 'calloutImportant', 'calloutNote', 'calloutTip', 'calloutWarning',
-      'date', 'dateTime', 'frontmatter', 'highlight', 'horizontalRule', 'imageWithSize',
+      'clist', 'code',
+      'date', 'dateTime', 'frontmatter',
+      'heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6',
+      'highlight', 'horizontalRule', 'imageWithSize',
       'inlineCode', 'italic', 'kebabCase', 'lowerCase', 'math', 'mermaid', 'music',
+      'olist',
+      'quote',
       'sentenceCase', 'snakeCase', 'sortLines', 'strikethrough', 'subscript',
       'superscript', 'table10x4', 'table2x2', 'table3x3', 'table4x3', 'table5x4',
-      'time', 'titleCase', 'upperCase', 'wikiLink',
+      'time', 'titleCase',
+      'ulist',
+      'upperCase', 'wikiLink',
     ].sort());
   });
 });
