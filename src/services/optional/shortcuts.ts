@@ -158,28 +158,39 @@ watch(
 
 function applyExpansion() {
   if (!shortcutsAllowed() || !expansions.length) return;
-  const { selectionMgr } = editorSvc.clEditor || {};
+  const editor = editorSvc.clEditor;
+  if (!editor) return;
+  const { selectionMgr } = editor;
   if (!selectionMgr) return;
   const offset = selectionMgr.selectionStart;
   if (offset !== selectionMgr.selectionEnd) return;
+  // Stage 3 regression fix: cledit's path used selectionMgr.createRange()
+  // + range.deleteContents() / insertNode() to swap the trigger inline.
+  // The CM6 bridge returns a plain `{ from, to }` from createRange, so
+  // those Range methods don't exist. Read the doc text directly and use
+  // editor.replace(start, end, text) — works on both bridge + cledit
+  // (CodeEditor / NewComment still use cledit).
+  const content = editor.getContent();
 
   expansions.some(({ trigger, replacement }) => {
     if (offset < trigger.length) return false;
-    const range = selectionMgr.createRange(offset - trigger.length, offset);
-    if (`${range}` !== trigger) return false;
-    range.deleteContents();
-    range.insertNode(document.createTextNode(replacement));
-    const newOffset = (offset - trigger.length) + replacement.length;
-    selectionMgr.setSelectionStartEnd(newOffset, newOffset);
-    selectionMgr.updateCursorCoordinates(true);
+    const start = offset - trigger.length;
+    if (content.slice(start, offset) !== trigger) return false;
+    editor.replace(start, offset, replacement);
     return true;
   });
 }
 
-// Subscribe to editor content changes. editorSvc emits 'contentChanged' on
-// every meaningful edit (mutation observer -> cledit).
+// Subscribe to editor content changes. editorSvc.$emit('sectionList', ...)
+// fires on every meaningful edit (debounced via onEditorChanged in
+// editorSvc). Previous binding was 'contentChanged' which editorSvc
+// itself never emits — that was a stale listener from the era when
+// shortcuts.ts attached directly to cledit. Triggers fired only via
+// other paths in cledit mode; on the CM6 bridge they didn't fire at
+// all, which is why text-expansion was the visible regression after
+// Stage 3 cutover.
 if (typeof editorSvc.$on === 'function') {
-  editorSvc.$on('contentChanged', () => setTimeout(applyExpansion, 1));
+  editorSvc.$on('sectionList', () => setTimeout(applyExpansion, 1));
 }
 
 // Always-on global shortcuts:
