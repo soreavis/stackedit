@@ -22,7 +22,6 @@ import networkSvc from '../services/networkSvc';
 import tempFileSvc from '../services/tempFileSvc';
 import uiPersistence from '../services/uiPersistence';
 import { setCm6BridgeFactory } from '../services/editor/editorSvcDiscussions';
-import { useFileStore } from '../stores/file';
 import { useNotificationStore } from '../stores/notification';
 import { useDataStore } from '../stores/data';
 import './common/vueGlobals';

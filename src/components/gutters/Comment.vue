@@ -23,7 +23,7 @@
 
 <script>
 
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapActions as mapPiniaActions } from 'pinia';
 import UserImage from '../UserImage';
 import UserName from '../UserName';
 import editorSvc from '../../services/editorSvc';

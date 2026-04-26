@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { mapState, mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapState as mapPiniaState } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import { Cm6Marker } from '../services/editor/cm6/cm6MarkerClass';
 import { debounce } from '../services/editor/sharedUtils';

@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { mapActions as mapPiniaActions } from 'pinia';
 import Toc from './Toc';
 import MainMenu from './menus/MainMenu';
 import WorkspacesMenu from './menus/WorkspacesMenu';
