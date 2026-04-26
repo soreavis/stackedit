@@ -5,7 +5,6 @@
 import js from '@eslint/js';
 import vue from 'eslint-plugin-vue';
 import vueParser from 'vue-eslint-parser';
-import babelParser from '@babel/eslint-parser';
 import globals from 'globals';
 
 const appGlobals = {
@@ -40,8 +39,6 @@ export default [
     languageOptions: {
       parser: vueParser,
       parserOptions: {
-        parser: babelParser,
-        requireConfigFile: false,
         ecmaVersion: 'latest',
         sourceType: 'module',
       },
