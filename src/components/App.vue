@@ -22,6 +22,7 @@ import networkSvc from '../services/networkSvc';
 import tempFileSvc from '../services/tempFileSvc';
 import uiPersistence from '../services/uiPersistence';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { useNotificationStore } from '../stores/notification';
 import './common/vueGlobals';
 
@@ -53,7 +54,7 @@ export default {
       // possible so nothing collapses during the boot dance.
       uiPersistence.restoreEarly();
       await syncSvc.init();
-      // Files are in store.state.file.itemsById now — safe to restore the
+      // Files are in useFileStore().itemsById now — safe to restore the
       // last-current file id so the user lands back on the document they
       // had open before the reload.
       uiPersistence.restoreCurrentFile();

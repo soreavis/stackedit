@@ -1,3 +1,4 @@
+import { useFileStore } from '../stores/file';
 import DiffMatchPatch from 'diff-match-patch';
 import moduleTemplate from './moduleTemplate';
 import empty from '../data/empties/emptyContent';
@@ -37,7 +38,7 @@ module.getters = {
     if (revisionContent) {
       return revisionContent;
     }
-    return itemsById[`${rootGetters['file/current'].id}/content`] || empty();
+    return itemsById[`${useFileStore().current.id}/content`] || empty();
   },
   currentChangeTrigger: (state, getters) => {
     const { current } = getters;
@@ -64,7 +65,7 @@ module.actions = {
     }
   },
   setRevisionContent({ state, rootGetters, commit }, value) {
-    const currentFile = rootGetters['file/current'];
+    const currentFile = useFileStore().current;
     const currentContent = state.itemsById[`${currentFile.id}/content`];
     if (currentContent) {
       const diffs = diffMatchPatch.diff_main(currentContent.text, value.text);

@@ -76,6 +76,7 @@ import markdownConversionSvc from '../services/markdownConversionSvc';
 import workspaceSvc from '../services/workspaceSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { useFindReplaceStore } from '../stores/findReplace';
 
 export default {
@@ -117,7 +118,7 @@ export default {
       // currentId is null (last file deleted, nothing opened yet, etc.)
       // the placeholder takes over regardless of whether the workspace
       // still contains other files.
-      const current = store.getters['file/current'];
+      const current = useFileStore().current;
       return !!current.id && current.parentId !== 'trash';
     },
   },
@@ -131,7 +132,7 @@ export default {
         const item = await workspaceSvc.createFile({}, true);
         if (item && item.id) {
           draftFilesSvc.markAsDraft(item.id);
-          store.commit('file/setCurrentId', item.id);
+          useFileStore().setCurrentId(item.id);
         }
       } catch (e) {
         // cancelled

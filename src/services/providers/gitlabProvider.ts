@@ -112,18 +112,18 @@ export default new Provider({
       }
       const item = await workspaceSvc.createFile({
         name,
-        parentId: store.getters['file/current'].parentId,
+        parentId: useFileStore().current.parentId,
         text: content.text,
         properties: content.properties,
         discussions: content.discussions,
         comments: content.comments,
       }, true);
-      store.commit('file/setCurrentId', item.id);
+      useFileStore().setCurrentId(item.id);
       workspaceSvc.addSyncLocation({
         ...updatedSyncLocation,
         fileId: item.id,
       });
-      useNotificationStore().info(`${store.getters['file/current'].name} was imported from GitLab.`);
+      useNotificationStore().info(`${useFileStore().current.name} was imported from GitLab.`);
     }
   },
   makeLocation(token, projectPath, branch, path) {

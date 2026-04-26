@@ -4,6 +4,7 @@
 // is for migration tracking; full typing comes after editorSvc/cledit are
 // properly typed.
 import store from '../../store';
+import { useFileStore } from '../../stores/file';
 import animationSvc from '../animationSvc';
 import editorSvc from '../editorSvc';
 
@@ -170,12 +171,10 @@ store.watch(
   },
 );
 
-store.watch(
-  () => store.getters['file/current'].id,
-  () => {
-    skipAnimation = true;
-  },
-);
+// file lives in Pinia; use $subscribe instead of Vuex store.watch.
+useFileStore().$subscribe(() => {
+  skipAnimation = true;
+});
 
 editorSvc.$on('previewCtxMeasured', (previewCtxMeasured) => {
   if (previewCtxMeasured) {

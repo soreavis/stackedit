@@ -6,6 +6,7 @@
 // this incremental migration.
 import localDbSvc from './localDbSvc';
 import store from '../store';
+import { useFileStore } from '../stores/file';
 import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useFolderStore } from '../stores/folder';
 import { useSyncedContentStore } from '../stores/syncedContent';
@@ -208,7 +209,7 @@ const applyChanges = (changes) => {
  * Create a sync location by uploading the current file content.
  */
 const createSyncLocation = (syncLocation) => {
-  const currentFile = store.getters['file/current'];
+  const currentFile = useFileStore().current;
   const fileId = currentFile.id;
   syncLocation.fileId = fileId;
   // Use deepCopy to freeze the item
@@ -258,7 +259,7 @@ const isTempFile = (fileId) => {
     // If file has already been synced, let's not consider it a temp file
     return false;
   }
-  const file = store.state.file.itemsById[fileId];
+  const file = useFileStore().itemsById[fileId];
   const content = store.state.content.itemsById[contentId];
   if (!file || !content) {
     return false;
@@ -387,7 +388,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
           token,
           content,
           // Use deepCopy to freeze item
-          file: utils.deepCopy(store.state.file.itemsById[fileId]),
+          file: utils.deepCopy(useFileStore().itemsById[fileId]),
           contentSyncData: oldContentSyncData,
           fileSyncData: oldFileSyncData,
           ifNotTooLate,
@@ -431,7 +432,7 @@ const syncFile = async (fileId, syncContext = new SyncContext()) => {
           const serverChanged = lastMergedContent && lastMergedContent.text !== serverContent.text;
           const clientChanged = lastMergedContent && lastMergedContent.text !== clientContent.text;
           if (serverChanged && clientChanged && serverContent.text !== clientContent.text) {
-            const fileName = (store.state.file.itemsById[fileId] || {}).name || 'a file';
+            const fileName = (useFileStore().itemsById[fileId] || {}).name || 'a file';
             useNotificationStore().info(`Sync auto-merged concurrent edits in "${fileName}". Use File → History to compare versions.`);
           }
         }
@@ -664,7 +665,7 @@ const syncWorkspace = async (skipContents = false) => {
     // Find and save one item to save
     await utils.awaitSome(() => ifNotTooLate(async () => {
       const storeItemMap = {
-        ...store.state.file.itemsById,
+        ...useFileStore().itemsById,
         ...useFolderStore().itemsById,
         ...store.state.syncLocation.itemsById,
         ...store.state.publishLocation.itemsById,
@@ -754,7 +755,7 @@ const syncWorkspace = async (skipContents = false) => {
     await syncDataItem('templates');
 
     if (!skipContents) {
-      const currentFileId = store.getters['file/current'].id;
+      const currentFileId = useFileStore().current.id;
       if (currentFileId) {
         // Sync current file first
         await syncFile(currentFileId, syncContext);
@@ -776,7 +777,7 @@ const syncWorkspace = async (skipContents = false) => {
         const ids = [
           ...Object.keys(localDbSvc.hashMap.content)
             .map(contentId => [contentId.split('/')[0], contentId]),
-          ...store.getters['file/items']
+          ...useFileStore().items
             .map(file => [file.id, `${file.id}/content`]),
         ];
 
@@ -848,7 +849,7 @@ const requestSync = (addTriggerSyncBadge = false) => {
         if (getLastStoredSyncActivity() + constants.cleanTrashAfter < Date.now()) {
           // Last synchronization happened 7 days ago
           const syncDataByItemId = store.getters['data/syncDataByItemId'];
-          store.getters['file/items'].forEach((file) => {
+          useFileStore().items.forEach((file) => {
             // If file is in the trash and has not been modified since it was last synced
             const syncData = syncDataByItemId[file.id];
             if (syncData && file.parentId === 'trash' && file.hash === syncData.hash) {
@@ -868,12 +869,12 @@ const requestSync = (addTriggerSyncBadge = false) => {
             // Only sync the current file if workspace sync is unavailable
             // as we don't want to look for out-of-sync files by loading
             // all the syncedContent objects.
-            await syncFile(store.getters['file/current'].id);
+            await syncFile(useFileStore().current.id);
           }
 
           // Clean files
           Object.entries(fileHashesToClean).forEach(([fileId, fileHash]) => {
-            const file = store.state.file.itemsById[fileId];
+            const file = useFileStore().itemsById[fileId];
             if (file && file.hash === fileHash) {
               workspaceSvc.deleteFile(fileId);
             }
