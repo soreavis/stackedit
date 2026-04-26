@@ -90,8 +90,25 @@ export {
   table4x3Command,
   table5x4Command,
   table10x4Command,
+  prefixLines,
+  ulistCommand,
+  olistCommand,
+  clistCommand,
+  quoteCommand,
+  codeCommand,
+  headingCommand,
+  heading1Command,
+  heading2Command,
+  heading3Command,
+  heading4Command,
+  heading5Command,
+  heading6Command,
+  linkCommand,
+  imageCommand,
 } from './cm6Commands';
-export type { Cm6Command, WrapOptions, CalloutType } from './cm6Commands';
+export type {
+  Cm6Command, WrapOptions, CalloutType,
+} from './cm6Commands';
 export {
   createCm6ClEditorBridge,
   Cm6Marker,

@@ -267,6 +267,98 @@ export const table4x3Command = tableInsertCommand(4, 3);
 export const table5x4Command = tableInsertCommand(5, 4);
 export const table10x4Command = tableInsertCommand(10, 4);
 
+// ---------- batch 10: pagedown-equivalent commands ----------
+
+// Prefix every line of the current selection (or the cursor's home line)
+// with a generated prefix. `prefix(i, total)` is called per line index.
+export function prefixLines(view: EditorView, prefix: (i: number, total: number) => string): boolean {
+  const { from, to } = view.state.selection.main;
+  const doc = view.state.doc.toString();
+  const lineStart = doc.lastIndexOf('\n', Math.max(0, from - 1)) + 1;
+  let lineEnd = doc.indexOf('\n', to);
+  if (lineEnd === -1) lineEnd = doc.length;
+  const block = doc.slice(lineStart, lineEnd);
+  const lines = block.split('\n');
+  const transformed = lines.map((line, i) => prefix(i, lines.length) + line).join('\n');
+  view.dispatch({ changes: { from: lineStart, to: lineEnd, insert: transformed } });
+  return true;
+}
+
+export const ulistCommand: Cm6Command = view => prefixLines(view, () => '- ');
+export const olistCommand: Cm6Command = view => prefixLines(view, i => `${i + 1}. `);
+export const clistCommand: Cm6Command = view => prefixLines(view, () => '- [ ] ');
+export const quoteCommand: Cm6Command = view => prefixLines(view, () => '> ');
+
+// Code: when nothing is selected, insert an inline backtick wrap; with
+// a selection that spans multiple lines, fence with ``` instead.
+export const codeCommand: Cm6Command = (view) => {
+  const { from, to } = view.state.selection.main;
+  const selected = view.state.doc.sliceString(from, to);
+  if (!selected) {
+    return wrapSelection(view, { prefix: '`', placeholder: 'code' });
+  }
+  if (selected.includes('\n')) {
+    return insertBlock(view, `\`\`\`\n${selected}\n\`\`\``);
+  }
+  return wrapSelection(view, { prefix: '`' });
+};
+
+// Heading: replace the line's leading hashes with `#`.repeat(level).
+export function headingCommand(level: number): Cm6Command {
+  return (view) => {
+    const { from, to } = view.state.selection.main;
+    const doc = view.state.doc.toString();
+    const lineStart = doc.lastIndexOf('\n', Math.max(0, from - 1)) + 1;
+    let lineEnd = doc.indexOf('\n', to);
+    if (lineEnd === -1) lineEnd = doc.length;
+    const lineText = doc.slice(lineStart, lineEnd);
+    const stripped = lineText.replace(/^#{1,6}\s+/, '');
+    const newLine = `${'#'.repeat(level)} ${stripped}`;
+    view.dispatch({ changes: { from: lineStart, to: lineEnd, insert: newLine } });
+    return true;
+  };
+}
+
+export const heading1Command = headingCommand(1);
+export const heading2Command = headingCommand(2);
+export const heading3Command = headingCommand(3);
+export const heading4Command = headingCommand(4);
+export const heading5Command = headingCommand(5);
+export const heading6Command = headingCommand(6);
+
+// Link / image — open the corresponding modal, insert the result at the
+// captured selection. The link/image modals call `callback(url | null)`
+// with just a URL string, matching the existing pagedown hooks contract.
+type ModalOpener = (cb: (url: string | null) => void) => void;
+
+export function linkCommand(openModal: ModalOpener): Cm6Command {
+  return (view) => {
+    const { from, to } = view.state.selection.main;
+    const selectedText = view.state.doc.sliceString(from, to) || 'link';
+    openModal((url) => {
+      if (!url) return;
+      view.dispatch({
+        changes: { from, to, insert: `[${selectedText}](${url})` },
+      });
+    });
+    return true;
+  };
+}
+
+export function imageCommand(openModal: ModalOpener): Cm6Command {
+  return (view) => {
+    const { from, to } = view.state.selection.main;
+    const selectedText = view.state.doc.sliceString(from, to) || 'alt text';
+    openModal((url) => {
+      if (!url) return;
+      view.dispatch({
+        changes: { from, to, insert: `![${selectedText}](${url})` },
+      });
+    });
+    return true;
+  };
+}
+
 export const cm6Commands: Record<string, Cm6Command> = {
   bold: boldCommand,
   italic: italicCommand,
@@ -302,4 +394,16 @@ export const cm6Commands: Record<string, Cm6Command> = {
   table4x3: table4x3Command,
   table5x4: table5x4Command,
   table10x4: table10x4Command,
+  // batch 10 — pagedown equivalents
+  ulist: ulistCommand,
+  olist: olistCommand,
+  clist: clistCommand,
+  quote: quoteCommand,
+  code: codeCommand,
+  heading1: heading1Command,
+  heading2: heading2Command,
+  heading3: heading3Command,
+  heading4: heading4Command,
+  heading5: heading5Command,
+  heading6: heading6Command,
 };
