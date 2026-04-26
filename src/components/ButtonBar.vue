@@ -29,13 +29,13 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import { useDataStore } from '../stores/data';
+import { useGlobalStore } from '../stores/global';
 
 export default {
   computed: {
-    ...mapState([
+    ...mapPiniaState(useGlobalStore, [
       'light',
     ]),
     ...mapPiniaState(useDataStore, [

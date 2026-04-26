@@ -29,19 +29,18 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import workspaceSvc from '../services/workspaceSvc';
 import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
-import store from '../store';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
 import { useContextMenuStore } from '../stores/contextMenu';
 import badgeSvc from '../services/badgeSvc';
 import { useDataStore } from '../stores/data';
 import { useExplorerStore } from '../stores/explorer';
+import { useGlobalStore } from '../stores/global';
 
 export default {
   name: 'explorer-node', // Required for recursivity
@@ -102,7 +101,7 @@ export default {
     },
     nerdInfoRows() {
       const id = this.node.item.id;
-      const path = store.getters.pathsByItemId[id] || '';
+      const path = useGlobalStore().pathsByItemId[id] || '';
       const rows = [
         { k: 'Name', v: this.node.item.name || '—' },
         { k: 'Path', v: path || '—' },
@@ -319,7 +318,7 @@ export default {
       }
     },
     async submitNewChild(cancel) {
-      const { newChildNode } = store.state.explorer;
+      const { newChildNode } = useExplorerStore();
       if (!cancel && !newChildNode.isNil && newChildNode.item.name) {
         try {
           if (newChildNode.isFolder) {
@@ -465,7 +464,7 @@ export default {
       }
     },
     async copyPath() {
-      const path = store.getters.pathsByItemId[this.node.item.id] || this.node.item.name || '';
+      const path = useGlobalStore().pathsByItemId[this.node.item.id] || this.node.item.name || '';
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(path);

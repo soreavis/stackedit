@@ -162,7 +162,7 @@ class RelativeTime {
 
 export default {
   // The optional second argument is unused — callers (Vue filter in
-  // `vueGlobals.js`) pass `store.state.timeCounter` as a reactivity tripwire
+  // `vueGlobals.js`) pass `useGlobalStore().timeCounter` as a reactivity tripwire
   // so Vue re-evaluates the filter every minute without us having to
   // subscribe inside the service. Documented here so the signature matches
   // the actual call shape.

@@ -17,7 +17,6 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import CommentList from './gutters/CommentList';
 import PreviewNewDiscussionButton from './gutters/PreviewNewDiscussionButton';

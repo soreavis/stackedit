@@ -1,3 +1,4 @@
+import { watch } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 // @ts-nocheck
 // Tangled with cleditCore (still on JS) — full typing requires porting
@@ -7,7 +8,6 @@ import DiffMatchPatch from 'diff-match-patch';
 import cleditRaw from './cledit';
 import utils from '../utils';
 import diffUtils from '../diffUtils';
-import store from '../../store';
 import { useContentStore } from '../../stores/content';
 import { useContentStateStore } from '../../stores/contentState';
 import EditorClassApplier from '../../components/common/EditorClassApplier';
@@ -204,12 +204,12 @@ export default {
     return start < end && { start, end };
   },
   initHighlighters() {
-    store.watch(
+    watch(
       () => useDiscussionStore().newDiscussionFromCurrent,
       () => syncDiscussionMarkers(useContentStore().current, false),
     );
 
-    store.watch(
+    watch(
       () => useDiscussionStore().currentFileDiscussions,
       (discussions: Record<string, any>) => {
         const classGetter = (type: string, discussionId: string) => () => {

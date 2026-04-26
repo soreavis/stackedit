@@ -14,9 +14,9 @@ import jekyllSiteTemplate from '../data/templates/jekyllSiteTemplate.html?raw';
 import constants from '../data/constants';
 import features from '../data/features';
 import badgeSvc from '../services/badgeSvc';
-import vuexStore from '../store';
 import { useLayoutStore } from './layout';
 import { useDiscussionStore } from './discussion';
+import { useGlobalStore } from './global';
 
 const itemTemplate = (id, data = {}) => ({
   id,
@@ -119,7 +119,7 @@ export const useDataStore = defineStore('data', {
       const result = {};
       const isGit = useWorkspaceStore().currentWorkspaceIsGit;
       if (isGit) {
-        Object.entries(vuexStore.getters.gitPathsByItemId).forEach(([id, path]) => {
+        Object.entries(useGlobalStore().gitPathsByItemId).forEach(([id, path]) => {
           const entry = this.syncDataById[path];
           if (entry) result[id] = entry;
         });

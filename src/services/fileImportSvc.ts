@@ -14,7 +14,6 @@ import TurndownService from 'turndown/lib/turndown.browser.umd';
 import workspaceSvc from './workspaceSvc';
 import badgeSvc from './badgeSvc';
 import htmlSanitizer from '../libs/htmlSanitizer';
-import store from '../store';
 import { useDataStore } from '../stores/data';
 
 // Browsers don't ship a unified FileSystemEntry type that covers both

@@ -21,7 +21,6 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import Prism from 'prismjs';
 import UserImage from '../UserImage';

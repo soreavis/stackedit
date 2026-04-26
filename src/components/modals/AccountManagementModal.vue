@@ -76,7 +76,6 @@
 import { mapState as mapPiniaState } from 'pinia';
 import ModalInner from './common/ModalInner';
 import MenuEntry from '../menus/common/MenuEntry';
-import store from '../../store';
 import { useModalStore } from '../../stores/modal';
 import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
@@ -154,7 +153,7 @@ export default {
   },
   methods: {
     async remove(entry) {
-      const tokensBySub = utils.deepCopy(store.getters[`data/${entry.providerId}TokensBySub`]);
+      const tokensBySub = utils.deepCopy(useDataStore()[`${entry.providerId}TokensBySub`]);
       delete tokensBySub[entry.token.sub];
       await useDataStore().patchTokensByType({
         [entry.providerId]: tokensBySub,

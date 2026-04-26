@@ -114,7 +114,6 @@
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex';
 import { mapState as mapPiniaState } from 'pinia';
 import { useWorkspaceStore } from '../../stores/workspace';
 import MenuEntry from './common/MenuEntry';
@@ -129,6 +128,7 @@ import { usePublishLocationStore } from '../../stores/publishLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useDataStore } from '../../stores/data';
+import { useQueueStore } from '../../stores/queue';
 
 const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
   .filter(token => filter(token))
@@ -149,10 +149,10 @@ export default {
     MenuEntry,
   },
   computed: {
-    ...mapState('queue', [
+    ...mapPiniaState(useQueueStore, [
       'isPublishRequested',
     ]),
-    ...mapGetters('file', [
+    ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
     ...mapPiniaState(usePublishLocationStore, {

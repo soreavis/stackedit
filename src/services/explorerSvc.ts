@@ -1,5 +1,4 @@
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import store from '../store';
 import { useFileStore } from '../stores/file';
 import { useFolderStore } from '../stores/folder';
 import { useModalStore } from '../stores/modal';

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
-import store from '../store';
 import { useNotificationStore } from './notification';
+import { useGlobalStore } from './/global';
 
 let queue = Promise.resolve();
 
@@ -14,11 +14,11 @@ export const useQueueStore = defineStore('queue', {
   actions: {
     enqueue(cb) {
       // Vuex root state still owns the offline flag during the transition.
-      if (store.state.offline) {
+      if (useGlobalStore().offline) {
         return;
       }
       const checkOffline = () => {
-        if (store.state.offline) {
+        if (useGlobalStore().offline) {
           // Empty the queue
           queue = Promise.resolve();
           this.isEmpty = true;

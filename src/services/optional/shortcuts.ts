@@ -3,8 +3,8 @@
 // glue. Tightly coupled to editorSvc + cledit dynamic surfaces. .ts rename
 // is for migration tracking; full typing comes after editorSvc/cledit are
 // properly typed.
+import { watch } from 'vue';
 import { tinykeys } from 'tinykeys';
-import store from '../../store';
 import { useContentStore } from '../../stores/content';
 import { useModalStore } from '../../stores/modal';
 import editorSvc from '../../services/editorSvc';
@@ -121,7 +121,7 @@ function collectExpansions(computedSettings) {
 
 let unbindAll = () => {};
 
-store.watch(
+watch(
   () => useDataStore().computedSettings,
   (computedSettings) => {
     unbindAll();

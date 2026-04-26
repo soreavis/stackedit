@@ -5,12 +5,12 @@
 // tracking; full typing requires per-provider response interfaces.
 import utils from '../../utils';
 import networkSvc from '../../networkSvc';
-import store from '../../../store';
 import { useWorkspaceStore } from '../../../stores/workspace';
 import { useModalStore } from '../../../stores/modal';
 import userSvc from '../../userSvc';
 import badgeSvc from '../../badgeSvc';
 import { useDataStore } from '../../../stores/data';
+import { useGlobalStore } from '../../../stores/global';
 
 const appsDomain = null;
 const tokenExpirationMargin = 5 * 60 * 1000; // 5 min (tokens expire after 1h)
@@ -245,7 +245,7 @@ export default {
       return await this.startOauth2(mergedScopes, sub, true);
     } catch (err) {
       // If it fails try to popup a window
-      if (store.state.offline) {
+      if (useGlobalStore().offline) {
         throw err;
       }
       await useModalStore().open({

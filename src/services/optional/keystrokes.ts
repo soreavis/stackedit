@@ -5,7 +5,6 @@
 // properly typed.
 import cledit from '../editor/cledit';
 import editorSvc from '../editorSvc';
-import store from '../../store';
 import { useDataStore } from '../../stores/data';
 
 const { Keystroke } = cledit;

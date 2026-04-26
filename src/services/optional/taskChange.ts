@@ -4,7 +4,6 @@
 // is for migration tracking; full typing comes after editorSvc/cledit are
 // properly typed.
 import editorSvc from '../editorSvc';
-import store from '../../store';
 import { useContentStore } from '../../stores/content';
 
 editorSvc.$on('inited', () => {

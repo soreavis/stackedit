@@ -12,9 +12,9 @@ import './extensions';
 import './services/optional';
 import './icons';
 import App from './components/App';
-import store from './store';
 import { useNotificationStore } from './stores/notification';
 import localDbSvc from './services/localDbSvc';
+import { useGlobalStore } from './stores/global';
 
 // Skew protection: when a Vite deploy ships new chunk hashes, a long-open
 // tab may fail to dynamically load the old hash. Catch and reload to pick
@@ -50,7 +50,7 @@ const updateSW = registerSW({
   // unsynced edits dropped on slow networks). We still flush local-db
   // before reloading regardless of the user's choice on the next click.
   onNeedRefresh: async () => {
-    if (store.state.light) return;
+    if (useGlobalStore().light) return;
     try {
       await useNotificationStore().confirm('A new version of StackEdit is ready. Reload now?');
       await localDbSvc.sync();
@@ -86,10 +86,15 @@ if (!localStorage.installPrompted) {
 
 Vue.config.productionTip = false;
 
- 
+// Tick a counter every 30s so reactive getters that bucket relative
+// dates (e.g. Recent folder labels in the explorer) re-render without
+// each consumer wiring its own setInterval.
+setInterval(() => {
+  useGlobalStore().updateTimeCounter();
+}, 30 * 1000);
+
 new Vue({
   el: '#app',
-  store,
   pinia,
   render: h => h(App),
 });

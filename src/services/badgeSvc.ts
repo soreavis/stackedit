@@ -1,4 +1,3 @@
-import store from '../store';
 import { useNotificationStore } from '../stores/notification';
 import { useDataStore } from '../stores/data';
 
