@@ -1,9 +1,8 @@
+// Discussions/markers/class-applier pipeline. Tangled with cleditCore
+// — module-level state stays loosely typed (`any`) until cledit is
+// ported.
 import { watch } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-// @ts-nocheck
-// Tangled with cleditCore (still on JS) — full typing requires porting
-// cledit core first. .ts extension applied for migration tracking; nocheck
-// suppresses errors until the underlying cledit types flow through.
 import DiffMatchPatch from 'diff-match-patch';
 import utils from '../utils';
 import diffUtils from '../diffUtils';

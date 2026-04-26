@@ -1,7 +1,6 @@
-// @ts-nocheck
-// Optional editor service — scroll-sync glue. animationSvc's fluent
-// chain API + the dimension descriptors carry too many dynamic shapes
-// to type cleanly without refactoring upstream. Tracked as a follow-up.
+// Optional editor service — scroll-sync glue. animationSvc fluent chain
+// + dimension descriptors stay loosely typed (`any`); tightening would
+// need an animationSvc redesign.
 import { watch } from 'vue';
 import { useFileStore } from '../../stores/file';
 import animationSvc from '../animationSvc';
@@ -9,21 +8,21 @@ import editorSvc from '../editorSvc';
 import { useDataStore } from '../../stores/data';
 import { useLayoutStore } from '../../stores/layout';
 
-let editorScrollerElt;
-let previewScrollerElt;
-let editorFinishTimeoutId;
-let previewFinishTimeoutId;
-let skipAnimation;
-let isScrollEditor;
-let isScrollPreview;
-let isEditorMoving;
-let isPreviewMoving;
-let sectionDescList = [];
+let editorScrollerElt: any;
+let previewScrollerElt: any;
+let editorFinishTimeoutId: any;
+let previewFinishTimeoutId: any;
+let skipAnimation: boolean | undefined;
+let isScrollEditor: boolean | undefined;
+let isScrollPreview: boolean | undefined;
+let isEditorMoving: boolean | undefined;
+let isPreviewMoving: boolean | undefined;
+let sectionDescList: any[] = [];
 
-let throttleTimeoutId;
+let throttleTimeoutId: any;
 let throttleLastTime = 0;
 
-function throttle(func, wait) {
+function throttle(func: () => any, wait: number): void {
   clearTimeout(throttleTimeoutId);
   const currentTime = Date.now();
   const localWait = (wait + throttleLastTime) - currentTime;
@@ -38,10 +37,10 @@ function throttle(func, wait) {
   }
 }
 
-const doScrollSync = () => {
-  const localSkipAnimation = skipAnimation || !useLayoutStore().styles.showSidePreview;
+const doScrollSync = (): void => {
+  const localSkipAnimation = skipAnimation || !(useLayoutStore() as any).styles.showSidePreview;
   skipAnimation = false;
-  if (!useDataStore().layoutSettings.scrollSync || sectionDescList.length === 0) {
+  if (!(useDataStore() as any).layoutSettings.scrollSync || sectionDescList.length === 0) {
     return;
   }
   let editorScrollTop = editorScrollerElt.scrollTop;
@@ -49,11 +48,11 @@ const doScrollSync = () => {
     editorScrollTop = 0;
   }
   const previewScrollTop = previewScrollerElt.scrollTop;
-  let scrollTo;
+  let scrollTo: any;
   if (isScrollEditor) {
     // Scroll the preview
     isScrollEditor = false;
-    sectionDescList.some((sectionDesc) => {
+    sectionDescList.some((sectionDesc: any) => {
       if (editorScrollTop > sectionDesc.editorDimension.endOffset) {
         return false;
       }
@@ -70,7 +69,7 @@ const doScrollSync = () => {
 
     throttle(() => {
       clearTimeout(previewFinishTimeoutId);
-      animationSvc.animate(previewScrollerElt)
+      ((animationSvc as any).animate(previewScrollerElt) as any)
         .scrollTop(scrollTo)
         .duration(!localSkipAnimation && 100)
         .start(() => {
@@ -81,10 +80,10 @@ const doScrollSync = () => {
           isPreviewMoving = true;
         });
     }, localSkipAnimation ? 500 : 50);
-  } else if (!useLayoutStore().styles.showEditor || isScrollPreview) {
+  } else if (!(useLayoutStore() as any).styles.showEditor || isScrollPreview) {
     // Scroll the editor
     isScrollPreview = false;
-    sectionDescList.some((sectionDesc) => {
+    sectionDescList.some((sectionDesc: any) => {
       if (previewScrollTop > sectionDesc.previewDimension.endOffset) {
         return false;
       }
@@ -101,7 +100,7 @@ const doScrollSync = () => {
 
     throttle(() => {
       clearTimeout(editorFinishTimeoutId);
-      animationSvc.animate(editorScrollerElt)
+      ((animationSvc as any).animate(editorScrollerElt) as any)
         .scrollTop(scrollTo)
         .duration(!localSkipAnimation && 100)
         .start(() => {
@@ -115,19 +114,19 @@ const doScrollSync = () => {
   }
 };
 
-let isPreviewRefreshing;
-let timeoutId;
+let isPreviewRefreshing: boolean | undefined;
+let timeoutId: any;
 
-const forceScrollSync = () => {
+const forceScrollSync = (): void => {
   if (!isPreviewRefreshing) {
     doScrollSync();
   }
 };
-watch(() => useDataStore().layoutSettings.scrollSync, forceScrollSync);
+watch(() => (useDataStore() as any).layoutSettings.scrollSync, forceScrollSync);
 
-editorSvc.$on('inited', () => {
-  editorScrollerElt = editorSvc.editorElt.parentNode;
-  previewScrollerElt = editorSvc.previewElt.parentNode;
+(editorSvc as any).$on('inited', () => {
+  editorScrollerElt = (editorSvc as any).editorElt.parentNode;
+  previewScrollerElt = (editorSvc as any).previewElt.parentNode;
 
   editorScrollerElt.addEventListener('scroll', () => {
     if (isEditorMoving) {
@@ -148,15 +147,15 @@ editorSvc.$on('inited', () => {
   });
 });
 
-editorSvc.$on('sectionList', () => {
+(editorSvc as any).$on('sectionList', () => {
   clearTimeout(timeoutId);
   isPreviewRefreshing = true;
   sectionDescList = [];
 });
 
-editorSvc.$on('previewCtx', () => {
+(editorSvc as any).$on('previewCtx', () => {
   // Assume the user is writing in the editor
-  isScrollEditor = useLayoutStore().styles.showEditor;
+  isScrollEditor = (useLayoutStore() as any).styles.showEditor;
   // A preview scrolling event can occur if height is smaller
   timeoutId = setTimeout(() => {
     isPreviewRefreshing = false;
@@ -164,8 +163,8 @@ editorSvc.$on('previewCtx', () => {
 });
 
 watch(
-  () => useLayoutStore().styles.showEditor,
-  (showEditor) => {
+  () => (useLayoutStore() as any).styles.showEditor,
+  (showEditor: boolean) => {
     isScrollEditor = showEditor;
     isScrollPreview = !showEditor;
     skipAnimation = true;
@@ -177,7 +176,7 @@ useFileStore().$subscribe(() => {
   skipAnimation = true;
 });
 
-editorSvc.$on('previewCtxMeasured', (previewCtxMeasured) => {
+(editorSvc as any).$on('previewCtxMeasured', (previewCtxMeasured: any) => {
   if (previewCtxMeasured) {
     ({ sectionDescList } = previewCtxMeasured);
     forceScrollSync();

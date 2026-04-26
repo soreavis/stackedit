@@ -1,12 +1,12 @@
-// @ts-nocheck
 // 600-line legacy editor service. Mixes editorSvcDiscussions +
-// editorSvcUtils onto a Vue instance via Object.assign — typing the
-// composite shape requires editor-state interface design that's out
-// of scope for this incremental migration.
+// editorSvcUtils onto a Vue instance via Object.assign — the composite
+// shape stays loosely typed (`any`) until the underlying mixins define
+// shared editor-state interfaces.
 import { watch } from 'vue';
 import Vue from 'vue';
 import DiffMatchPatch from 'diff-match-patch';
 import Prism from 'prismjs';
+// @ts-expect-error — no type declarations published for this package
 import markdownItPandocRenderer from 'markdown-it-pandoc-renderer';
 import { debounce } from './editor/sharedUtils';
 import htmlSanitizer from '../libs/htmlSanitizer';
@@ -23,9 +23,9 @@ import { useModalStore } from '../stores/modal';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
 
-const allowDebounce = (action, wait) => {
-  let timeoutId;
-  return (doDebounce = false, ...params) => {
+const allowDebounce = (action: (...args: any[]) => any, wait: number): any => {
+  let timeoutId: any;
+  return (doDebounce: boolean = false, ...params: any[]): void => {
     clearTimeout(timeoutId);
     if (doDebounce) {
       timeoutId = setTimeout(() => action(...params), wait);
@@ -35,12 +35,18 @@ const allowDebounce = (action, wait) => {
   };
 };
 
-const diffMatchPatch = new DiffMatchPatch();
+const diffMatchPatch: any = new DiffMatchPatch();
 let instantPreview = true;
-let tokens;
+let tokens: any;
 
 class SectionDesc {
-  constructor(section, previewElt, tocElt, html) {
+  section: any;
+  editorElt: any;
+  previewElt: any;
+  tocElt: any;
+  html: any;
+
+  constructor(section: any, previewElt: any, tocElt: any, html: any) {
     this.section = section;
     this.editorElt = section.elt;
     this.previewElt = previewElt;
@@ -50,63 +56,63 @@ class SectionDesc {
 }
 
 // Use a vue instance as an event bus
-const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils, {
+const editorSvc: any = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils, {
   // Elements
-  editorElt: null,
-  previewElt: null,
-  tocElt: null,
+  editorElt: null as any,
+  previewElt: null as any,
+  tocElt: null as any,
   // Other objects
-  clEditor: null,
-  options: null,
-  prismGrammars: null,
-  converter: null,
-  parsingCtx: null,
-  conversionCtx: null,
+  clEditor: null as any,
+  options: null as any,
+  prismGrammars: null as any,
+  converter: null as any,
+  parsingCtx: null as any,
+  conversionCtx: null as any,
   previewCtx: {
-    sectionDescList: [],
-  },
-  previewCtxMeasured: null,
-  previewCtxWithDiffs: null,
-  sectionList: null,
-  selectionRange: null,
-  previewSelectionRange: null,
-  previewSelectionStartOffset: null,
+    sectionDescList: [] as any[],
+  } as any,
+  previewCtxMeasured: null as any,
+  previewCtxWithDiffs: null as any,
+  sectionList: null as any,
+  selectionRange: null as any,
+  previewSelectionRange: null as any,
+  previewSelectionStartOffset: null as any,
 
   /**
    * Initialize the Prism grammar with the options
    */
-  initPrism() {
+  initPrism(this: any): void {
     const options = {
       ...this.options,
-      insideFences: markdownConversionSvc.defaultOptions.insideFences,
+      insideFences: (markdownConversionSvc as any).defaultOptions.insideFences,
     };
-    this.prismGrammars = markdownGrammarSvc.makeGrammars(options);
+    this.prismGrammars = (markdownGrammarSvc as any).makeGrammars(options);
   },
 
   /**
    * Initialize the markdown-it converter with the options
    */
-  initConverter() {
-    this.converter = markdownConversionSvc.createConverter(this.options, true);
+  initConverter(this: any): void {
+    this.converter = (markdownConversionSvc as any).createConverter(this.options, true);
   },
 
   /**
    * Initialize the cledit editor with markdown-it section parser and Prism highlighter
    */
-  initClEditor() {
+  initClEditor(this: any): void {
     this.previewCtxMeasured = null;
     editorSvc.$emit('previewCtxMeasured', null);
     this.previewCtxWithDiffs = null;
     editorSvc.$emit('previewCtxWithDiffs', null);
-    const options = {
-      sectionHighlighter: section => Prism
+    const options: any = {
+      sectionHighlighter: (section: any) => (Prism as any)
         .highlight(section.text, this.prismGrammars[section.data]),
-      sectionParser: (text) => {
-        this.parsingCtx = markdownConversionSvc.parseSections(this.converter, text);
+      sectionParser: (text: string) => {
+        this.parsingCtx = (markdownConversionSvc as any).parseSections(this.converter, text);
         return this.parsingCtx.sections;
       },
-      getCursorFocusRatio: () => {
-        if (useDataStore().layoutSettings.focusMode) {
+      getCursorFocusRatio: (): number => {
+        if ((useDataStore() as any).layoutSettings.focusMode) {
           return 1;
         }
         return 0.15;
@@ -119,8 +125,8 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
   /**
    * Finish the conversion initiated by the section parser
    */
-  convert() {
-    this.conversionCtx = markdownConversionSvc.convert(this.parsingCtx, this.conversionCtx);
+  convert(this: any): void {
+    this.conversionCtx = (markdownConversionSvc as any).convert(this.parsingCtx, this.conversionCtx);
     this.$emit('conversionCtx', this.conversionCtx);
     ({ tokens } = this.parsingCtx.markdownState);
   },
@@ -128,17 +134,17 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
   /**
    * Refresh the preview with the result of `convert()`
    */
-  async refreshPreview() {
-    const sectionDescList = [];
-    let sectionPreviewElt;
-    let sectionTocElt;
+  async refreshPreview(this: any): Promise<void> {
+    const sectionDescList: any[] = [];
+    let sectionPreviewElt: any;
+    let sectionTocElt: any;
     let sectionIdx = 0;
     let sectionDescIdx = 0;
     let insertBeforePreviewElt = this.previewElt.firstChild;
     let insertBeforeTocElt = this.tocElt.firstChild;
     let previewHtml = '';
-    let loadingImages = [];
-    this.conversionCtx.htmlSectionDiff.forEach((item) => {
+    let loadingImages: any[] = [];
+    this.conversionCtx.htmlSectionDiff.forEach((item: any) => {
       for (let i = 0; i < item[1].length; i += 1) {
         const section = this.conversionCtx.sectionList[sectionIdx];
         if (item[0] === 0) {
@@ -179,7 +185,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
           } else {
             this.previewElt.appendChild(sectionPreviewElt);
           }
-          extensionSvc.sectionPreview(sectionPreviewElt, this.options, true);
+          (extensionSvc as any).sectionPreview(sectionPreviewElt, this.options, true);
           loadingImages = [
             ...loadingImages,
             ...Array.prototype.slice.call(sectionPreviewElt.getElementsByTagName('img')),
@@ -190,7 +196,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
           sectionTocElt.className = 'cl-toc-section';
           const headingElt = sectionPreviewElt.querySelector('h1, h2, h3, h4, h5, h6');
           if (headingElt) {
-            const clonedElt = headingElt.cloneNode(true);
+            const clonedElt: any = headingElt.cloneNode(true);
             clonedElt.removeAttribute('id');
             sectionTocElt.appendChild(clonedElt);
           }
@@ -220,14 +226,14 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     this.makeTextToPreviewDiffs();
 
     // Wait for images to load
-    const loadedPromises = loadingImages.map(imgElt => new Promise((resolve) => {
+    const loadedPromises = loadingImages.map((imgElt: any) => new Promise<void>((resolve) => {
       if (!imgElt.src) {
         resolve();
         return;
       }
       const img = new window.Image();
-      img.onload = resolve;
-      img.onerror = resolve;
+      img.onload = () => resolve();
+      img.onerror = () => resolve();
       img.src = imgElt.src;
     }));
     await Promise.all(loadedPromises);
@@ -239,9 +245,9 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
   /**
    * Measure the height of each section in editor, preview and toc.
    */
-  measureSectionDimensions: allowDebounce((restoreScrollPosition = false, force = false) => {
+  measureSectionDimensions: allowDebounce((restoreScrollPosition: boolean = false, force: boolean = false) => {
     if (force || editorSvc.previewCtx !== editorSvc.previewCtxMeasured) {
-      sectionUtils.measureSectionDimensions(editorSvc);
+      (sectionUtils as any).measureSectionDimensions(editorSvc);
       editorSvc.previewCtxMeasured = editorSvc.previewCtx;
       if (restoreScrollPosition) {
         editorSvc.restoreScrollPosition();
@@ -254,12 +260,12 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
    * Compute the diffs between editor's markdown and preview's html
    * asynchronously unless there is only one section to compute.
    */
-  makeTextToPreviewDiffs() {
+  makeTextToPreviewDiffs(this: any): void {
     if (editorSvc.previewCtx !== editorSvc.previewCtxWithDiffs) {
-      const makeOne = () => {
+      const makeOne = (): void => {
         let hasOne = false;
         const hasMore = editorSvc.previewCtx.sectionDescList
-          .some((sectionDesc) => {
+          .some((sectionDesc: any) => {
             if (!sectionDesc.textToPreviewDiffs) {
               if (hasOne) {
                 return true;
@@ -291,8 +297,8 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
    */
   saveContentState: allowDebounce(() => {
     const scrollPosition = editorSvc.getScrollPosition() ||
-      useContentStateStore().current.scrollPosition;
-    useContentStateStore().patchCurrent({
+      (useContentStateStore() as any).current.scrollPosition;
+    (useContentStateStore() as any).patchCurrent({
       selectionStart: editorSvc.clEditor.selectionMgr.selectionStart,
       selectionEnd: editorSvc.clEditor.selectionMgr.selectionEnd,
       scrollPosition,
@@ -304,22 +310,22 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
    */
   saveSelection: allowDebounce(() => {
     const selection = window.getSelection();
-    let range = selection.rangeCount && selection.getRangeAt(0);
+    let range: any = selection && selection.rangeCount && selection.getRangeAt(0);
     if (range) {
       if (
-         
+
         !(editorSvc.previewElt.compareDocumentPosition(range.startContainer) &
           window.Node.DOCUMENT_POSITION_CONTAINED_BY) ||
         !(editorSvc.previewElt.compareDocumentPosition(range.endContainer) &
           window.Node.DOCUMENT_POSITION_CONTAINED_BY)
-         
+
       ) {
         range = null;
       }
     }
     if (editorSvc.previewSelectionRange !== range) {
-      let previewSelectionStartOffset;
-      let previewSelectionEndOffset;
+      let previewSelectionStartOffset: any;
+      let previewSelectionEndOffset: any;
       if (range) {
         const startRange = document.createRange();
         startRange.setStart(editorSvc.previewElt, 0);
@@ -343,21 +349,21 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
   /**
    * Returns the pandoc AST generated from the file tokens and the converter options
    */
-  getPandocAst() {
-    return tokens && markdownItPandocRenderer(tokens, this.converter.options);
+  getPandocAst(this: any): any {
+    return tokens && (markdownItPandocRenderer as any)(tokens, this.converter.options);
   },
 
   /**
    * Pass the elements to the store and initialize the editor.
    */
-  init(editorElt, previewElt, tocElt) {
+  init(this: any, editorElt: HTMLElement, previewElt: HTMLElement, tocElt: HTMLElement): void {
     this.editorElt = editorElt;
     this.previewElt = previewElt;
     this.tocElt = tocElt;
 
     this.createClEditor(editorElt);
 
-    this.clEditor.on('contentChanged', (content, diffs, sectionList) => {
+    this.clEditor.on('contentChanged', (content: any, diffs: any, sectionList: any) => {
       this.parsingCtx = {
         ...this.parsingCtx,
         sectionList,
@@ -392,8 +398,8 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
       instantPreview = false;
     }, 25);
 
-    let newSectionList;
-    let newSelectionRange;
+    let newSectionList: any;
+    let newSelectionRange: any;
     const onEditorChanged = allowDebounce(() => {
       if (this.sectionList !== newSectionList) {
         this.sectionList = newSectionList;
@@ -407,7 +413,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
       this.saveContentState();
     }, 10);
 
-    this.clEditor.selectionMgr.on('selectionChanged', (start, end, selectionRange) => {
+    this.clEditor.selectionMgr.on('selectionChanged', (start: any, end: any, selectionRange: any) => {
       newSelectionRange = selectionRange;
       onEditorChanged(!instantPreview);
     });
@@ -416,11 +422,11 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
      * Inline images
      */
 
-    const imgCache = Object.create(null);
+    const imgCache: any = Object.create(null);
 
-    const hashImgElt = imgElt => `${imgElt.src}:${imgElt.width || -1}:${imgElt.height || -1}`;
+    const hashImgElt = (imgElt: any): string => `${imgElt.src}:${imgElt.width || -1}:${imgElt.height || -1}`;
 
-    const addToImgCache = (imgElt) => {
+    const addToImgCache = (imgElt: any): void => {
       const hash = hashImgElt(imgElt);
       let entries = imgCache[hash];
       if (!entries) {
@@ -430,15 +436,15 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
       entries.push(imgElt);
     };
 
-    const getFromImgCache = (imgEltsToCache) => {
+    const getFromImgCache = (imgEltsToCache: any): any => {
       const hash = hashImgElt(imgEltsToCache);
       const entries = imgCache[hash];
       if (!entries) {
         return null;
       }
-      let imgElt;
+      let imgElt: any;
       return entries
-        .some((entry) => {
+        .some((entry: any) => {
           if (this.editorElt.contains(entry)) {
             return false;
           }
@@ -448,9 +454,9 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     };
 
     const triggerImgCacheGc = debounce(() => {
-      Object.entries(imgCache).forEach(([src, entries]) => {
+      Object.entries(imgCache).forEach(([src, entries]: [string, any]) => {
         // Filter entries that are not attached to the DOM
-        const filteredEntries = entries.filter(imgElt => this.editorElt.contains(imgElt));
+        const filteredEntries = entries.filter((imgElt: any) => this.editorElt.contains(imgElt));
         if (filteredEntries.length) {
           imgCache[src] = filteredEntries;
         } else {
@@ -459,10 +465,10 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
       });
     }, 100);
 
-    let imgEltsToCache = [];
-    if (useDataStore().computedSettings.editor.inlineImages) {
-      this.clEditor.highlighter.on('sectionHighlighted', (section) => {
-        Array.from(section.elt.getElementsByClassName('token img')).forEach((imgTokenElt) => {
+    let imgEltsToCache: any[] = [];
+    if ((useDataStore() as any).computedSettings.editor.inlineImages) {
+      this.clEditor.highlighter.on('sectionHighlighted', (section: any) => {
+        Array.from(section.elt.getElementsByClassName('token img')).forEach((imgTokenElt: any) => {
           const srcElt = imgTokenElt.querySelector('.token.cl-src');
           if (srcElt) {
             // Create an img element before the .img.token and wrap both elements
@@ -470,7 +476,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
             const imgElt = document.createElement('img');
             imgElt.style.display = 'none';
             const uri = srcElt.textContent;
-            if (!/^unsafe/.test(htmlSanitizer.sanitizeUri(uri, true))) {
+            if (!/^unsafe/.test((htmlSanitizer as any).sanitizeUri(uri, true))) {
               imgElt.onload = () => {
                 imgElt.style.display = '';
               };
@@ -499,7 +505,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     }
 
     this.clEditor.highlighter.on('highlighted', () => {
-      imgEltsToCache.forEach((imgElt) => {
+      imgEltsToCache.forEach((imgElt: any) => {
         const cachedImgElt = getFromImgCache(imgElt);
         if (cachedImgElt) {
           // Found a previously loaded image that has just been released
@@ -513,7 +519,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
       triggerImgCacheGc();
     });
 
-    this.clEditor.on('contentChanged', (content, diffs, sectionList) => {
+    this.clEditor.on('contentChanged', (content: any, diffs: any, sectionList: any) => {
       newSectionList = sectionList;
       onEditorChanged(!instantPreview);
     });
@@ -530,12 +536,12 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
     // })
 
     // Watch file content changes
-    let lastContentId = null;
-    let lastProperties;
+    let lastContentId: any = null;
+    let lastProperties: any;
     watch(
-      () => useContentStore().currentChangeTrigger,
+      () => (useContentStore() as any).currentChangeTrigger,
       () => {
-        const content = useContentStore().current;
+        const content: any = useContentStore().current;
         // Track ID changes
         let initClEditor = false;
         if (content.id !== lastContentId) {
@@ -546,7 +552,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
         // Track properties changes
         if (content.properties !== lastProperties) {
           lastProperties = content.properties;
-          const options = extensionSvc.getOptions(useContentStore().currentProperties);
+          const options = (extensionSvc as any).getOptions((useContentStore() as any).currentProperties);
           if (utils.serializeObject(options) !== utils.serializeObject(this.options)) {
             this.options = options;
             this.initPrism();
@@ -566,14 +572,14 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
 
     // Disable editor if hidden or if no content is loaded
     watch(
-      () => useContentStore().isCurrentEditable,
-      editable => this.clEditor.toggleEditable(!!editable), {
+      () => (useContentStore() as any).isCurrentEditable,
+      (editable: any) => this.clEditor.toggleEditable(!!editable), {
         immediate: true,
       },
     );
 
     watch(
-      () => utils.serializeObject(useLayoutStore().styles),
+      () => utils.serializeObject((useLayoutStore() as any).styles),
       () => this.measureSectionDimensions(false, true, true),
     );
 
