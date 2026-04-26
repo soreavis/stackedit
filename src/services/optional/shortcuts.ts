@@ -31,20 +31,18 @@ import {
 //     below. That's a cleaner separation — text-expansion is a content concern,
 //     not a keyboard concern, and now works on any keyboard layout.
 
-// Route through cm6Commands when the bridge is active; fall back to
-// pagedown for the cledit path. Mirrors NavigationBar.pagedownClick.
+// Stage 3 batch 11: CM6 bridge is the only editor; pagedown is gone.
+// Each toolbar / shortcut name maps to a cm6Commands entry (link / image
+// take a modal opener, the rest are direct lookups; `hr` is renamed
+// to `horizontalRule`).
 const pagedownHandler = name => () => {
-  const view = editorSvc.clEditor && editorSvc.clEditor.view;
-  if (view) {
-    const command = name === 'link'
-      ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
-      : name === 'image'
-        ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
-        : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
-    if (command) command(view);
-    return;
-  }
-  editorSvc.pagedownEditor.uiManager.doClick(name);
+  const view = editorSvc.clEditor.view;
+  const command = name === 'link'
+    ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
+    : name === 'image'
+      ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
+      : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
+  if (command) command(view);
 };
 
 const findReplaceOpener = type => () => {

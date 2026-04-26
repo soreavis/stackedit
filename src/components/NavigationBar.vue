@@ -339,19 +339,15 @@ export default {
         return this.openHeadingMenu(evt);
       }
       const before = editorSvc.clEditor.getContent();
-      // Stage 3 batch 10: when the CM6 bridge is active, dispatch
-      // through cm6Commands. Falls back to pagedown for the cledit path.
-      const view = editorSvc.clEditor && editorSvc.clEditor.view;
-      if (view) {
-        const command = name === 'link'
-          ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
-          : name === 'image'
-            ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
-            : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
-        if (command) command(view);
-      } else {
-        editorSvc.pagedownEditor.uiManager.doClick(name);
-      }
+      // Stage 3 batch 11: CM6 bridge is the only editor. Dispatch
+      // every toolbar action through cm6Commands; pagedown is gone.
+      const view = editorSvc.clEditor.view;
+      const command = name === 'link'
+        ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
+        : name === 'image'
+          ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
+          : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
+      if (command) command(view);
       if (before !== editorSvc.clEditor.getContent()) {
         badgeSvc.addBadge('formatButtons');
       }
@@ -370,30 +366,11 @@ export default {
       if (item) item.perform();
     },
     applyHeading(level) {
-      // CM6 bridge path: dispatch via cm6Commands.headingN (which also
-      // strips the existing prefix before re-applying).
-      const view = editorSvc.clEditor && editorSvc.clEditor.view;
-      if (view) {
-        const command = cm6Commands[`heading${level}`];
-        if (command) command(view);
-        return;
-      }
-      const sel = editorSvc.clEditor.selectionMgr;
-      const content = editorSvc.clEditor.getContent();
-      const cursor = Math.min(sel.selectionStart, sel.selectionEnd);
-      // Find the current line's bounds.
-      const lineStart = content.lastIndexOf('\n', cursor - 1) + 1;
-      let lineEnd = content.indexOf('\n', cursor);
-      if (lineEnd === -1) lineEnd = content.length;
-      const lineText = content.slice(lineStart, lineEnd);
-      // Strip an existing heading prefix so re-applying replaces rather
-      // than nests (`### foo` + apply H1 → `# foo`, not `# ### foo`).
-      const stripped = lineText.replace(/^#{1,6}\s+/, '');
-      const newLine = `${'#'.repeat(level)} ${stripped}`;
-      editorSvc.clEditor.replace(lineStart, lineEnd, newLine);
-      // Cursor lands at end of the prefix so typing extends the heading.
-      const caret = lineStart + level + 1;
-      sel.setSelectionStartEnd(caret, caret);
+      // Stage 3 batch 11: CM6 bridge is the only editor — dispatch via
+      // headingN command (strips an existing prefix instead of nesting).
+      const view = editorSvc.clEditor.view;
+      const command = cm6Commands[`heading${level}`];
+      if (command) command(view);
       badgeSvc.addBadge('formatButtons');
     },
     customClick(button, evt) {

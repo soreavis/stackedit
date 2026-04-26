@@ -30,7 +30,7 @@ import {
 import { Transaction } from '@codemirror/state';
 import { bracketMatching } from '@codemirror/language';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
-import { markdown } from '@codemirror/lang-markdown';
+import { markdown, markdownKeymap } from '@codemirror/lang-markdown';
 import DiffMatchPatch from 'diff-match-patch';
 import { stackeditHighlight } from './cm6Highlighter';
 import {
@@ -66,30 +66,11 @@ class Emitter {
   }
 }
 
-// -------- Marker (cledit.Marker drop-in) --------
-let markerSeq = 0;
-export class Cm6Marker {
-  id: number;
-  offset: number;
-  trailing: boolean;
-  // cm6Id: id assigned by cm6Marker StateField after addMarker().
-  // Kept private so consumers can't accidentally mutate it.
-  private cm6Id: number | null = null;
-
-  constructor(offset: number, trailing = false) {
-    markerSeq += 1;
-    this.id = markerSeq;
-    this.offset = offset;
-    this.trailing = trailing;
-  }
-
-  // No-op — the StateField auto-maps offsets via mapPos(). Kept to
-  // preserve the cledit API surface for any caller still invoking it.
-  adjustOffset(_diffs: Array<[number, string]>): void { /* handled by StateField */ }
-
-  __setCm6Id(id: number) { this.cm6Id = id; }
-  __getCm6Id(): number | null { return this.cm6Id; }
-}
+// Marker class lives in cm6MarkerClass.ts so stores / components can
+// import it without dragging in @codemirror/* (which would blow the
+// main-bundle size-limit). Re-export here for the bridge surface.
+export { Cm6Marker } from './cm6MarkerClass';
+import { Cm6Marker } from './cm6MarkerClass';
 
 // -------- option types --------
 export interface SectionEntry { data: string; text: string; }
@@ -178,6 +159,10 @@ function baseExtensions(editableCompartment: Compartment): Extension[] {
     markerField,
     classRangeField,
     keymap.of([
+      // markdownKeymap first so its Enter handler (continue list,
+      // continue blockquote) takes precedence over defaultKeymap's
+      // plain newline.
+      ...markdownKeymap,
       ...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab,
     ]),
     editableCompartment.of(EditorView.editable.of(true)),
@@ -404,7 +389,7 @@ export function createCm6ClEditorBridge(
       view.dispatch({
         effects: addMarkerEffect.of({ id: marker.id, offset: marker.offset, trailing: marker.trailing }),
       });
-      marker.__setCm6Id(marker.id);
+      // marker.id is already assigned by Cm6Marker — no extra cm6Id sync needed.
       // Sync the offset back to marker.offset whenever the StateField updates.
       // Cheap polling via the updateListener — we already iterate markerField
       // entries on each transaction, so update marker.offset there too.
