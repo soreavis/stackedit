@@ -242,4 +242,24 @@ export default {
       }
     }
   },
+  async emptyTrash(): Promise<void> {
+    const trashFiles = (useFileStore().items as Array<{ id: string; parentId: string | null }>)
+      .filter(file => file.parentId === 'trash');
+    if (!trashFiles.length) return;
+    try {
+      await useModalStore().open({ type: 'emptyTrash', count: trashFiles.length });
+    } catch {
+      return; // user cancelled
+    }
+    const currentFileId = useFileStore().current.id;
+    let doClose = false;
+    trashFiles.forEach((file) => {
+      if (file.id === currentFileId) doClose = true;
+      workspaceSvc.deleteFile(file.id);
+    });
+    if (doClose) {
+      useFileStore().setCurrentId(pickVisibleReplacement());
+    }
+    badgeSvc.addBadge('removeFile');
+  },
 };
