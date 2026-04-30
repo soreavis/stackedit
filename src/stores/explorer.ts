@@ -239,6 +239,11 @@ export const useExplorerStore = defineStore('explorer', {
         return total;
       };
       countFiles(rootNode);
+      // Trash and Temp aren't pushed into rootNode.folders until further
+      // below, so the rootNode walk above skips them. Count them directly
+      // so the badge on these sentinel folders matches their contents.
+      countFiles(trashFolderNode);
+      countFiles(tempFolderNode);
 
       const recentFolderNode = new Node(emptyFolder() as unknown as ExplorerItem, [], true);
       recentFolderNode.item.id = 'recent';
@@ -282,9 +287,10 @@ export const useExplorerStore = defineStore('explorer', {
         node.noDrop = true;
       });
       (rootNode.folders as ExplorerNodeShape[]).unshift(trashFolderNode);
-      if (recentFolderNode.files.length) {
-        (rootNode.folders as ExplorerNodeShape[]).unshift(recentFolderNode);
-      }
+      // Always show the Recent sentinel — same as Trash/Temp. Empty just
+      // means there are no recently-opened files yet; the badge stays
+      // hidden naturally because showFileCount gates on fileCount > 0.
+      (rootNode.folders as ExplorerNodeShape[]).unshift(recentFolderNode);
 
       (rootNode.files as ExplorerNodeShape[]).push(fakeFileNode);
       return {

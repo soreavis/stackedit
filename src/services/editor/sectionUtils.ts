@@ -3,6 +3,19 @@
 // editor-space, preview-space, and TOC-space, then normalized so empty
 // sections borrow height from their neighbors and the proportions hold
 // across all three columns.
+//
+// This file mirrors the original benweet/stackedit `sectionUtils.js`
+// almost verbatim — the dimension normalizer and the per-section
+// offset loop are copies. The only CM6 adaptation is in
+// `resolveEditorSectionTop`: cledit had per-section DOM wrappers with
+// real `offsetTop`, CM6 doesn't, so we fall back to
+// `view.lineBlockAt(charOffset).top` (CM6's height map) translated
+// from `.cm-content` space into the `.editor` scroll container's
+// coordinate space. Once the syntax-tree-driven block decorations in
+// `cm6Highlighter.ts` apply heading/code line-height classes to the
+// whole document up front (not just the rendered viewport),
+// `lineBlockAt` returns stable y-coordinates for every line — which is
+// the same property cledit-section divs gave the original.
 
 class SectionDimension {
   startOffset: number;
@@ -16,8 +29,6 @@ class SectionDimension {
   }
 }
 
-// editorSvc has a `previewCtx.sectionDescList` of dimension-bearing
-// objects. The fields on each dimension are SectionDimension instances.
 interface SectionDesc {
   editorDimension: SectionDimension;
   previewDimension: SectionDimension;
@@ -25,11 +36,12 @@ interface SectionDesc {
   editorElt?: HTMLElement;
   previewElt?: HTMLElement;
   tocElt?: HTMLElement;
-  // section: the markdown-it section ({ data, text }); editorSvc's
-  // SectionDesc constructor stashes it for downstream consumers
-  // (textToPreviewDiffs, scroll sync). Optional because the cledit
-  // path didn't always need it.
   section?: { text: string; data: string };
+  // Source-line range covered by this section in the markdown source.
+  // Computed from cumulative `section.text` line counts and used by
+  // scroll-sync's line-based editor mapping (see scrollSync.ts).
+  startLine?: number;
+  lineCount?: number;
 }
 
 interface EditorSvcLike {
@@ -38,13 +50,8 @@ interface EditorSvcLike {
   previewElt: HTMLElement;
   tocElt: HTMLElement;
   clEditor?: {
-    // Stage 3 batch 9: when the CM6 bridge is active, section.elt is
-    // never set (CM6 doesn't render `<div class="cledit-section">`
-    // wrappers). Instead we measure via `view.coordsAtPos(offset)`
-    // — character-offset in the doc maps to a viewport y, which we
-    // translate to a scroll-container-relative offsetTop.
     view?: {
-      coordsAtPos(pos: number): { top: number; bottom: number; left: number; right: number } | null;
+      lineBlockAt(pos: number): { top: number; bottom: number; height: number } | null;
     };
   };
 }
@@ -83,9 +90,15 @@ const normalizeEditorDimensions = dimensionNormalizer('editorDimension');
 const normalizePreviewDimensions = dimensionNormalizer('previewDimension');
 const normalizeTocDimensions = dimensionNormalizer('tocDimension');
 
-// Resolve a section's editor-space top offset. Cledit path uses the
-// rendered `<div class="cledit-section">` wrapper's offsetTop; CM6
-// bridge path computes from char offset via view.coordsAtPos().
+// Resolve a section's editor-space top offset. cledit had a per-section
+// `editorElt` div with a real `offsetTop`; CM6 doesn't render
+// per-section DOM, so we ask CM6's height map for the y-coord of the
+// section's first character (via `view.lineBlockAt(charOffset).top`)
+// and translate that from `.cm-content` space into the `.editor`
+// scroll container's coordinate space. The translation is the constant
+// offset between `.cm-content`'s top and `.editor`'s scroll origin —
+// stable as long as the editor pane isn't resized, which we re-measure
+// on every call so resizes naturally settle on the next sync.
 function resolveEditorSectionTop(
   editorSvc: EditorSvcLike,
   desc: SectionDesc,
@@ -96,15 +109,17 @@ function resolveEditorSectionTop(
   const view = editorSvc.clEditor?.view;
   if (!view) return fallback;
   try {
-    const coords = view.coordsAtPos(charOffset);
-    if (!coords) return fallback;
-    const scrollerRect = editorSvc.editorElt.getBoundingClientRect();
-    // editorElt.parentNode is the scroll container in cledit-mode; in
-    // bridge-mode editorElt itself wraps the cm-content. Either way,
-    // bounding-rect-relative y + scrollTop gives the equivalent of
-    // offsetTop within the scrollable surface.
-    const scrollTop = (editorSvc.editorElt.parentElement?.scrollTop) ?? editorSvc.editorElt.scrollTop ?? 0;
-    return Math.max(0, Math.round(coords.top - scrollerRect.top + scrollTop));
+    const block = view.lineBlockAt(charOffset);
+    if (!block) return fallback;
+    const editorInner = editorSvc.editorElt;
+    const cmContent = editorInner.querySelector('.cm-content') as HTMLElement | null;
+    if (!cmContent) return fallback;
+    const scrollContainer = editorInner.parentElement || editorInner;
+    const cmRect = cmContent.getBoundingClientRect();
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const cmContentTopInContainer = cmRect.top - containerRect.top
+      + (scrollContainer.scrollTop || 0);
+    return Math.max(0, Math.round(cmContentTopInContainer + block.top));
   } catch {
     return fallback;
   }
@@ -112,18 +127,34 @@ function resolveEditorSectionTop(
 
 export default {
   measureSectionDimensions(editorSvc: EditorSvcLike): void {
+    const list = editorSvc.previewCtx.sectionDescList;
+    if (!list.length) return;
+
+    // Source-line range index. Each section's text ends with `\n` per
+    // the parser, so the section spans
+    // `(text.match(/\n/g) || []).length` source lines. Cumulative
+    // startLine = previous section's startLine + lineCount. Line
+    // numbers are 1-based to match CM6's `state.doc.lineAt().number`.
+    let cumulativeLine = 1;
+    for (let k = 0; k < list.length; k += 1) {
+      const text = list[k].section?.text || '';
+      const lc = Math.max(1, (text.match(/\n/g) || []).length);
+      list[k].startLine = cumulativeLine;
+      list[k].lineCount = lc;
+      cumulativeLine += lc;
+    }
+
     let editorSectionOffset = 0;
     let previewSectionOffset = 0;
     let tocSectionOffset = 0;
-    let sectionDesc = editorSvc.previewCtx.sectionDescList[0];
+    let sectionDesc = list[0];
     let nextSectionDesc: SectionDesc;
     let i = 1;
-    // Track running character offset for CM6-mode top resolution.
     let runningCharOffset = sectionDesc?.section?.text?.length ?? 0;
-    for (; i < editorSvc.previewCtx.sectionDescList.length; i += 1) {
-      nextSectionDesc = editorSvc.previewCtx.sectionDescList[i];
+    for (; i < list.length; i += 1) {
+      nextSectionDesc = list[i];
 
-      // Measure editor section
+      // Editor section: lineBlockAt-derived top offset
       let newEditorSectionOffset = resolveEditorSectionTop(
         editorSvc,
         nextSectionDesc,
@@ -139,7 +170,7 @@ export default {
       );
       editorSectionOffset = newEditorSectionOffset;
 
-      // Measure preview section
+      // Preview section: rendered HTML wrapper offsetTop (real DOM)
       let newPreviewSectionOffset = nextSectionDesc.previewElt
         ? nextSectionDesc.previewElt.offsetTop
         : previewSectionOffset;
@@ -152,7 +183,7 @@ export default {
       );
       previewSectionOffset = newPreviewSectionOffset;
 
-      // Measure TOC section
+      // TOC section: rendered TOC item offsetTop
       let newTocSectionOffset = nextSectionDesc.tocElt
         ? nextSectionDesc.tocElt.offsetTop + (nextSectionDesc.tocElt.offsetHeight / 2)
         : tocSectionOffset;
@@ -166,8 +197,10 @@ export default {
       runningCharOffset += nextSectionDesc?.section?.text?.length ?? 0;
     }
 
-    // Last section
-    sectionDesc = editorSvc.previewCtx.sectionDescList[i - 1];
+    // Last section: clamp to live scrollHeights so it covers any
+    // leftover space (rounding, image/font load shifts) and there's
+    // never a gap where a scrollTop falls into no section's range.
+    sectionDesc = list[i - 1];
     if (sectionDesc) {
       sectionDesc.editorDimension = new SectionDimension(
         editorSectionOffset,

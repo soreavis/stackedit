@@ -4,6 +4,10 @@
       <span v-for="n in lineCount" :key="n">{{ n }}</span>
     </div>
     <pre class="editor__inner markdown-highlighting" :style="{padding: styles.editorPadding}" :class="{monospaced: computedSettings.editor.monospacedFontOnly}"></pre>
+    <div v-if="loading" class="editor__loading" role="status" aria-label="Loading file">
+      <div class="editor__loading-spinner"></div>
+      <div class="editor__loading-label">Loading…</div>
+    </div>
     <div v-if="cm6Enabled" class="editor__cm6-sandbox" aria-label="CodeMirror 6 sandbox (Stage 3 batch 1)">
       <div class="editor__cm6-sandbox-label">CM6 sandbox</div>
       <div ref="cm6Mount" class="editor__cm6-sandbox-mount"></div>
@@ -35,6 +39,11 @@ export default {
   data: () => ({
     lineCount: 1,
     cm6Enabled: isCm6FlagEnabled(),
+    // Shown until the editor has parsed + rendered first content. Big
+    // markdown files take noticeable time to parse + decorate + apply
+    // section measurements; the spinner gives the user immediate
+    // feedback that something is happening rather than a blank pre.
+    loading: true,
   }),
   computed: {
     ...mapPiniaState(useFileStore, [
@@ -74,6 +83,20 @@ export default {
     };
     editorSvc.$on('sectionList', updateLineCount);
     updateLineCount();
+
+    // Drop the loading overlay as soon as the editor has parsed first
+    // content. `sectionList` fires after the bridge's contentChanged
+    // handler runs through markdown parsing, so by then the editor is
+    // showing real content.
+    const dismissLoading = () => {
+      this.loading = false;
+      editorSvc.$off('sectionList', dismissLoading);
+    };
+    editorSvc.$on('sectionList', dismissLoading);
+    // Belt-and-suspenders: never keep the spinner up longer than 8s
+    // even if something goes wrong, so the user is never stuck staring
+    // at a blank pane.
+    setTimeout(() => { this.loading = false; }, 8000);
 
     const editorElt = this.$el.querySelector('.editor__inner');
     const onDiscussionEvt = cb => (evt) => {
@@ -175,6 +198,58 @@ export default {
 
 .editor--with-line-numbers .editor__inner {
   padding-left: 52px !important;
+}
+
+/* Loading state shown until the editor has parsed and rendered first
+   content. Pinned to the editor pane (sticky-like via position:sticky
+   would require scroll context; we use position:fixed with the parent
+   editor's bounding box mapped via top/left in JS would be over-kill —
+   absolute centered inside .editor is enough since the editor is the
+   visible viewport). */
+.editor__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(2px);
+  z-index: 5;
+  pointer-events: none;
+  font: 13px/1.4 $font-family-main;
+  color: rgba(0, 0, 0, 0.55);
+
+  .app--dark & {
+    background: rgba(20, 20, 20, 0.55);
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.editor__loading-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 0, 0, 0.12);
+  border-top-color: rgba(0, 0, 0, 0.55);
+  animation: editor-spinner 0.9s linear infinite;
+
+  .app--dark & {
+    border-color: rgba(255, 255, 255, 0.18);
+    border-top-color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.editor__loading-label {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@keyframes editor-spinner {
+  to { transform: rotate(360deg); }
 }
 
 /* Stage 3 batch 1 sandbox: appears only with `?cm6=1` query param.
