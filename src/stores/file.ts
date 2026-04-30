@@ -83,9 +83,15 @@ export const useFileStore = defineStore('file', {
   actions: {
     setItem(value: Partial<FileItem> & { id: string }): void {
       const item = Object.assign(emptyFile(value.id), value) as FileItem;
-      if (!item.hash) {
-        item.hash = hashFunc(item);
-      }
+      // Always recompute the content hash. Callers like
+      // workspaceSvc.setOrPatchItem spread the existing item (with its
+      // stale hash) before patching fields like parentId/name, so a
+      // truthy item.hash here is no signal that the hash is current.
+      // localDbSvc.writeAll uses hash inequality to detect changes —
+      // skipping the recompute would silently lose the IndexedDB write
+      // (e.g. trash moves stay visual-only and revert on reload).
+      // Matches itemStoreFactory's non-simpleHash branch.
+      item.hash = hashFunc(item);
       this.itemsById = { ...this.itemsById, [item.id]: item };
     },
     patchItem(patch: Partial<FileItem> & { id: string }): boolean {

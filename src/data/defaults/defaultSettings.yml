@@ -16,6 +16,13 @@ editor:
   # Use monospaced font only
   monospacedFontOnly: false
 
+# Settings for nerds — turn these on to peek under the hood.
+debug:
+  # Show a small live overlay (bottom-left) with editor/preview scroll
+  # positions, drift, and which sections each side is currently in.
+  # Useful when troubleshooting scroll-sync alignment.
+  scrollSyncOverlay: false
+
 # Keyboard shortcuts
 # See https://craig.is/killing/mice
 shortcuts:
