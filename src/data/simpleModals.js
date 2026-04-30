@@ -34,6 +34,11 @@ export default {
     'No',
     'Yes, delete',
   ),
+  emptyTrash: simpleModal(
+    config => `<p>You are about to permanently delete ${config.count} file${config.count === 1 ? '' : 's'} from Trash. Are you sure?</p>`,
+    'No',
+    'Yes, empty Trash',
+  ),
   fileRestoration: simpleModal(
     '<p>You are about to revert some changes. Are you sure?</p>',
     'No',

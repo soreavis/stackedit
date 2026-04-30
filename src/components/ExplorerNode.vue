@@ -1,9 +1,9 @@
 <template>
-  <div v-if="isVisible" class="explorer-node" :class="{'explorer-node--selected': isSelected, 'explorer-node--primary': isPrimary, 'explorer-node--folder': node.isFolder, 'explorer-node--open': isOpen, 'explorer-node--trash': node.isTrash, 'explorer-node--temp': node.isTemp, 'explorer-node--recent': node.isRecent, 'explorer-node--pinned': isPinned, 'explorer-node--drag-target': isDragTargetFolder}" @dragover.prevent @dragenter.stop="node.noDrop || setDragTarget(node)" @dragleave.stop="isDragTarget && setDragTarget()" @drop.prevent.stop="onDrop" @contextmenu="onContextMenu">
+  <div v-if="isVisible" class="explorer-node" :class="{'explorer-node--selected': isSelected, 'explorer-node--primary': isPrimary, 'explorer-node--folder': node.isFolder, 'explorer-node--open': isOpen, 'explorer-node--trash': node.isTrash, 'explorer-node--temp': node.isTemp, 'explorer-node--recent': node.isRecent, 'explorer-node--pinned': isPinned, 'explorer-node--drag-target': isDragTargetFolder}" @dragover.prevent @dragenter.stop="setDragTarget(node.noDrop ? null : node)" @drop.prevent.stop="onDrop" @contextmenu="onContextMenu">
     <div class="explorer-node__item-editor" v-if="isEditing" :style="{paddingLeft: leftPadding}" draggable="true" @dragstart.stop.prevent>
       <input type="text" class="text-input" v-focus @blur="submitEdit()" @keydown.stop @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingNodeName">
     </div>
-    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span><span v-if="showNerdInfo" class="explorer-node__info" @click.stop @mousedown.stop @mouseenter="onInfoEnter" @mouseleave="onInfoLeave">ⓘ</span>
+    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount || showNerdInfo" class="explorer-node__rhs"><span v-if="showNerdInfo" class="explorer-node__info" @click.stop @mousedown.stop @mouseenter="onInfoEnter" @mouseleave="onInfoLeave">ⓘ</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span></span>
       <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
       <div v-if="infoOpen" class="explorer-node__info-popover" :style="infoPopoverStyle">
         <div class="explorer-node__info-row" v-for="row in nerdInfoRows" :key="row.k"><span class="explorer-node__info-k">{{ row.k }}</span><span class="explorer-node__info-v">{{ row.v }}</span></div>
@@ -109,7 +109,21 @@ export default {
         { k: 'ID', v: id },
       ];
       if (this.node.isFolder) {
-        rows.push({ k: 'Contains', v: `${this.node.fileCount || 0} files` });
+        const directFiles = (this.node.files || []).filter(f => f.item.id !== 'fake').length;
+        const directFolders = (this.node.folders || []).length;
+        const parts = [];
+        if (directFiles) parts.push(`${directFiles} ${directFiles === 1 ? 'file' : 'files'}`);
+        if (directFolders) parts.push(`${directFolders} ${directFolders === 1 ? 'subfolder' : 'subfolders'}`);
+        rows.push({ k: 'Contains', v: parts.length ? parts.join(' · ') : 'Empty' });
+        // node.fileCount is the recursive file total. Add a recursive
+        // subfolder count so we can surface a single "Total items" row when
+        // there's nesting beyond what "Contains" covers.
+        const countSubfolders = node => (node.folders || [])
+          .reduce((sum, f) => sum + 1 + countSubfolders(f), 0);
+        const totalItems = (this.node.fileCount || 0) + countSubfolders(this.node);
+        if (totalItems > directFiles + directFolders) {
+          rows.push({ k: 'Total', v: `${totalItems} items` });
+        }
       } else {
         const entry = useContentStore().itemsById[`${id}/content`];
         const text = (entry && entry.text) || '';
@@ -433,11 +447,16 @@ export default {
           }, {
             type: 'separator',
           }, {
+            name: 'Empty Trash',
+            disabled: !this.node.isTrash || (this.node.fileCount || 0) === 0,
+            perform: () => explorerSvc.emptyTrash(),
+          }, {
             name: 'Rename',
             disabled: this.node.isTrash || this.node.isTemp || this.node.isRecent,
             perform: () => this.setEditingId(this.node.item.id),
           }, {
             name: 'Delete',
+            disabled: this.node.isTrash,
             perform: () => explorerSvc.deleteItem(),
           }],
         });
@@ -514,6 +533,15 @@ export default {
     },
     onEnter(el, done) {
       const h = el.scrollHeight;
+      // Empty children container has scrollHeight 0 — the 0→0 height
+      // assignment fires no transitionend, so onAfterEnter never runs and
+      // the inline `height:0; overflow:hidden` would stay stuck. Files
+      // added later into this open-but-empty folder would render inside
+      // a clipped 0-height box. Short-circuit so afterEnter still clears.
+      if (h === 0) {
+        done();
+        return;
+      }
       // Force reflow so the browser commits the 0 → h transition.
       void el.offsetHeight;
       el.style.height = `${h}px`;
@@ -532,6 +560,12 @@ export default {
       el.style.overflow = 'hidden';
     },
     onLeave(el, done) {
+      // Symmetric guard: an empty container (scrollHeight 0) won't fire a
+      // transitionend on the 0→0 leave, so Vue would never unmount it.
+      if (el.scrollHeight === 0) {
+        done();
+        return;
+      }
       void el.offsetHeight;
       el.style.height = '0';
       const onEnd = () => {
@@ -631,10 +665,18 @@ $item-font-size: 14px;
   }
 }
 
+.explorer-node__rhs {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .explorer-node__count {
-  float: right;
-  margin-left: 6px;
-  font-size: 0.7em;
+  font-size: 0.75em;
   font-weight: 500;
   padding: 0 6px;
   background-color: rgba(0, 0, 0, 0.08);
@@ -655,11 +697,7 @@ $item-font-size: 14px;
 }
 
 .explorer-node__info {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   opacity: 0.7;
   cursor: help;
