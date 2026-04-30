@@ -1,6 +1,7 @@
 import DiffMatchPatch from 'diff-match-patch';
 import Prism from 'prismjs';
 import MarkdownIt from 'markdown-it';
+import markdownItFrontMatter from 'markdown-it-front-matter';
 import markdownGrammarSvc from './markdownGrammarSvc';
 import extensionSvc from './extensionSvc';
 import utils from './utils';
@@ -154,6 +155,15 @@ export default {
     converter.core.ruler.enable([], true);
     converter.block.ruler.enable([], true);
     converter.inline.ruler.enable([], true);
+    // YAML front-matter (--- … ---) at the very top of a document gets
+    // consumed by this plugin and never reaches the renderer, so it
+    // doesn't render as a giant collapsed setext-h2 + hr. The callback
+    // is intentionally a no-op — we don't surface front-matter into
+    // the rendered HTML or the export view object today; the plugin
+    // exists purely to prevent rendering. (If anyone ever needs the
+    // parsed YAML they can swap in a callback that stashes it on
+    // `parsingCtx` or similar.)
+    converter.use(markdownItFrontMatter, () => {});
     extensionSvc.initConverter(converter, options);
     Object.keys(startSectionBlockTypeMap).forEach((type) => {
       const rule = converter.renderer.rules[type] || converter.renderer.renderToken;
@@ -225,6 +235,25 @@ export default {
       }
     });
     addSection(lines.length);
+    // markdown-it-front-matter consumes the `---\n…\n---` block at the
+    // top of the doc but doesn't emit a token. parseSections then
+    // accumulates those front-matter lines into a phantom first
+    // section with no HTML to map to — the renderer's first marker is
+    // BEFORE the first real content token (heading_open at index 1),
+    // so `htmlSectionList[0]` is empty, gets shifted, and every
+    // section ends up paired with the NEXT section's HTML.
+    // sectionDescList's `previewElt.offsetTop` then points at the
+    // wrong DOM node, sync misaligns by exactly one section, and the
+    // user sees the preview perpetually showing content one section
+    // ahead of the editor — same symptom as a cascading off-by-one.
+    //
+    // If the first section's text is *only* front matter (delimited
+    // by `---` lines), drop it so the parser-section index matches
+    // the renderer-section index.
+    const fmRe = /^---\r?\n[\s\S]*?\r?\n---\r?\n*$/;
+    if (parsingCtx.sections.length > 1 && fmRe.test(parsingCtx.sections[0].text)) {
+      parsingCtx.sections.shift();
+    }
     return parsingCtx;
   },
 

@@ -127,6 +127,16 @@ const editorSvc: any = Object.assign(new Vue(), editorSvcDiscussions, editorSvcU
    */
   convert(this: any): void {
     this.conversionCtx = (markdownConversionSvc as any).convert(this.parsingCtx, this.conversionCtx);
+    // Freeze preview height before refresh swaps section HTML in & out.
+    // Without this lock, the scrollbar's max-scroll position changes
+    // mid-reflow, the browser reclamps preview.scrollTop, and scroll
+    // sync sees the resulting jiggle as user-driven preview scroll —
+    // the visible "stutter" while the editor is being typed in or a
+    // long file is loading. Original benweet/stackedit did exactly
+    // this on `conversionCtx`, then released it on `previewText`.
+    if (this.previewElt) {
+      this.previewElt.style.height = `${this.previewElt.offsetHeight}px`;
+    }
     this.$emit('conversionCtx', this.conversionCtx);
     ({ tokens } = this.parsingCtx.markdownState);
   },
@@ -144,6 +154,13 @@ const editorSvc: any = Object.assign(new Vue(), editorSvcDiscussions, editorSvcU
     let insertBeforeTocElt = this.tocElt.firstChild;
     let previewHtml = '';
     let loadingImages: any[] = [];
+    // Collect Promises returned by extension `sectionPreview` listeners
+    // (mermaid is the canonical async one — it ships a placeholder that
+    // gets replaced by an SVG seconds later). Without awaiting these,
+    // `measureSectionDimensions` runs against the placeholder size and
+    // every section after a mermaid block ends up with stale preview
+    // pixel offsets that scrolling can never recover from.
+    const extensionPromises: Promise<unknown>[] = [];
     this.conversionCtx.htmlSectionDiff.forEach((item: any) => {
       for (let i = 0; i < item[1].length; i += 1) {
         const section = this.conversionCtx.sectionList[sectionIdx];
@@ -185,7 +202,9 @@ const editorSvc: any = Object.assign(new Vue(), editorSvcDiscussions, editorSvcU
           } else {
             this.previewElt.appendChild(sectionPreviewElt);
           }
-          (extensionSvc as any).sectionPreview(sectionPreviewElt, this.options, true);
+          extensionPromises.push(
+            (extensionSvc as any).sectionPreview(sectionPreviewElt, this.options, true),
+          );
           loadingImages = [
             ...loadingImages,
             ...Array.prototype.slice.call(sectionPreviewElt.getElementsByTagName('img')),
@@ -236,9 +255,26 @@ const editorSvc: any = Object.assign(new Vue(), editorSvcDiscussions, editorSvcU
       img.onerror = () => resolve();
       img.src = imgElt.src;
     }));
-    await Promise.all(loadedPromises);
+    // Wait for BOTH image loads AND async extension renders (mermaid,
+    // katex, etc.) BEFORE the single measurement — matches the
+    // original benweet/stackedit pattern. Measuring after only image
+    // loads gave us stale preview pixel offsets for any section with
+    // a mermaid diagram, since the placeholder is tiny but the
+    // rendered SVG is hundreds of pixels tall. Promise.allSettled
+    // tolerates a single diagram failing to render — every other
+    // section still gets correct measurements.
+    await Promise.allSettled([
+      ...loadedPromises,
+      ...extensionPromises,
+    ]);
 
-    // Debounce if sections have already been measured
+    // Release the height lock that `convert()` placed on previewElt to
+    // suppress reflow-jiggle. After this, the preview's scrollHeight
+    // reflects the real rendered height (including mermaid SVGs etc.)
+    // and scroll-sync can measure correct section offsets.
+    if (this.previewElt) {
+      this.previewElt.style.removeProperty('height');
+    }
     this.measureSectionDimensions(!!this.previewCtxMeasured);
   },
 
