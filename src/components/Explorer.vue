@@ -267,11 +267,13 @@ export default {
     },
     onTreeDragLeave(evt) {
       // Only clear when the drag genuinely leaves the tree, not when
-      // moving into a descendant explorer-node.
+      // moving into a descendant explorer-node. The per-row dragleave
+      // no longer clears (Chrome fires the new row's dragenter BEFORE
+      // the old row's dragleave, which would race-clear a freshly-set
+      // target), so the tree-level handler is the single point that
+      // resets when the cursor exits the explorer entirely.
       if (evt.currentTarget.contains(evt.relatedTarget)) return;
-      if (this.isRootDropTarget) {
-        this.setDragTarget();
-      }
+      this.setDragTarget();
     },
     async onTreeDrop(evt) {
       this.setDragTarget();

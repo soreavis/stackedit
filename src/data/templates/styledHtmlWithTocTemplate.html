@@ -38,6 +38,40 @@
       border-radius: 3px;
     }
     html { scroll-behavior: smooth; }
+    /* Content-driven column sizing for tables. Upstream `style.css`
+       sets `table-layout: fixed`, which gives every column the same
+       width regardless of content — short values like "Founded" or
+       "Signal" end up consuming as much horizontal space as a 30-word
+       prose cell, and that prose then wraps to many lines. `auto`
+       lets the browser measure each column's natural content and
+       distribute width proportionally. `word-break: break-word` keeps
+       very long unbreakable tokens (URLs, hashes) from blowing out
+       the layout, and `vertical-align: top` keeps short cells aligned
+       to the top edge of taller neighbours. */
+    /* `table-layout: auto` lets the browser measure each column's
+       content and distribute width proportionally — the wide prose
+       column ("Value", "Why") gets the lion's share and short-content
+       columns ("Metric", "Signal", "Pressure Level") shrink to fit
+       their longest word. Crucially we DON'T set any kind of
+       `overflow-wrap` / `word-break` here — those values reduce each
+       column's min-content-width to a single character (because the
+       algorithm now knows it could break words to satisfy compression),
+       and auto-layout then collapses narrow columns letter-by-letter
+       to give the prose column more room. With the defaults,
+       min-content-width is the widest unbreakable word, so
+       "Pressure" / "Founded" / "Coevera" stay on one line. */
+    .stackedit__html table {
+      table-layout: auto;
+      width: 100%;
+    }
+    .stackedit__html th,
+    .stackedit__html td {
+      vertical-align: top;
+    }
+    .stackedit__html td a,
+    .stackedit__html td code {
+      overflow-wrap: anywhere;
+    }
   </style>
   {{#if pdf}}
   <style>

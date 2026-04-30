@@ -20,7 +20,6 @@ import {
 } from '@codemirror/state';
 import {
   EditorView, keymap,
-  lineNumbers, highlightActiveLine, highlightActiveLineGutter,
   drawSelection, rectangularSelection, crosshairCursor,
 } from '@codemirror/view';
 import {
@@ -143,11 +142,40 @@ interface UndoMgrShim {
   setDefaultMode(_mode: string): void;
 }
 
+// Make CM6 visually transparent inside `.editor__inner`. The wrapping <pre>
+// already supplies the prose font (`$font-family-main` in Lato), padding,
+// and the optional line-number gutter (`.editor__line-numbers`, gated by
+// `layoutSettings.showLineNumbers`). Without these overrides CM6's baseTheme
+// would force monospace on `.cm-scroller`, paint a focus outline on
+// `.cm-editor`/`.cm-focused`, and add its own `.cm-content` padding — all of
+// which break visual parity with the cledit-era editor and shift the
+// per-section pixel heights that scroll-sync (`measureSectionDimensions`)
+// depends on.
+const transparentTheme = EditorView.theme({
+  '&': {
+    backgroundColor: 'transparent',
+    color: 'inherit',
+    fontFamily: 'inherit',
+    fontSize: 'inherit',
+    lineHeight: 'inherit',
+    height: '100%',
+  },
+  '&.cm-focused': { outline: 'none' },
+  '.cm-scroller': {
+    fontFamily: 'inherit',
+    lineHeight: 'inherit',
+    overflow: 'visible',
+  },
+  '.cm-content': {
+    fontFamily: 'inherit',
+    padding: 0,
+    caretColor: 'currentColor',
+  },
+  '.cm-line': { padding: 0 },
+});
+
 function baseExtensions(editableCompartment: Compartment): Extension[] {
   return [
-    lineNumbers(),
-    highlightActiveLine(),
-    highlightActiveLineGutter(),
     history(),
     drawSelection(),
     rectangularSelection(),
@@ -155,6 +183,7 @@ function baseExtensions(editableCompartment: Compartment): Extension[] {
     bracketMatching(),
     highlightSelectionMatches(),
     EditorView.lineWrapping,
+    transparentTheme,
     stackeditHighlight(),
     markdown(),
     markerField,
