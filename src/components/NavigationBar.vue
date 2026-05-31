@@ -343,9 +343,9 @@ export default {
       // every toolbar action through cm6Commands; pagedown is gone.
       const view = editorSvc.clEditor.view;
       const command = name === 'link'
-        ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
+        ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }).catch(() => {}))
         : name === 'image'
-          ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
+          ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }).catch(() => {}))
           : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
       if (command) command(view);
       if (before !== editorSvc.clEditor.getContent()) {
