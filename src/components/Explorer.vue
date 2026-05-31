@@ -55,6 +55,7 @@
       @keydown.delete="deleteItem()"
       @keydown="onTreeKeyDown"
       @mousedown="onTreeMouseDown"
+      @contextmenu="onTreeContextMenu"
       @dragover.prevent
       @dragenter="onTreeDragEnter"
       @dragleave="onTreeDragLeave"
@@ -78,6 +79,7 @@ import { useFolderStore } from '../stores/folder';
 import { useDataStore } from '../stores/data';
 import { useExplorerStore } from '../stores/explorer';
 import { useGlobalStore } from '../stores/global';
+import { useContextMenuStore } from '../stores/contextMenu';
 
 export default {
   components: {
@@ -157,6 +159,41 @@ export default {
     },
     collapseAll() {
       useExplorerStore().setOpenNodes({});
+    },
+    async onTreeContextMenu(evt) {
+      // Only act on genuinely empty tree space. Real file/folder rows have
+      // their own menu (ExplorerNode.onContextMenu) and stop propagation
+      // before this fires; the row guard also covers the sentinel/filler
+      // rows (Recent, the fake bottom spacer) that bubble up here.
+      if (evt.target.closest('.explorer-node__item, .explorer-node__item-editor')) return;
+      evt.preventDefault();
+      const hasFolders = useFolderStore().items.length > 0;
+      const item = await useContextMenuStore().open({
+        coordinates: {
+          left: evt.clientX,
+          top: evt.clientY,
+        },
+        items: [{
+          name: 'New file',
+          perform: () => this.newItem(false),
+        }, {
+          name: 'New folder',
+          perform: () => this.newItem(true),
+        }, {
+          type: 'separator',
+        }, {
+          name: 'Expand all folders',
+          disabled: !hasFolders,
+          perform: () => this.expandAll(),
+        }, {
+          name: 'Collapse all folders',
+          disabled: !hasFolders,
+          perform: () => this.collapseAll(),
+        }],
+      });
+      if (item) {
+        item.perform();
+      }
     },
     cycleSort() {
       const order = ['name', 'modified', 'created'];

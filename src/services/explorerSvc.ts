@@ -134,11 +134,13 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
   if (folders) badgeSvc.addBadge('removeFolder');
   else badgeSvc.addBadge('removeFile');
 
-  // Clear selection after bulk delete.
-  useExplorerStore().setSelectedIds([]);
-
   if (doClose) {
-    useFileStore().setCurrentId(pickVisibleReplacement());
+    // Removed the open file: close the editor and leave nothing selected.
+    useFileStore().setCurrentId(null);
+  } else {
+    // Open file survived the bulk delete: keep it highlighted rather than
+    // leaving the deleted rows' stale selection behind.
+    useExplorerStore().setSelectedIds(currentFileId ? [currentFileId] : []);
   }
 }
 
@@ -237,8 +239,14 @@ export default {
         badgeSvc.addBadge('removeFile');
       }
       if (doClose) {
-        const replacement = pickVisibleReplacement();
-        useFileStore().setCurrentId(replacement);
+        // Deleted the open file (or a folder holding it): close the editor
+        // and leave the explorer with nothing selected. The current-id
+        // watcher in Explorer.vue clears the selection when id → null.
+        useFileStore().setCurrentId(null);
+      } else {
+        // Deleted a different file: drop the now-gone row's stale highlight
+        // and keep the open file highlighted instead.
+        useExplorerStore().setSelectedIds(currentFileId ? [currentFileId] : []);
       }
     }
   },
