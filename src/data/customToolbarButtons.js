@@ -189,9 +189,12 @@ export const music = {
 // blocks (so indentation / whitespace there stays exactly as the user
 // typed). Outside fences:
 //   - trims trailing whitespace per line
-//   - collapses 3+ blank lines to 1 blank line
+//   - collapses 2+ blank lines to 1 blank line
 //   - ensures a space after heading hashes (`#foo` → `# foo`)
 //   - ensures a space after list-bullet markers (`-foo` → `- foo`)
+//   - surrounds every heading with exactly one blank line (MD022) — so
+//     deleting the blank line under a heading and tidying restores it,
+//     and a heading bumped against preceding prose gets separated
 //   - normalizes trailing newlines at EOF to exactly 1
 // Deliberately doesn't reflow paragraphs, rewrap tables, or change
 // emphasis-marker style — those are opinionated transforms that can
@@ -225,8 +228,35 @@ function tidyMarkdown(text) {
       out.push(t);
     }
   }
-  while (out.length > 0 && out[out.length - 1] === '') out.pop();
-  return `${out.join('\n')}\n`;
+  // Second pass: surround ATX headings with exactly one blank line. Fenced
+  // code is tracked again so a `#` line inside a code block is left alone.
+  // Blank runs were already collapsed above, so checking the immediate
+  // neighbour is enough to avoid creating doubles.
+  const spaced = [];
+  inFence = false;
+  const isHeading = l => /^#{1,6}\s/.test(l);
+  for (let i = 0; i < out.length; i += 1) {
+    const line = out[i];
+    if (/^\s*```/.test(line)) {
+      inFence = !inFence;
+      spaced.push(line);
+      continue;
+    }
+    if (!inFence && isHeading(line)) {
+      if (spaced.length > 0 && spaced[spaced.length - 1] !== '') {
+        spaced.push(''); // blank line before (skipped at doc start)
+      }
+      spaced.push(line);
+      const next = out[i + 1];
+      if (next !== undefined && next !== '') {
+        spaced.push(''); // blank line after (skipped at EOF / already blank)
+      }
+      continue;
+    }
+    spaced.push(line);
+  }
+  while (spaced.length > 0 && spaced[spaced.length - 1] === '') spaced.pop();
+  return `${spaced.join('\n')}\n`;
 }
 
 export const tidy = {

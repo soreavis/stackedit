@@ -91,11 +91,7 @@ git:
   deleteFileMessage: '{{path}} deleted from https://stackedit.io/'
 
 # Default content for new files
-newFileContent: |
-
-
-
-  > Written with [StackEdit](https://stackedit.io/).
+newFileContent: ''
 
 # Default properties for new files
 newFileProperties: |

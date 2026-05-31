@@ -3,7 +3,7 @@
     <div class="explorer-node__item-editor" v-if="isEditing" :style="{paddingLeft: leftPadding}" draggable="true" @dragstart.stop.prevent>
       <input type="text" class="text-input" v-focus @blur="submitEdit()" @keydown.stop @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingNodeName">
     </div>
-    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount || showNerdInfo" class="explorer-node__rhs"><span v-if="showNerdInfo" class="explorer-node__info" @click.stop @mousedown.stop @mouseenter="onInfoEnter" @mouseleave="onInfoLeave">ⓘ</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span></span>
+    <div class="explorer-node__item" v-else-if="!node.isRoot" :data-node-id="node.item.id" :style="{paddingLeft: leftPadding}" @click="onClick" @dblclick="onDoubleClick" draggable="true" @dragstart.stop="onDragStart" @dragend.stop="onDragEnd"><span v-if="showCaret" class="explorer-node__caret" @click.stop="onCaretClick" @mousedown.stop>{{ isOpen ? '▾' : '▹' }}</span><span v-for="(part, i) in nameParts" :key="i" :class="{ 'explorer-node__match': part.match }">{{ part.text }}</span><span v-if="isPinned" class="explorer-node__pin" v-title="'Pinned'">📌</span><span v-if="node.recentLabel" class="explorer-node__ts">{{ node.recentLabel }}</span><span v-if="showFileCount || showNerdInfo" class="explorer-node__rhs"><span v-if="showNerdInfo" class="explorer-node__info" @click.stop @mousedown.stop @mouseenter="onInfoEnter" @mouseleave="onInfoLeave">ⓘ</span><span v-if="showFileCount" class="explorer-node__count">{{ node.fileCount }}</span></span>
       <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
       <div v-if="infoOpen" class="explorer-node__info-popover" :style="infoPopoverStyle">
         <div class="explorer-node__info-row" v-for="row in nerdInfoRows" :key="row.k"><span class="explorer-node__info-k">{{ row.k }}</span><span class="explorer-node__info-v">{{ row.v }}</span></div>
@@ -275,6 +275,17 @@ export default {
     onCaretClick() {
       // Caret toggles open/close independently of selection.
       useExplorerStore().toggleOpenNode(this.node.item.id);
+    },
+    onDoubleClick() {
+      // Double-click enters inline rename, same as F2 / the context-menu
+      // Rename action. Sentinels (Trash/Temp/Recent/root) and the nil node
+      // aren't renameable, so they fall through to their normal click
+      // behavior (the caret on the second click just toggled them open).
+      const { node } = this;
+      if (node.isNil || node.isRoot || node.isTrash || node.isTemp || node.isRecent) {
+        return;
+      }
+      this.setEditingId(node.item.id);
     },
     collectRange(anchorId, targetId) {
       // Use the live DOM to get visible nodes in render order.
