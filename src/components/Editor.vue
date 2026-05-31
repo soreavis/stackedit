@@ -126,6 +126,26 @@ export default {
       useDiscussionStore().setCurrentDiscussionId(discussionId);
     }));
 
+    // Click-to-focus: a click on the empty area around or below the text
+    // (the editor padding, or the blank space under a short / empty doc —
+    // anywhere outside the CM6 editor box) focuses the editor and drops the
+    // caret at the nearest position, falling back to the document end. This
+    // makes an empty file editable by clicking anywhere in the pane, not
+    // only on its single line. CM6 already handles clicks inside its own
+    // box; the gutter (comments / new-discussion button) handles its own.
+    this.$el.addEventListener('mousedown', (evt) => {
+      if (evt.button !== 0) return;
+      if (evt.target.closest('.cm-editor, .gutter, .editor__cm6-sandbox')) return;
+      const view = editorSvc.clEditor && editorSvc.clEditor.view;
+      if (!view) return;
+      const pos = view.posAtCoords({ x: evt.clientX, y: evt.clientY });
+      evt.preventDefault();
+      view.focus();
+      // Plain `{anchor}` spec avoids a static @codemirror/state import here
+      // (which would pull it into the main bundle, out of the lazy CM6 chunk).
+      view.dispatch({ selection: { anchor: pos == null ? view.state.doc.length : pos } });
+    });
+
     this.$watch(
       () => useDiscussionStore().currentDiscussionId,
       (discussionId, oldDiscussionId) => {

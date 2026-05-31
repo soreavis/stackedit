@@ -389,6 +389,11 @@ export const cm6Commands: Record<string, Cm6Command> = {
   sortLines: sortLinesCommand,
   wikiLink: wikiLinkCommand,
   imageWithSize: imageWithSizeCommand,
+  // Plain `table` is what the core (pagedown) toolbar button dispatches —
+  // a single-click default insert. The sized variants back the custom
+  // toolbar's size dropdown. Without this key `cm6Commands['table']` was
+  // undefined, so the core Table button did nothing.
+  table: table3x3Command,
   table2x2: table2x2Command,
   table3x3: table3x3Command,
   table4x3: table4x3Command,
