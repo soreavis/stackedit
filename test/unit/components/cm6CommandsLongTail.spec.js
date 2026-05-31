@@ -283,7 +283,7 @@ describe('cm6Commands registry coverage', () => {
       'olist',
       'quote',
       'sentenceCase', 'snakeCase', 'sortLines', 'strikethrough', 'subscript',
-      'superscript', 'table10x4', 'table2x2', 'table3x3', 'table4x3', 'table5x4',
+      'superscript', 'table', 'table10x4', 'table2x2', 'table3x3', 'table4x3', 'table5x4',
       'time', 'titleCase',
       'ulist',
       'upperCase', 'wikiLink',
