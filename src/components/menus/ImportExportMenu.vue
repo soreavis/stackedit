@@ -194,6 +194,7 @@ export default {
     async exportMarkdown() {
       const currentFile = useFileStore().current;
       try {
+        useNotificationStore().info('Exporting Markdown…');
         await exportSvc.exportToDisk(currentFile.id, 'md');
         badgeSvc.addBadge('exportMarkdown');
       } catch (e) { /* Cancel */ }

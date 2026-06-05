@@ -84,19 +84,59 @@ export default {
     editorSvc.$on('sectionList', updateLineCount);
     updateLineCount();
 
-    // Drop the loading overlay as soon as the editor has parsed first
-    // content. `sectionList` fires after the bridge's contentChanged
-    // handler runs through markdown parsing, so by then the editor is
-    // showing real content.
-    const dismissLoading = () => {
-      this.loading = false;
-      editorSvc.$off('sectionList', dismissLoading);
+    // --- Document-loading overlay -----------------------------------
+    // Re-arm the spinner on every file switch so the user gets immediate
+    // feedback while a new file is read from IndexedDB + parsed +
+    // decorated. Cached / small files load well under the show-delay
+    // below, so quick switches never flash the overlay.
+    let showTimer = null;
+    let safetyTimer = null;
+    const clearLoaderTimers = () => {
+      clearTimeout(showTimer);
+      clearTimeout(safetyTimer);
+      showTimer = null;
+      safetyTimer = null;
     };
-    editorSvc.$on('sectionList', dismissLoading);
-    // Belt-and-suspenders: never keep the spinner up longer than 8s
-    // even if something goes wrong, so the user is never stuck staring
-    // at a blank pane.
-    setTimeout(() => { this.loading = false; }, 8000);
+    const armLoader = (immediate) => {
+      clearLoaderTimers();
+      if (immediate) {
+        this.loading = true;
+      } else {
+        // Delay so cached / fast loads don't flash the overlay.
+        showTimer = setTimeout(() => { this.loading = true; }, 150);
+      }
+      // Belt-and-suspenders: never keep the spinner up longer than 8s
+      // even if something goes wrong, so the user is never stuck staring
+      // at a blank pane.
+      safetyTimer = setTimeout(() => {
+        clearTimeout(showTimer);
+        showTimer = null;
+        this.loading = false;
+      }, 8000);
+    };
+    const dismissLoader = () => {
+      clearLoaderTimers();
+      this.loading = false;
+    };
+    // `sectionList` fires after the bridge's contentChanged handler runs
+    // markdown parsing, so by then the editor shows real content.
+    // Persistent listener — fires on every switch, not just the first.
+    this._loaderDismiss = dismissLoader;
+    editorSvc.$on('sectionList', dismissLoader);
+    // Re-arm whenever the open file changes. No file selected → no
+    // spinner (EmptyDocument takes over the pane instead).
+    this._loaderUnwatch = this.$watch(
+      () => useFileStore().currentId,
+      (id) => { if (id) armLoader(false); else dismissLoader(); },
+    );
+    // The file open on mount is already loading: keep the initial overlay
+    // (data.loading starts true) but arm the 8s safety; drop it if there
+    // is no current file.
+    if (useFileStore().currentId) {
+      safetyTimer = setTimeout(() => { this.loading = false; }, 8000);
+    } else {
+      this.loading = false;
+    }
 
     const editorElt = this.$el.querySelector('.editor__inner');
     const onDiscussionEvt = cb => (evt) => {
@@ -164,6 +204,14 @@ export default {
     if (this._cm6Handle) {
       this._cm6Handle.dispose();
       this._cm6Handle = null;
+    }
+    if (this._loaderUnwatch) {
+      this._loaderUnwatch();
+      this._loaderUnwatch = null;
+    }
+    if (this._loaderDismiss) {
+      editorSvc.$off('sectionList', this._loaderDismiss);
+      this._loaderDismiss = null;
     }
   },
 };

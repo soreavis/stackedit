@@ -18,6 +18,7 @@ export default {
     'workspaces',
     'settings',
     'layoutSettings',
+    'localSettings',
     'tokens',
     'badgeCreations',
     'serverConf',
