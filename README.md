@@ -4,8 +4,8 @@
 ![Version](https://img.shields.io/badge/version-5.16.1-blue)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 ![Node](https://img.shields.io/badge/node-22.x-green?logo=nodedotjs&logoColor=white)
-![Vue 2](https://img.shields.io/badge/vue-2.7-42b883?logo=vuedotjs&logoColor=white)
-![Vite](https://img.shields.io/badge/vite-7.3-646cff?logo=vite&logoColor=white)
+![Vue 3](https://img.shields.io/badge/vue-3.5-42b883?logo=vuedotjs&logoColor=white)
+![Vite](https://img.shields.io/badge/vite-8.0-646cff?logo=vite&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-479_passing-brightgreen)
 
 > **Full-featured, open-source Markdown editor** descended from [PageDown](https://code.google.com/archive/p/pagedown/), the Markdown library originally written for Stack Overflow and the other Stack Exchange sites. Modernized for Vercel deployment, hardened, and actively maintained.
