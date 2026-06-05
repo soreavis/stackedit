@@ -26,9 +26,6 @@ export default defineConfig({
     extensions: ['.mjs', '.js', '.ts', '.vue', '.json'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      // Vue 3 migration build: run Vue 3 with Vue-2 compatible behavior +
-      // per-feature deprecation warnings. Removed once the migration completes.
-      vue: '@vue/compat',
     },
   },
   define: {
@@ -39,15 +36,7 @@ export default defineConfig({
   },
   plugins: [
     devApiPlugin(),
-    vue({
-      template: {
-        compilerOptions: {
-          // Compile templates in Vue-2 compat mode (legacy slot syntax,
-          // v-bind sync, etc. keep working with warnings).
-          compatConfig: { MODE: 2 },
-        },
-      },
-    }),
+    vue(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt'],

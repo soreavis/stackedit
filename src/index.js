@@ -10,7 +10,8 @@ import { injectSpeedInsights } from '@vercel/speed-insights';
 import { registerSW } from 'virtual:pwa-register';
 import './extensions';
 import './services/optional';
-import './icons';
+import icons from './icons';
+import vueGlobals from './components/common/vueGlobals';
 import App from './components/App';
 import { useNotificationStore } from './stores/notification';
 import localDbSvc from './services/localDbSvc';
@@ -93,4 +94,6 @@ setInterval(() => {
 
 createApp(App)
   .use(pinia)
+  .use(icons)
+  .use(vueGlobals)
   .mount('#app');

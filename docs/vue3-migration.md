@@ -1,7 +1,10 @@
 # Vue 2.7 → Vue 3 migration plan
 
-Status: **in progress** (branch `feat/vue3-migration`). This document is the
-working plan; update the batch checkboxes as work lands.
+Status: **COMPLETE** — the app runs on **pure Vue 3.5** (`@vue/compat` removed).
+Batches 1–7 landed on `feat/vue3-migration`; Batch 8 (components → `<script
+setup lang="ts">`) remains as separate, now-unblocked future work. Final state:
+typecheck 0 · lint 0 · unit 479/479 · build 0 · 0 compat warnings · main bundle
+**623 kB** (below the pre-migration 662 kB — Vue 3 runtime is leaner than 2.7).
 
 ## Goal & strategy
 

@@ -6,11 +6,10 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [vue({ template: { compilerOptions: { compatConfig: { MODE: 2 } } } })],
+  plugins: [vue()],
   resolve: {
     alias: {
       '@': path.resolve(here, 'src'),
-      vue: '@vue/compat',
     },
     // Match the production extensions list so `.vue` imports without
     // explicit extension resolve in tests too (e.g. src/icons/index.js

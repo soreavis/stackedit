@@ -24,7 +24,6 @@ import uiPersistence from '../services/uiPersistence';
 import { setCm6BridgeFactory } from '../services/editor/editorSvcDiscussions';
 import { useNotificationStore } from '../stores/notification';
 import { useDataStore } from '../stores/data';
-import './common/vueGlobals';
 
 const themeClasses = {
   light: ['app--light'],
