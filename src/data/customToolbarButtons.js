@@ -9,6 +9,7 @@
 // `selectionMgr.setSelectionStartEnd`.
 
 import { useModalStore } from '../stores/modal';
+import tidyMarkdown from './markdownTidy';
 
 function getSelection(editorSvc) {
   const sel = editorSvc.clEditor.selectionMgr;
@@ -184,80 +185,6 @@ export const music = {
     );
   },
 };
-
-// Conservative whole-document tidier. Skips content inside fenced code
-// blocks (so indentation / whitespace there stays exactly as the user
-// typed). Outside fences:
-//   - trims trailing whitespace per line
-//   - collapses 2+ blank lines to 1 blank line
-//   - ensures a space after heading hashes (`#foo` → `# foo`)
-//   - ensures a space after list-bullet markers (`-foo` → `- foo`)
-//   - surrounds every heading with exactly one blank line (MD022) — so
-//     deleting the blank line under a heading and tidying restores it,
-//     and a heading bumped against preceding prose gets separated
-//   - normalizes trailing newlines at EOF to exactly 1
-// Deliberately doesn't reflow paragraphs, rewrap tables, or change
-// emphasis-marker style — those are opinionated transforms that can
-// damage intentional formatting.
-function tidyMarkdown(text) {
-  const lines = text.split('\n');
-  const out = [];
-  let inFence = false;
-  let blankRun = 0;
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i];
-    if (/^\s*```/.test(line)) {
-      inFence = !inFence;
-      out.push(line);
-      blankRun = 0;
-      continue;
-    }
-    if (inFence) {
-      out.push(line);
-      continue;
-    }
-    let t = line.replace(/[ \t]+$/, '');
-    if (t === '') {
-      blankRun += 1;
-      if (blankRun > 1) continue;
-      out.push(t);
-    } else {
-      blankRun = 0;
-      t = t.replace(/^(#{1,6})([^\s#])/, '$1 $2');
-      t = t.replace(/^([ \t]*)([-*+])([^\s])/, '$1$2 $3');
-      out.push(t);
-    }
-  }
-  // Second pass: surround ATX headings with exactly one blank line. Fenced
-  // code is tracked again so a `#` line inside a code block is left alone.
-  // Blank runs were already collapsed above, so checking the immediate
-  // neighbour is enough to avoid creating doubles.
-  const spaced = [];
-  inFence = false;
-  const isHeading = l => /^#{1,6}\s/.test(l);
-  for (let i = 0; i < out.length; i += 1) {
-    const line = out[i];
-    if (/^\s*```/.test(line)) {
-      inFence = !inFence;
-      spaced.push(line);
-      continue;
-    }
-    if (!inFence && isHeading(line)) {
-      if (spaced.length > 0 && spaced[spaced.length - 1] !== '') {
-        spaced.push(''); // blank line before (skipped at doc start)
-      }
-      spaced.push(line);
-      const next = out[i + 1];
-      if (next !== undefined && next !== '') {
-        spaced.push(''); // blank line after (skipped at EOF / already blank)
-      }
-      continue;
-    }
-    spaced.push(line);
-  }
-  while (spaced.length > 0 && spaced[spaced.length - 1] === '') spaced.pop();
-  return `${spaced.join('\n')}\n`;
-}
 
 export const tidy = {
   method: 'tidy',

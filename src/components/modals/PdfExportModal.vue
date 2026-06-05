@@ -46,6 +46,7 @@ export default modalTemplate({
       this.config.resolve();
       const currentFile = useFileStore().current;
       useQueueStore().enqueue(async () => {
+        useNotificationStore().info('Exporting to PDF…');
         const [sponsorToken, html] = await Promise.all([
           Promise.resolve().then(() => {
             const tokenToRefresh = useWorkspaceStore().sponsorToken;

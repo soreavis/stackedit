@@ -105,13 +105,13 @@ export default {
     },
     hasTargetItem() {
       // Any real node (file or folder) counts; sentinels do not so the
-      // toolbar buttons don't light up when only Trash/Temp is selected.
+      // toolbar buttons don't light up when only Trash/Temp/Recent is selected.
       return useExplorerStore().selectedNodes
-        .some(n => !n.isNil && !n.isTrash && !n.isTemp && !n.isRoot);
+        .some(n => !n.isNil && !n.isTrash && !n.isTemp && !n.isRecent && !n.isRoot);
     },
     canRename() {
       const node = this.selectedNode;
-      return !node.isNil && !node.isTrash && !node.isTemp && !node.isRoot;
+      return !node.isNil && !node.isTrash && !node.isTemp && !node.isRecent && !node.isRoot;
     },
     isMultiSelect() {
       return Object.keys(useExplorerStore().selectedIds).length > 1;
@@ -175,10 +175,12 @@ export default {
         },
         items: [{
           name: 'New file',
-          perform: () => this.newItem(false),
+          // Empty-area create always targets the root, ignoring any lingering
+          // selection (e.g. a file selected inside a now-collapsed folder).
+          perform: () => explorerSvc.newItem(false, true),
         }, {
           name: 'New folder',
-          perform: () => this.newItem(true),
+          perform: () => explorerSvc.newItem(true, true),
         }, {
           type: 'separator',
         }, {
@@ -294,7 +296,9 @@ export default {
     },
     editItem() {
       const node = this.selectedNode;
-      if (!node.isTrash && !node.isTemp) {
+      // Mirror the F2 / context-menu guards: the virtual Trash/Temp/Recent
+      // folders, the nil placeholder, and root can't be renamed.
+      if (!node.isNil && !node.isTrash && !node.isTemp && !node.isRecent && !node.isRoot) {
         useExplorerStore().setEditingId(node.item.id);
       }
     },
@@ -394,7 +398,10 @@ export default {
       const hit = new Set(additive ? baseIds : []);
       treeElt.querySelectorAll('.explorer-node__item[data-node-id]').forEach((el) => {
         const id = el.getAttribute('data-node-id');
-        if (!id || id === 'trash' || id === 'temp') return;
+        // Skip the virtual sentinels (Trash/Temp/Recent) and the bottom
+        // spacer — same exclusions as visibleNodeIds. Selecting Recent would
+        // expose it to the bulk-delete path.
+        if (!id || id === 'trash' || id === 'temp' || id === 'recent' || id === 'fake') return;
         const r = el.getBoundingClientRect();
         const relLeft = r.left - treeRect.left;
         const relTop = r.top - treeRect.top;

@@ -60,6 +60,7 @@ export default modalTemplate({
       const { config } = this;
       const currentFile = useFileStore().current;
       config.resolve();
+      this.info('Exporting to HTML…');
       await exportSvc.exportToDisk(currentFile.id, 'html', this.allTemplatesById[this.selectedTemplate]);
       badgeSvc.addBadge('exportHtml');
     },
