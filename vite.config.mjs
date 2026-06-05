@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import vue2 from '@vitejs/plugin-vue2';
+import vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
@@ -26,7 +26,9 @@ export default defineConfig({
     extensions: ['.mjs', '.js', '.ts', '.vue', '.json'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      vue: 'vue/dist/vue.runtime.esm.js',
+      // Vue 3 migration build: run Vue 3 with Vue-2 compatible behavior +
+      // per-feature deprecation warnings. Removed once the migration completes.
+      vue: '@vue/compat',
     },
   },
   define: {
@@ -37,7 +39,15 @@ export default defineConfig({
   },
   plugins: [
     devApiPlugin(),
-    vue2(),
+    vue({
+      template: {
+        compilerOptions: {
+          // Compile templates in Vue-2 compat mode (legacy slot syntax,
+          // v-bind sync, etc. keep working with warnings).
+          compatConfig: { MODE: 2 },
+        },
+      },
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt'],

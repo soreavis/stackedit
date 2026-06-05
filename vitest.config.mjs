@@ -1,16 +1,16 @@
 import { defineConfig } from 'vitest/config';
-import vue2 from '@vitejs/plugin-vue2';
+import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [vue2()],
+  plugins: [vue({ template: { compilerOptions: { compatConfig: { MODE: 2 } } } })],
   resolve: {
     alias: {
       '@': path.resolve(here, 'src'),
-      vue: 'vue/dist/vue.runtime.esm.js',
+      vue: '@vue/compat',
     },
     // Match the production extensions list so `.vue` imports without
     // explicit extension resolve in tests too (e.g. src/icons/index.js

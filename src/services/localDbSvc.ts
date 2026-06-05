@@ -295,7 +295,12 @@ const localDbSvc: LocalDbSvc = {
           ...storeItem,
           tx: incrementedTx,
         };
-        dbStore.put(item);
+        // Vue 3: store items are reactive() Proxies whose nested objects
+        // (discussions/comments) are also proxies — IndexedDB's structured
+        // clone can't clone them. deepCopy (JSON round-trip) yields a plain
+        // cloneable object. (Vue 2 reactivity was defineProperty on plain
+        // objects, so this wasn't needed before.)
+        dbStore.put(utils.deepCopy(item));
         this.hashMap[item.type][item.id] = item.hash as number;
         this.lastTx = incrementedTx;
       }
