@@ -56,6 +56,7 @@
 </template>
 
 <script>
+import { markRaw } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
@@ -129,6 +130,11 @@ export default {
     title: '',
     titleFocus: false,
     titleHover: false,
+    // DOM refs assigned in mounted(). Declared so Vue 3's render proxy
+    // doesn't warn when a computed reads them before mount; markRaw on
+    // assignment keeps the elements out of the reactive system.
+    titleFakeElt: null,
+    titleInputElt: null,
   }),
   computed: {
     ...mapPiniaState(useGlobalStore, [
@@ -462,8 +468,8 @@ export default {
     );
   },
   mounted() {
-    this.titleFakeElt = this.$el.querySelector('.navigation-bar__title--fake');
-    this.titleInputElt = this.$el.querySelector('.navigation-bar__title--input');
+    this.titleFakeElt = markRaw(this.$el.querySelector('.navigation-bar__title--fake'));
+    this.titleInputElt = markRaw(this.$el.querySelector('.navigation-bar__title--input'));
     this.mounted = true;
   },
 };
