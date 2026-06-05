@@ -40,6 +40,7 @@ import { useContextMenuStore } from '../stores/contextMenu';
 import badgeSvc from '../services/badgeSvc';
 import { useDataStore } from '../stores/data';
 import { useExplorerStore } from '../stores/explorer';
+import { useFolderStore } from '../stores/folder';
 import { useGlobalStore } from '../stores/global';
 
 export default {
@@ -292,7 +293,10 @@ export default {
       const nodes = Array.from(document.querySelectorAll('.explorer__tree .explorer-node__item[data-node-id]'));
       const ids = nodes
         .map(el => el.getAttribute('data-node-id'))
-        .filter(id => id && id !== 'trash' && id !== 'temp');
+        // Exclude the virtual sentinels (Trash/Temp/Recent) and the bottom
+        // spacer so a shift-range can't drag Recent into the selection (and
+        // from there into the bulk-delete path).
+        .filter(id => id && id !== 'trash' && id !== 'temp' && id !== 'recent' && id !== 'fake');
       if (!anchorId || !ids.includes(anchorId)) return [targetId];
       const a = ids.indexOf(anchorId);
       const b = ids.indexOf(targetId);
@@ -424,6 +428,14 @@ export default {
         const isFile = !this.node.isFolder && !this.node.isNil;
         const isRegularFolder = this.node.isFolder && !this.node.isTrash && !this.node.isTemp && !this.node.isRecent && !this.node.isRoot;
         const isPinned = this.isPinned;
+        // New file/folder act on the folder *context*: the node itself when
+        // it's a folder, otherwise the file's parent folder so the new item
+        // lands as a sibling (VS Code / Finder behavior). explorerSvc.newItem
+        // already resolves the parent via selectedNodeFolder. Blocked for the
+        // virtual Trash/Recent sentinels and for files already in the Trash.
+        const isTrashedFile = this.node.item.parentId === 'trash';
+        const canCreateChild = (this.node.isFolder || isFile)
+          && !this.node.isTrash && !this.node.isRecent && !isTrashedFile;
         const item = await useContextMenuStore().open({
           coordinates: {
             left: evt.clientX,
@@ -431,12 +443,23 @@ export default {
           },
           items: [{
             name: 'New file',
-            disabled: !this.node.isFolder || this.node.isTrash || this.node.isRecent,
+            disabled: !canCreateChild,
             perform: () => explorerSvc.newItem(false),
           }, {
             name: 'New folder',
-            disabled: !this.node.isFolder || this.node.isTrash || this.node.isTemp || this.node.isRecent,
+            disabled: !canCreateChild || this.node.isTemp,
             perform: () => explorerSvc.newItem(true),
+          }, {
+            type: 'separator',
+          }, {
+            // On a folder these expand/collapse just that branch; on a leaf
+            // file (no subtree of its own) they fall back to expanding /
+            // collapsing the whole tree.
+            name: 'Expand',
+            perform: () => (this.node.isFolder ? this.expandSubtree() : this.expandAllFolders()),
+          }, {
+            name: 'Collapse',
+            perform: () => (this.node.isFolder ? this.collapseSubtree() : this.collapseAllFolders()),
           }, {
             type: 'separator',
           }, {
@@ -467,7 +490,9 @@ export default {
             perform: () => this.setEditingId(this.node.item.id),
           }, {
             name: 'Delete',
-            disabled: this.node.isTrash,
+            // Recent is a virtual folder whose files are clones of real items;
+            // a recursive delete would trash every recently-opened file.
+            disabled: this.node.isTrash || this.node.isRecent,
             perform: () => explorerSvc.deleteItem(),
           }],
         });
@@ -532,6 +557,39 @@ export default {
       if (pinned[id]) delete pinned[id];
       else pinned[id] = true;
       useDataStore().patchLocalSettings({ pinnedFolderIds: pinned });
+    },
+    collectFolderIds(node, acc) {
+      // This folder + every descendant folder id (depth-first) so the
+      // expand/collapse action applies to the whole subtree, not just one
+      // level. Files are ignored — only folders have an open/closed state.
+      if (!node || !node.isFolder) return acc;
+      if (node.item && node.item.id) acc.push(node.item.id);
+      (node.folders || []).forEach(child => this.collectFolderIds(child, acc));
+      return acc;
+    },
+    expandSubtree() {
+      const open = { ...useExplorerStore().openNodes };
+      this.collectFolderIds(this.node, []).forEach((id) => { open[id] = true; });
+      useExplorerStore().setOpenNodes(open);
+    },
+    collapseSubtree() {
+      const open = { ...useExplorerStore().openNodes };
+      this.collectFolderIds(this.node, []).forEach((id) => { open[id] = false; });
+      useExplorerStore().setOpenNodes(open);
+    },
+    expandAllFolders() {
+      // Mirrors Explorer.vue's expandAll — every real folder plus the
+      // Trash/Temp/Recent sentinels. Used when Expand is invoked on a leaf
+      // file, which has no subtree of its own to expand.
+      const open = {};
+      useFolderStore().items.forEach((f) => { open[f.id] = true; });
+      open.trash = true;
+      open.temp = true;
+      open.recent = true;
+      useExplorerStore().setOpenNodes(open);
+    },
+    collapseAllFolders() {
+      useExplorerStore().setOpenNodes({});
     },
     // Folder expand/collapse easing. Vue's <transition> needs JS hooks to
     // animate variable-height content: read the natural height after the
