@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { toRaw } from 'vue';
 import providerRegistry from '../services/providers/common/providerRegistry';
 import utils from '../services/utils';
 import { useQueueStore } from './queue';
@@ -44,7 +45,10 @@ export const useNotificationStore = defineStore('notification', {
       item.promise = new Promise<unknown>((resolve, reject) => {
         this.items = [...this.items, item];
         const removeItem = () => {
-          this.items = this.items.filter(otherItem => otherItem !== item);
+          // Vue 3: reactive() proxies stored items, so the array element is
+          // never === the raw `item` closed over here — compare unwrapped, or
+          // toasts never auto-dismiss / resolve-clear.
+          this.items = this.items.filter(otherItem => toRaw(otherItem) !== item);
         };
         setTimeout(removeItem, item.timeout || defaultTimeout);
         item.resolve = (res) => {

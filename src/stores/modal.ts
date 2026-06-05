@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { toRaw } from 'vue';
 
 export interface ModalConfig {
   type: string;
@@ -33,7 +34,11 @@ export const useModalStore = defineStore('modal', {
           this.stack = [config, ...this.stack];
         });
       } finally {
-        this.stack = this.stack.filter(otherConfig => otherConfig !== config);
+        // Vue 3: reactive() wraps stored objects in Proxies, so the array
+        // element is never === the raw `config` we closed over. Compare the
+        // unwrapped target so the just-resolved modal is actually removed
+        // (otherwise modals pile up on the stack and never close).
+        this.stack = this.stack.filter(otherConfig => toRaw(otherConfig) !== config);
       }
     },
     async hideUntil<T>(promise: Promise<T>): Promise<T> {

@@ -1,4 +1,4 @@
-import Vue from 'vue';
+import { createApp } from 'vue';
 // Import pinia FIRST so the active Pinia instance is set up before any
 // service module / Vuex getter that touches a Pinia store at boot.
 // (e.g. scrollSync registers a Vuex watcher that evaluates layout/styles
@@ -84,8 +84,6 @@ if (!localStorage.installPrompted) {
   });
 }
 
-Vue.config.productionTip = false;
-
 // Tick a counter every 30s so reactive getters that bucket relative
 // dates (e.g. Recent folder labels in the explorer) re-render without
 // each consumer wiring its own setInterval.
@@ -93,8 +91,6 @@ setInterval(() => {
   useGlobalStore().updateTimeCounter();
 }, 30 * 1000);
 
-new Vue({
-  el: '#app',
-  pinia,
-  render: h => h(App),
-});
+createApp(App)
+  .use(pinia)
+  .mount('#app');
