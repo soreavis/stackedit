@@ -10,7 +10,7 @@
       </div>
     </label>
     <menu-entry @click.native="exportWorkspace">
-      <icon-content-save slot="icon"></icon-content-save>
+      <template #icon><icon-content-save></icon-content-save></template>
       Export workspace backup
     </menu-entry>
   </div>

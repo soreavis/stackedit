@@ -6,21 +6,23 @@
       </div>
       <p>Publish <b>{{ currentFileName }}</b> to your <b>WordPress</b> site.</p>
       <form-entry label="Site domain" error="domain">
-        <input slot="field" class="textfield" type="text" v-model.trim="domain" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="domain" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> example.wordpress.com<br>
           <b>Note:</b> Jetpack is required for self-hosted sites.
         </div>
       </form-entry>
       <form-entry label="Existing post ID" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="postId" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="postId" @keydown.enter="resolve()"></template>
       </form-entry>
       <form-entry label="Template">
-        <select slot="field" class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
-          <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
-            {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
-          </option>
-        </select>
+        <template #field>
+          <select class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
+            <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
+              {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
+            </option>
+          </select>
+        </template>
         <div class="form-entry__actions">
           <a href="javascript:void(0)" @click="configureTemplates">Configure templates</a>
         </div>

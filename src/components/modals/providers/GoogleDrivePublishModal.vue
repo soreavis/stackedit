@@ -6,7 +6,7 @@
       </div>
       <p>Publish <b>{{ currentFileName }}</b> to your <b>Google Drive</b> account.</p>
       <form-entry label="Folder ID" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="folderId" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="folderId" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If not supplied, the file will be created in your Drive root folder.
         </div>
@@ -15,7 +15,7 @@
         </div>
       </form-entry>
       <form-entry label="Existing file ID" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="fileId" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="fileId" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           This will overwrite the file on the server.
         </div>
@@ -33,11 +33,13 @@
         </div>
       </div>
       <form-entry label="Template" v-if="format === 'html'">
-        <select slot="field" class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
-          <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
-            {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
-          </option>
-        </select>
+        <template #field>
+          <select class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
+            <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
+              {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
+            </option>
+          </select>
+        </template>
         <div class="form-entry__actions">
           <a href="javascript:void(0)" @click="configureTemplates">Configure templates</a>
         </div>

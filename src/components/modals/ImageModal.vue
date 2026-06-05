@@ -3,15 +3,15 @@
     <div class="modal__content">
       <p>Please provide a <b>URL</b> for your image.</p>
       <form-entry label="URL" error="url">
-        <input slot="field" class="textfield" type="text" v-model.trim="url" @keydown.enter="resolve">
+        <template #field><input class="textfield" type="text" v-model.trim="url" @keydown.enter="resolve"></template>
       </form-entry>
       <menu-entry @click.native="openGoogleDrive(token)" v-for="token in googleDriveTokens" :key="token.sub">
-        <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+        <template #icon><icon-provider provider-id="googleDrive"></icon-provider></template>
         <div>Open from Google Drive</div>
         <span>{{ token.name }}</span>
       </menu-entry>
       <menu-entry @click.native="addGoogleDriveAccount" v-if="!googleDriveTokens.length">
-        <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+        <template #icon><icon-provider provider-id="googleDrive"></icon-provider></template>
         <span>Add Google Drive account</span>
       </menu-entry>
     </div>

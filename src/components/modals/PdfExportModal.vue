@@ -3,11 +3,13 @@
     <div class="modal__content">
       <p>Please choose a template for your <b>PDF export</b>.</p>
       <form-entry label="Template">
-        <select class="textfield" slot="field" v-model="selectedTemplate" @keydown.enter="resolve()">
-          <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
-            {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
-          </option>
-        </select>
+        <template #field>
+          <select class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
+            <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
+              {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
+            </option>
+          </select>
+        </template>
         <div class="form-entry__actions">
           <a href="javascript:void(0)" @click="configureTemplates">Configure templates</a>
         </div>

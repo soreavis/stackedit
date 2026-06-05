@@ -38,31 +38,31 @@
         </div>
       </div>
       <menu-entry @click.native="addBloggerAccount">
-        <icon-provider slot="icon" provider-id="blogger"></icon-provider>
+        <template #icon><icon-provider provider-id="blogger"></icon-provider></template>
         <span>Add Blogger account</span>
       </menu-entry>
       <menu-entry @click.native="addDropboxAccount">
-        <icon-provider slot="icon" provider-id="dropbox"></icon-provider>
+        <template #icon><icon-provider provider-id="dropbox"></icon-provider></template>
         <span>Add Dropbox account</span>
       </menu-entry>
       <menu-entry @click.native="addGithubAccount">
-        <icon-provider slot="icon" provider-id="github"></icon-provider>
+        <template #icon><icon-provider provider-id="github"></icon-provider></template>
         <span>Add GitHub account</span>
       </menu-entry>
       <menu-entry @click.native="addGitlabAccount">
-        <icon-provider slot="icon" provider-id="gitlab"></icon-provider>
+        <template #icon><icon-provider provider-id="gitlab"></icon-provider></template>
         <span>Add GitLab account</span>
       </menu-entry>
       <menu-entry @click.native="addGoogleDriveAccount">
-        <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+        <template #icon><icon-provider provider-id="googleDrive"></icon-provider></template>
         <span>Add Google Drive account</span>
       </menu-entry>
       <menu-entry @click.native="addWordpressAccount">
-        <icon-provider slot="icon" provider-id="wordpress"></icon-provider>
+        <template #icon><icon-provider provider-id="wordpress"></icon-provider></template>
         <span>Add WordPress account</span>
       </menu-entry>
       <menu-entry @click.native="addZendeskAccount">
-        <icon-provider slot="icon" provider-id="zendesk"></icon-provider>
+        <template #icon><icon-provider provider-id="zendesk"></icon-provider></template>
         <span>Add Zendesk account</span>
       </menu-entry>
     </div>

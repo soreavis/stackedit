@@ -6,19 +6,19 @@
       </div>
       <p>Create a workspace synced with a <b>GitHub</b> repository folder.</p>
       <form-entry label="Repository URL" error="repoUrl">
-        <input slot="field" class="textfield" type="text" v-model.trim="repoUrl" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="repoUrl" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> https://github.com/owner/my-repo
         </div>
       </form-entry>
       <form-entry label="Folder path" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If not supplied, the root folder will be used.
         </div>
       </form-entry>
       <form-entry label="Branch" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="branch" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="branch" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If not supplied, the <code>main</code> branch will be used (use <code>master</code> for older repos).
         </div>
