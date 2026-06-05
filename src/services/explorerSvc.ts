@@ -15,6 +15,7 @@ interface ExplorerNode {
   isRoot?: boolean;
   isTrash?: boolean;
   isTemp?: boolean;
+  isRecent?: boolean;
   isNil?: boolean;
   isFolder?: boolean;
   folders: ExplorerNode[];
@@ -59,8 +60,10 @@ function pickVisibleReplacement(): string | null {
 }
 
 async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
-  // Drop sentinel roots and empty nodes — users can't bulk-delete Trash/Temp themselves.
-  const nodes = selectedNodes.filter(n => !n.isTrash && !n.isTemp && !n.isNil);
+  // Drop sentinel roots and empty nodes — users can't bulk-delete the virtual
+  // Trash/Temp/Recent folders themselves (deleting Recent would trash the real
+  // files its clones point at).
+  const nodes = selectedNodes.filter(n => !n.isTrash && !n.isTemp && !n.isRecent && !n.isRoot && !n.isNil);
   if (!nodes.length) return;
 
   const nodeMap: Record<string, ExplorerNode> = useExplorerStore().nodeStructure.nodeMap as any;
@@ -145,14 +148,22 @@ async function bulkDelete(selectedNodes: ExplorerNode[]): Promise<void> {
 }
 
 export default {
-  newItem(isFolder = false): void {
-    const selectedNode = useExplorerStore().selectedNode as unknown as ExplorerNode;
-    let parentId: string | null = useExplorerStore().selectedNodeFolder.item.id;
-    // If the selected folder is collapsed, create at the root instead
-    // of burying the new item inside a closed branch.
-    if (selectedNode.isFolder
-      && !selectedNode.isRoot
-      && !(useExplorerStore().openNodes as Record<string, boolean>)[selectedNode.item.id]
+  newItem(isFolder = false, atRoot = false): void {
+    const explorerStore = useExplorerStore();
+    // The folder the new item should go in: the selected node itself when
+    // it's a folder, otherwise the selected file's parent folder. `atRoot`
+    // (right-clicking the empty explorer area) ignores the selection
+    // entirely and always targets the root — blank space has no folder
+    // context.
+    const folderNode = explorerStore.selectedNodeFolder as unknown as ExplorerNode;
+    let parentId: string | null = atRoot ? null : folderNode.item.id;
+    // Only nest inside a folder that's actually open in the tree. If the
+    // target folder is collapsed — e.g. a file is still "selected" inside a
+    // branch the user has since closed — create at the root instead of
+    // burying the new item inside a hidden branch.
+    if (!atRoot
+      && !folderNode.isRoot
+      && !(explorerStore.openNodes as Record<string, boolean>)[folderNode.item.id]
     ) {
       parentId = null;
     }
@@ -161,8 +172,8 @@ export default {
     ) {
       parentId = null;
     }
-    useExplorerStore().openNode(parentId);
-    useExplorerStore().setNewItem({
+    explorerStore.openNode(parentId);
+    explorerStore.setNewItem({
       type: isFolder ? 'folder' : 'file',
       parentId,
     });
@@ -174,7 +185,16 @@ export default {
       return;
     }
     const selectedNode = useExplorerStore().selectedNode as unknown as ExplorerNode;
-    if (selectedNode.isNil) {
+    if (selectedNode.isNil || selectedNode.isRoot) {
+      return;
+    }
+
+    // "Recent" is a virtual folder whose children are clones of real files
+    // (their ids point at the live items). A recursive delete here would
+    // trash every recently-opened file. The toolbar Delete button and the
+    // Delete key both funnel through here, so this is the single guard that
+    // makes them safe — not just the context-menu's disabled flag.
+    if (selectedNode.isRecent) {
       return;
     }
 
