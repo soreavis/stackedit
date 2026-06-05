@@ -243,7 +243,9 @@ export default {
           start: this.selectedClassApplier.startMarker.offset,
           end: this.selectedClassApplier.endMarker.offset,
         });
-        selectionMgr.updateCursorCoordinates(this.$el.parentNode.clientHeight);
+        // updateCursorCoordinates was a cledit/pagedown selectionMgr method that
+        // no longer exists post-CM6 migration (it threw "is not a function").
+        // setSelectionStartEnd above now scrolls the match into view via CM6.
         // Deduce the findPosition
         Object.keys(this.classAppliers).forEach((key, i) => {
           if (this.selectedClassApplier !== this.classAppliers[key]) {
