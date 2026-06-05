@@ -6,14 +6,14 @@
       </div>
       <p>Link your <b>GitLab</b> account to <b>StackEdit</b>.</p>
       <form-entry label="GitLab URL" error="serverUrl">
-        <input v-if="config.forceServerUrl" slot="field" class="textfield" type="text" disabled="disabled" v-model="config.forceServerUrl">
-        <input v-else slot="field" class="textfield" type="text" v-model.trim="serverUrl" @keydown.enter="resolve()">
+        <template #field v-if="config.forceServerUrl"><input class="textfield" type="text" disabled="disabled" v-model="config.forceServerUrl"></template>
+        <template #field v-else><input class="textfield" type="text" v-model.trim="serverUrl" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> https://gitlab.example.com/
         </div>
       </form-entry>
       <form-entry label="Application ID" error="applicationId">
-        <input slot="field" class="textfield" type="text" v-model.trim="applicationId" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="applicationId" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           You have to configure an OAuth2 Application with redirect URL <b>{{ redirectUrl }}</b>
         </div>

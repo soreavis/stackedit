@@ -16,40 +16,42 @@
         <div class="modal__title">Extensions</div>
         <div class="modal__sub-title">Configure the Markdown engine.</div>
         <form-entry label="Preset">
-          <select slot="field" class="textfield" v-model="preset" @keydown.enter="resolve()">
-            <option v-for="(preset, id) in presets" :key="id" :value="preset">
-              {{ preset }}
-            </option>
-          </select>
+          <template #field>
+            <select class="textfield" v-model="preset" @keydown.enter="resolve()">
+              <option v-for="(preset, id) in presets" :key="id" :value="preset">
+                {{ preset }}
+              </option>
+            </select>
+          </template>
         </form-entry>
         <div class="modal__title">Metadata</div>
         <div class="modal__sub-title">Add info to your publications (Wordpress, Blogger...).</div>
         <form-entry label="Title">
-          <input slot="field" class="textfield" type="text" v-model.trim="title" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="title" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Author">
-          <input slot="field" class="textfield" type="text" v-model.trim="author" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="author" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Tags" info="comma-separated">
-          <input slot="field" class="textfield" type="text" v-model.trim="tags" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="tags" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Categories" info="comma-separated">
-          <input slot="field" class="textfield" type="text" v-model.trim="categories" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="categories" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Excerpt">
-          <input slot="field" class="textfield" type="text" v-model.trim="excerpt" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="excerpt" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Featured image">
-          <input slot="field" class="textfield" type="text" v-model.trim="featuredImage" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="featuredImage" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Status">
-          <input slot="field" class="textfield" type="text" v-model.trim="status" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="status" @keydown.enter="resolve()"></template>
           <div class="form-entry__info">
             <b>Example:</b> draft
           </div>
         </form-entry>
         <form-entry label="Date" info="YYYY-MM-DD">
-          <input slot="field" class="textfield" type="text" v-model.trim="date" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="date" @keydown.enter="resolve()"></template>
         </form-entry>
       </div>
       <div v-else-if="tab === 'yaml'" key="tab-yaml">

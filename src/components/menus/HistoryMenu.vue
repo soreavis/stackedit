@@ -2,7 +2,7 @@
   <div class="history side-bar__panel side-bar__panel--menu">
     <div class="side-bar__info">
       <p v-if="syncLocations.length > 1">
-        <select slot="field" class="textfield" v-model="syncLocationId" @keydown.enter="resolve()">
+        <select class="textfield" v-model="syncLocationId" @keydown.enter="resolve()">
           <option v-for="location in syncLocations" :key="location.id" :value="location.id">
             {{ location.description }}
           </option>

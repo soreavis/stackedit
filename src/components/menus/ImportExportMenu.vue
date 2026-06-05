@@ -21,28 +21,28 @@
       </div>
     </label>
     <menu-entry @click.native="onImportClipboard">
-      <icon-content-copy slot="icon"></icon-content-copy>
+      <template #icon><icon-content-copy></icon-content-copy></template>
       <div>Import from clipboard</div>
       <span>Paste Markdown or HTML as a new file.</span>
     </menu-entry>
     <hr>
     <menu-entry @click.native="exportMarkdown" :disabled="!hasCurrentFile">
-      <icon-download slot="icon"></icon-download>
+      <template #icon><icon-download></icon-download></template>
       <div>Export as Markdown</div>
       <span>Save plain text file.</span>
     </menu-entry>
     <menu-entry @click.native="exportHtml" :disabled="!hasCurrentFile">
-      <icon-download slot="icon"></icon-download>
+      <template #icon><icon-download></icon-download></template>
       <div>Export as HTML</div>
       <span>Generate an HTML page from a template.</span>
     </menu-entry>
     <menu-entry @click.native="exportPdf" :disabled="!hasCurrentFile">
-      <icon-download slot="icon"></icon-download>
+      <template #icon><icon-download></icon-download></template>
       <div><div class="menu-entry__label" :class="{'menu-entry__label--warning': !isSponsor}">sponsor</div> Export as PDF</div>
       <span>Produce a PDF from an HTML template. Mermaid diagrams are included and scaled to fit a single page.</span>
     </menu-entry>
     <menu-entry @click.native="exportPandoc" :disabled="!hasCurrentFile">
-      <icon-download slot="icon"></icon-download>
+      <template #icon><icon-download></icon-download></template>
       <div><div class="menu-entry__label" :class="{'menu-entry__label--warning': !isSponsor}">sponsor</div> Export with Pandoc</div>
       <span>Convert to PDF, Word, EPUB...</span>
     </menu-entry>
