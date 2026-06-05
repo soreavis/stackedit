@@ -50,7 +50,6 @@
 </template>
 
 <script>
-import Vue from 'vue';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
 
@@ -110,7 +109,7 @@ export default {
             default:
               return;
           }
-          Vue.set(this.stepStyles, step, style);
+          this.stepStyles[step] = style;
         });
       });
     },

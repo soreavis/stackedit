@@ -32,7 +32,7 @@
           </div>
           <div class="revision__header flex flex--column">
             <user-name :user-id="revision.sub"></user-name>
-            <div class="revision__created">{{ revision.created | formatTime }}</div>
+            <div class="revision__created">{{ formatTime(revision.created) }}</div>
           </div>
         </a>
       </div>
@@ -46,6 +46,7 @@
 
 <script>
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { formatTime } from '../common/vueGlobals';
 import providerRegistry from '../../services/providers/common/providerRegistry';
 import UserImage from '../UserImage';
 import UserName from '../UserName';
@@ -164,6 +165,7 @@ export default {
     },
   },
   methods: {
+    formatTime,
     ...mapPiniaActions(useContentStore, {
       setRevisionContent: 'setRevisionContentRaw',
     }),
@@ -322,7 +324,7 @@ export default {
     };
     window.addEventListener('keyup', this.onKeyup);
   },
-  destroyed() {
+  unmounted() {
     // Close revision
     this.setRevisionContent();
     // Remove highlighters

@@ -63,7 +63,6 @@
 </template>
 
 <script>
-import Vue from 'vue';
 
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import ModalInner from './common/ModalInner';
@@ -135,7 +134,7 @@ export default {
   created() {
     Object.keys(this.workspacesById).forEach(async (workspaceId) => {
       const cancel = localDbSvc.getWorkspaceItems(workspaceId, () => {
-        Vue.set(this.availableOffline, workspaceId, true);
+        this.availableOffline[workspaceId] = true;
         cancel();
       });
     });

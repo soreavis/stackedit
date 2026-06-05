@@ -200,7 +200,7 @@ export default {
       },
     );
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this._cm6Handle) {
       this._cm6Handle.dispose();
       this._cm6Handle = null;
