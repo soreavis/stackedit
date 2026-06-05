@@ -51,6 +51,7 @@ export default modalTemplate({
       const currentContent = useContentStore().current;
       const { selectedFormat } = this;
       useQueueStore().enqueue(async () => {
+        useNotificationStore().info(`Exporting to ${selectedFormat}…`);
         const tokenToRefresh = useWorkspaceStore().sponsorToken;
         const sponsorToken = tokenToRefresh && await googleHelper.refreshToken(tokenToRefresh);
 

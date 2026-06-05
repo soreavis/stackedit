@@ -1,6 +1,6 @@
 <template>
   <div class="stat-panel panel no-overflow">
-    <div class="stat-panel__block stat-panel__block--left" v-if="styles.showEditor">
+    <div class="stat-panel__block stat-panel__block--left" v-if="styles.showEditor && hasCurrentFile">
       <span class="stat-panel__block-name" v-title="'Markdown source'">
         <icon-language-markdown></icon-language-markdown>
         <span v-if="textSelection">selection</span>
@@ -10,7 +10,7 @@
       </span>
       <span class="stat-panel__value">Ln {{ line }}, Col {{ column }}</span>
     </div>
-    <div class="stat-panel__block stat-panel__block--right">
+    <div class="stat-panel__block stat-panel__block--right" v-if="hasCurrentFile">
       <span class="stat-panel__block-name" v-title="'Rendered HTML'">
         <icon-language-html5></icon-language-html5>
         <span v-if="htmlSelection">selection</span>
@@ -28,6 +28,7 @@ import { mapState as mapPiniaState } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import utils from '../services/utils';
 import { useLayoutStore } from '../stores/layout';
+import { useFileStore } from '../stores/file';
 
 // A footer stat: either a regex counter OR a custom computeFn(text) → value.
 class Stat {
@@ -83,9 +84,16 @@ export default {
       new Stat('read', null, formatReading),
     ],
   }),
-  computed: mapPiniaState(useLayoutStore, [
-    'styles',
-  ]),
+  computed: {
+    ...mapPiniaState(useLayoutStore, [
+      'styles',
+    ]),
+    // Footer stats are meaningless with no open file — hide them so the
+    // status bar reads empty in the "No file selected" state.
+    hasCurrentFile() {
+      return !!useFileStore().currentId;
+    },
+  },
   created() {
     editorSvc.$on('sectionList', () => this.computeText());
     editorSvc.$on('selectionRange', () => this.computeText());
