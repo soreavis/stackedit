@@ -28,7 +28,7 @@ const copyToClipboard = async (text) => {
 
 // Global directives
 Vue.directive('focus', {
-  inserted(el) {
+  mounted(el) {
     el.focus();
     const { value } = el;
     if (value && el.setSelectionRange) {
@@ -37,34 +37,20 @@ Vue.directive('focus', {
   },
 });
 
-const setVisible = (el, value) => {
-  el.style.display = value ? '' : 'none';
-  if (value) {
-    el.removeAttribute('aria-hidden');
-  } else {
-    el.setAttribute('aria-hidden', 'true');
-  }
-};
-Vue.directive('show', {
-  bind(el, { value }) {
-    setVisible(el, value);
-  },
-  update(el, { value, oldValue }) {
-    if (value !== oldValue) {
-      setVisible(el, value);
-    }
-  },
-});
+// v-show is a Vue 3 built-in directive (display toggle). The old custom
+// override only added aria-hidden on top of display:none, which is redundant
+// — display:none already removes the element from the accessibility tree — so
+// it's dropped in favor of the built-in (same `v-show="x"` template syntax).
 
 const setElTitle = (el, title) => {
   el.title = title;
   el.setAttribute('aria-label', title);
 };
 Vue.directive('title', {
-  bind(el, { value }) {
+  mounted(el, { value }) {
     setElTitle(el, value);
   },
-  update(el, { value, oldValue }) {
+  updated(el, { value, oldValue }) {
     if (value !== oldValue) {
       setElTitle(el, value);
     }
@@ -86,16 +72,16 @@ const destroyClipboard = (el) => {
   }
 };
 Vue.directive('clipboard', {
-  bind(el, { value }) {
+  mounted(el, { value }) {
     createClipboard(el, value);
   },
-  update(el, { value, oldValue }) {
+  updated(el, { value, oldValue }) {
     if (value !== oldValue) {
       destroyClipboard(el);
       createClipboard(el, value);
     }
   },
-  unbind(el) {
+  unmounted(el) {
     destroyClipboard(el);
   },
 });
