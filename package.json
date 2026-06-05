@@ -37,7 +37,6 @@
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "@vue/compat": "^3.5.35",
     "abcjs": "^6.6.3",
     "bezier-easing": "^3.0.0",
     "diff-match-patch": "^1.0.5",
