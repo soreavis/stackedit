@@ -1,6 +1,6 @@
 <template>
   <transition name="modal-fade">
-    <div class="modal" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.enter="onEnter" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
+    <div class="modal" ref="modalEl" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.enter="onEnter" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
       <div class="modal__sponsor-banner" v-if="!isSponsor">
         StackEdit is <a class="not-tabbable" target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">open source</a>, please consider
         <a class="not-tabbable" href="javascript:void(0)" @click="sponsor">sponsoring</a> for just $5.
@@ -153,10 +153,17 @@ export default {
       () => this.config,
       (isOpen) => {
         if (isOpen) {
-          const tabbables = getTabbables(this.$el);
-          if (tabbables[0]) {
-            tabbables[0].focus();
-          }
+          // Defer to the next tick: the template root is a <transition>, so in
+          // Vue 3 this.$el is a placeholder comment node until the v-if content
+          // mounts. Use the ref on the rendered .modal element instead.
+          this.$nextTick(() => {
+            const el = this.$refs.modalEl;
+            if (!el) return;
+            const tabbables = getTabbables(el);
+            if (tabbables[0]) {
+              tabbables[0].focus();
+            }
+          });
         }
       },
       { immediate: true },
@@ -188,14 +195,15 @@ export default {
       const target = evt.target;
       if (target && target.tagName === 'TEXTAREA') return;
       if (target && target.isContentEditable) return;
-      const resolve = this.$el && this.$el.querySelector('.button--resolve');
+      const resolve = this.$refs.modalEl && this.$refs.modalEl.querySelector('.button--resolve');
       if (resolve && !resolve.disabled) {
         evt.preventDefault();
         resolve.click();
       }
     },
     onTab(evt) {
-      const tabbables = getTabbables(this.$el);
+      if (!this.$refs.modalEl) return;
+      const tabbables = getTabbables(this.$refs.modalEl);
       const firstTabbable = tabbables[0];
       const lastTabbable = tabbables[tabbables.length - 1];
       if (evt.shiftKey && firstTabbable === evt.target) {
