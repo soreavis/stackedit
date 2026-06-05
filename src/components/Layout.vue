@@ -1,7 +1,7 @@
 <template>
   <div class="layout" :class="{'layout--revision': revisionContent}">
     <div class="layout__panel flex flex--row" :class="{'flex--end': styles.showSideBar}">
-      <div class="layout__panel layout__panel--explorer" v-show="styles.showExplorer" :aria-hidden="!styles.showExplorer" :style="{width: styles.layoutOverflow ? '100%' : constants.explorerWidth + 'px'}">
+      <div class="layout__panel layout__panel--explorer" v-show="styles.showExplorer" :aria-hidden="String(!styles.showExplorer)" :style="{width: styles.layoutOverflow ? '100%' : constants.explorerWidth + 'px'}">
         <explorer></explorer>
       </div>
       <div class="layout__panel flex flex--column" tour-step-anchor="welcome,end" :style="{width: styles.innerWidth + 'px'}">
@@ -171,7 +171,7 @@ export default {
     setTimeout(focus, 100);
     this.$watch(() => this.styles.showEditor, focus);
   },
-  destroyed() {
+  unmounted() {
     window.removeEventListener('resize', this.updateStyle);
     window.removeEventListener('keyup', this.saveSelection);
     window.removeEventListener('mouseup', this.saveSelection);

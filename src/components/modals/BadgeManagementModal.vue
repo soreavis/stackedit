@@ -35,7 +35,6 @@
 </template>
 
 <script>
-import Vue from 'vue';
 
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
@@ -65,7 +64,7 @@ export default {
   },
   methods: {
     show(featureId) {
-      Vue.set(this.shown, featureId, true);
+      this.shown[featureId] = true;
     },
   },
 };

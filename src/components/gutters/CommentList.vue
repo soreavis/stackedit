@@ -186,7 +186,7 @@ export default {
       });
     }
   },
-  destroyed() {
+  unmounted() {
     this.scrollerElt.removeEventListener('scroll', this.updateSticky);
   },
 };

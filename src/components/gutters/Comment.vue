@@ -10,7 +10,7 @@
         </button>
         <user-name :user-id="comment.sub"></user-name>
       </div>
-      <div class="comment__created">{{ comment.created | formatTime }}</div>
+      <div class="comment__created">{{ formatTime(comment.created) }}</div>
     </div>
     <div class="comment__text">
       <div class="comment__text-inner" v-html="text"></div>
@@ -24,6 +24,7 @@
 <script>
 
 import { mapActions as mapPiniaActions } from 'pinia';
+import { formatTime } from '../common/vueGlobals';
 import UserImage from '../UserImage';
 import UserName from '../UserName';
 import editorSvc from '../../services/editorSvc';
@@ -48,6 +49,7 @@ export default {
     },
   },
   methods: {
+    formatTime,
     ...mapPiniaActions(useDiscussionStore, [
       'setIsCommenting',
     ]),

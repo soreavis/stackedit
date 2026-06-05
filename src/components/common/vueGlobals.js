@@ -86,8 +86,10 @@ Vue.directive('clipboard', {
   },
 });
 
-// Global filters
-Vue.filter('formatTime', time =>
-  // Access the time counter for reactive refresh
-  timeSvc.format(time, useGlobalStore().timeCounter));
+// Relative-time formatter — was a Vue 2 global filter (removed in Vue 3).
+// Exported as a function and used as a component method; reading timeCounter
+// keeps it reactive (re-renders when the global 30s tick advances).
+export function formatTime(time) {
+  return timeSvc.format(time, useGlobalStore().timeCounter);
+}
 
