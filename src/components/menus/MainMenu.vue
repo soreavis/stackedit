@@ -229,7 +229,10 @@ export default {
       } catch (e) { /* Cancel */ }
     },
     about() {
-      useModalStore().open('about');
+      // Swallow the reject() the modal fires on cancel/close — same as every
+      // other opener in this file. Without it, dismissing About surfaces an
+      // "Uncaught (in promise) undefined".
+      useModalStore().open('about').catch(() => {});
     },
   },
 };

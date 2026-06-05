@@ -19,7 +19,11 @@ export function getSelection(view: EditorView): SelectionRange {
 }
 
 export function setSelection(view: EditorView, range: SelectionRange): void {
-  view.dispatch({ selection: { anchor: range.start, head: range.end } });
+  // scrollIntoView preserves the cledit-era behavior (selectionMgr's
+  // updateCursorCoordinates scrolled the cursor into view) — e.g. Find/Replace
+  // Next/Previous reveals an off-screen match. No-op when already visible, so
+  // it's harmless for the toolbar/comment consumers.
+  view.dispatch({ selection: { anchor: range.start, head: range.end }, scrollIntoView: true });
 }
 
 export function hasFocus(view: EditorView): boolean {
