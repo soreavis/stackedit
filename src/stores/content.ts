@@ -66,7 +66,7 @@ export const useContentStore = defineStore('content', {
       return utils.computeProperties(this.current.properties);
     },
     isCurrentEditable(): boolean {
-      const layoutStyles = (useLayoutStore() as any).styles;
+      const layoutStyles = useLayoutStore().styles;
       return !this.revisionContent && !!this.current.id && !!layoutStyles.showEditor;
     },
   },

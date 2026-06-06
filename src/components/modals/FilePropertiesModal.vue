@@ -150,7 +150,7 @@ export default defineComponent({
     },
   },
   created() {
-    const content = useContentStore().current;
+    const content = (useContentStore() as any).current;
     this.contentId = content.id;
     this.setYamlProperties(content.properties);
     if (this.tab === 'simple') {

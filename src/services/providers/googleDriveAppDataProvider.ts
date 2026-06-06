@@ -13,7 +13,7 @@ export default new Provider({
   id: 'googleDriveAppData',
   name: 'Google Drive app data',
   getToken(): any {
-    return (useWorkspaceStore() as any).syncToken;
+    return useWorkspaceStore().syncToken;
   },
   getWorkspaceParams(): any {
     // No param as it's the main workspace
@@ -36,7 +36,7 @@ export default new Provider({
     return useWorkspaceStore().workspacesById.main;
   },
   async getChanges(): Promise<any[]> {
-    const syncToken = (useWorkspaceStore() as any).syncToken;
+    const syncToken = useWorkspaceStore().syncToken;
     const startPageToken = (useDataStore().localSettings as any).syncStartPageToken;
     const result = await (googleHelper as any).getChanges(syncToken, startPageToken, true);
     const changes = result.changes.filter((change: any) => {
@@ -67,7 +67,7 @@ export default new Provider({
     });
   },
   async saveWorkspaceItem({ item, syncData, ifNotTooLate }: any): Promise<any> {
-    const syncToken = (useWorkspaceStore() as any).syncToken;
+    const syncToken = useWorkspaceStore().syncToken;
     const file = await (googleHelper as any).uploadAppDataFile({
       token: syncToken,
       name: JSON.stringify(item),
@@ -86,7 +86,7 @@ export default new Provider({
     };
   },
   removeWorkspaceItem({ syncData, ifNotTooLate }: any): any {
-    const syncToken = (useWorkspaceStore() as any).syncToken;
+    const syncToken = useWorkspaceStore().syncToken;
     return (googleHelper as any).removeAppDataFile(syncToken, syncData.id, ifNotTooLate);
   },
   async downloadWorkspaceContent({ token, contentSyncData }: any): Promise<any> {
