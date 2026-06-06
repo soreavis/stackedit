@@ -24,7 +24,8 @@
     "patch": "npm version patch -m \"Tag v%s\"",
     "minor": "npm version minor -m \"Tag v%s\"",
     "major": "npm version major -m \"Tag v%s\"",
-    "oxlint": "oxlint src api"
+    "oxlint": "oxlint src api",
+    "test:browser": "vitest run --config vitest.browser.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
@@ -73,6 +74,8 @@
     "@typescript-eslint/eslint-plugin": "^8.60.1",
     "@typescript-eslint/parser": "^8.60.1",
     "@vitejs/plugin-vue": "^6.0.7",
+    "@vitest/browser": "^4.1.8",
+    "@vitest/browser-playwright": "^4.1.8",
     "@vitest/coverage-v8": "^4.1.8",
     "@vue/compiler-sfc": "^3.5.35",
     "@vue/test-utils": "^2.4.11",
