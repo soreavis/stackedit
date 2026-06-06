@@ -11,11 +11,11 @@ const getScopes = (token: any): any[] => [token.repoFullAccess ? 'repo' : 'publi
 const request = (token: any, options: any): Promise<any> => (networkSvc as any).request({
   ...options,
   headers: {
-    ...options.headers || {},
+    ...options.headers,
     Authorization: `token ${token.accessToken}`,
   },
   params: {
-    ...options.params || {},
+    ...options.params,
     t: Date.now(), // Prevent from caching
   },
 });

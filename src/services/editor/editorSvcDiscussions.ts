@@ -2,7 +2,6 @@
 // — module-level state stays loosely typed (`any`) until cledit is
 // ported.
 import { watch } from 'vue';
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import DiffMatchPatch from 'diff-match-patch';
 import utils from '../utils';
 import diffUtils from '../diffUtils';

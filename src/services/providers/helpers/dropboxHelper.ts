@@ -18,7 +18,7 @@ const httpHeaderSafeJson = (args: any): any => args && JSON.stringify(args)
 const request = ({ accessToken }: any, options: any, args?: any): Promise<any> => (networkSvc as any).request({
   ...options,
   headers: {
-    ...options.headers || {},
+    ...options.headers,
     'Content-Type': options.body && (typeof options.body === 'string'
       ? 'application/octet-stream' : 'application/json; charset=utf-8'),
     'Dropbox-API-Arg': httpHeaderSafeJson(args),

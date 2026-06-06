@@ -268,21 +268,6 @@ watch(
 // section offsets (which were scaled to the old scrollHeight) need a
 // fresh re-measurement. Without this, drift accumulates as the user
 // scrolls deeper into the doc and never recovers.
-let lastMeasuredEditorScrollHeight = 0;
-const RESCALE_THRESHOLD_PX = 50;
-let rescaleTimeoutId: any;
-function maybeRescaleEditorOffsets(): void {
-  const ed = editorScrollerElt;
-  if (!ed) return;
-  if (Math.abs(ed.scrollHeight - lastMeasuredEditorScrollHeight) <= RESCALE_THRESHOLD_PX) return;
-  clearTimeout(rescaleTimeoutId);
-  rescaleTimeoutId = setTimeout(() => {
-    if (!editorScrollerElt) return;
-    if (Math.abs(editorScrollerElt.scrollHeight - lastMeasuredEditorScrollHeight) <= RESCALE_THRESHOLD_PX) return;
-    lastMeasuredEditorScrollHeight = editorScrollerElt.scrollHeight;
-    (editorSvc as any).measureSectionDimensions(false, false, true);
-  }, 120);
-}
 
 (editorSvc as any).$on('inited', () => {
   editorScrollerElt = (editorSvc as any).editorElt.parentNode;
@@ -364,9 +349,6 @@ useFileStore().$subscribe(() => {
 (editorSvc as any).$on('previewCtxMeasured', (previewCtxMeasured: any) => {
   if (previewCtxMeasured) {
     ({ sectionDescList } = previewCtxMeasured);
-    if (editorScrollerElt) {
-      lastMeasuredEditorScrollHeight = editorScrollerElt.scrollHeight;
-    }
     forceScrollSync();
   }
 });

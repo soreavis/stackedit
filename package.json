@@ -23,7 +23,8 @@
     "postversion": "git push origin main --tags && npm publish",
     "patch": "npm version patch -m \"Tag v%s\"",
     "minor": "npm version minor -m \"Tag v%s\"",
-    "major": "npm version major -m \"Tag v%s\""
+    "major": "npm version major -m \"Tag v%s\"",
+    "oxlint": "oxlint src api"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
@@ -80,6 +81,7 @@
     "globals": "^17.6.0",
     "happy-dom": "^20.10.1",
     "jsdom": "^29.1.1",
+    "oxlint": "^1.68.0",
     "playwright": "^1.60.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "sass": "^1.100.0",
