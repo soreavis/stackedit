@@ -29,17 +29,20 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import gistProvider from '../../../services/providers/gistProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     filename: '',
     gistId: '',
   }),
-  computedLocalSettings: {
-    isPublic: 'gistIsPublic',
+  computed: {
+    isPublic: localSetting('gistIsPublic'),
   },
   created() {
     this.filename = `${this.currentFileName}.md`;
@@ -50,7 +53,7 @@ export default modalTemplate({
         this.setError('filename');
       } else {
         // Return new location
-        const location = gistProvider.makeLocation(
+        const location = (gistProvider as any).makeLocation(
           this.config.token,
           this.filename,
           this.isPublic,

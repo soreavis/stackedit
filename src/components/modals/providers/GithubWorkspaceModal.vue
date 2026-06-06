@@ -31,17 +31,20 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import utils from '../../../services/utils';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     branch: '',
     path: '',
   }),
-  computedLocalSettings: {
-    repoUrl: 'githubWorkspaceRepoUrl',
+  computed: {
+    repoUrl: localSetting('githubWorkspaceRepoUrl'),
   },
   methods: {
     resolve() {

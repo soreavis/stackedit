@@ -22,11 +22,13 @@
   </modal-inner>
 </template>
 
-<script>
-import modalTemplate from '../common/modalTemplate';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import baseModal from '../common/baseModal';
 import utils from '../../../services/utils';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     dbUrl: '',
   }),

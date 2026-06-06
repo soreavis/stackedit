@@ -37,17 +37,22 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import bloggerPageProvider from '../../../services/providers/bloggerPageProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
+import templatePickerModal from '../common/templatePickerModal';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal, templatePickerModal],
   data: () => ({
     pageId: '',
+    templateSettingId: 'bloggerPublishTemplate',
   }),
-  computedLocalSettings: {
-    blogUrl: 'bloggerBlogUrl',
-    selectedTemplate: 'bloggerPublishTemplate',
+  computed: {
+    blogUrl: localSetting('bloggerBlogUrl'),
+    selectedTemplate: localSetting('bloggerPublishTemplate'),
   },
   methods: {
     resolve() {
@@ -55,7 +60,7 @@ export default modalTemplate({
         this.setError('blogUrl');
       } else {
         // Return new location
-        const location = bloggerPageProvider.makeLocation(
+        const location = (bloggerPageProvider as any).makeLocation(
           this.config.token,
           this.blogUrl,
           this.pageId,

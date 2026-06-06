@@ -19,18 +19,21 @@
   </modal-inner>
 </template>
 
-<script>
-import modalTemplate from '../common/modalTemplate';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import baseModal from '../common/baseModal';
 import { useDataStore } from '../../../stores/data';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     name: '',
     password: '',
   }),
   created() {
-    this.name = this.config.token.name;
-    this.password = this.config.token.password;
+    const token = this.config.token as { name: string; password: string };
+    this.name = token.name;
+    this.password = token.password;
   },
   methods: {
     resolve() {
@@ -42,11 +45,11 @@ export default modalTemplate({
       }
       if (this.name && this.password) {
         const token = {
-          ...this.config.token,
+          ...(this.config.token as Record<string, unknown>),
           name: this.name,
           password: this.password,
         };
-        useDataStore().addCouchdbToken(token);
+        useDataStore().addCouchdbToken(token as any);
         this.config.resolve();
       }
     },
