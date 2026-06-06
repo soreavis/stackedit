@@ -8,7 +8,7 @@
       <form-entry label="File path" error="path">
         <template #field><input class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
-          <b>Example:</b> {{ config.token.fullAccess ? '' : '/Applications/StackEdit (restricted)' }}/path/to/My Document.md<br>
+          <b>Example:</b> {{ token.fullAccess ? '' : '/Applications/StackEdit (restricted)' }}/path/to/My Document.md<br>
           If the file exists, it will be overwritten.
         </div>
       </form-entry>
@@ -20,24 +20,31 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import dropboxProvider from '../../../services/providers/dropboxProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     path: '',
   }),
   created() {
     this.path = `/${this.currentFileName}.md`;
   },
+  computed: {
+    token(): any {
+      return this.config.token;
+    },
+  },
   methods: {
     resolve() {
-      if (!dropboxProvider.checkPath(this.path)) {
+      if (!(dropboxProvider as any).checkPath(this.path)) {
         this.setError('path');
       } else {
         // Return new location
-        const location = dropboxProvider.makeLocation(this.config.token, this.path);
+        const location = (dropboxProvider as any).makeLocation(this.config.token, this.path);
         this.config.resolve(location);
       }
     },

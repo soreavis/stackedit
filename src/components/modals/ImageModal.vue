@@ -22,14 +22,16 @@
   </modal-inner>
 </template>
 
-<script>
-import modalTemplate from './common/modalTemplate';
-import MenuEntry from '../menus/common/MenuEntry';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import baseModal from './common/baseModal';
+import MenuEntry from '../menus/common/MenuEntry.vue';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import { useModalStore } from '../../stores/modal';
 import { useDataStore } from '../../stores/data';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   components: {
     MenuEntry,
   },
@@ -40,12 +42,12 @@ export default modalTemplate({
     googleDriveTokens() {
       const googleTokensBySub = useDataStore().googleTokensBySub;
       return Object.values(googleTokensBySub)
-        .filter(token => token.isDrive)
-        .sort((token1, token2) => token1.name.localeCompare(token2.name));
+        .filter((token: any) => token.isDrive)
+        .sort((token1: any, token2: any) => (token1.name || '').localeCompare(token2.name || ''));
     },
   },
   methods: {
-    resolve(evt) {
+    resolve(evt: Event) {
       evt.preventDefault(); // Fixes https://github.com/benweet/stackedit/issues/1503
       if (!this.url) {
         this.setError('url');
@@ -65,7 +67,7 @@ export default modalTemplate({
         await googleHelper.addDriveAccount(!useDataStore().localSettings.googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
-    async openGoogleDrive(token) {
+    async openGoogleDrive(token: any) {
       const { callback } = this.config;
       this.config.reject();
       const res = await googleHelper.openPicker(token, 'img');

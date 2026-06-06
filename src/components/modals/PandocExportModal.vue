@@ -27,12 +27,14 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import FileSaver from 'file-saver';
 import networkSvc from '../../services/networkSvc';
 import editorSvc from '../../services/editorSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
-import modalTemplate from './common/modalTemplate';
+import baseModal from './common/baseModal';
+import { localSetting } from './common/localSetting';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useContentStore } from '../../stores/content';
 import { useFileStore } from '../../stores/file';
@@ -42,9 +44,10 @@ import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
 import { useDataStore } from '../../stores/data';
 
-export default modalTemplate({
-  computedLocalSettings: {
-    selectedFormat: 'pandocExportFormat',
+export default defineComponent({
+  mixins: [baseModal],
+  computed: {
+    selectedFormat: localSetting('pandocExportFormat'),
   },
   methods: {
     async resolve() {
@@ -73,7 +76,7 @@ export default modalTemplate({
           });
           FileSaver.saveAs(body, `${currentFile.name}.${selectedFormat}`);
           badgeSvc.addBadge('exportPandoc');
-        } catch (err) {
+        } catch (err: any) {
           if (err.status === 401) {
             useModalStore().open('sponsorOnly');
           } else {
