@@ -42,7 +42,7 @@ const request = async (token: any, options: any = {}): Promise<any> => {
     ...options,
     headers: {
       Accept: 'application/json',
-      ...options.headers || {},
+      ...options.headers,
     },
     url: (utils as any).resolveUrl(baseUrl, options.path || '.'),
     withCredentials: true,

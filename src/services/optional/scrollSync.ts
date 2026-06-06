@@ -55,9 +55,9 @@ function throttle(func: () => any, wait: number): void {
 // CM6 doesn't have per-section DOM); section preview offsets come from
 // the rendered HTML's `offsetTop` (just like the original).
 const doScrollSync = (): void => {
-  const localSkipAnimation = skipAnimation || !(useLayoutStore() as any).styles.showSidePreview;
+  const localSkipAnimation = skipAnimation || !useLayoutStore().styles.showSidePreview;
   skipAnimation = false;
-  if (!(useDataStore() as any).layoutSettings.scrollSync || sectionDescList.length === 0) {
+  if (!useDataStore().layoutSettings.scrollSync || sectionDescList.length === 0) {
     return;
   }
   let editorScrollTop = editorScrollerElt.scrollTop;
@@ -93,7 +93,7 @@ const doScrollSync = (): void => {
           isPreviewMoving = true;
         });
     }, localSkipAnimation ? 500 : 10);
-  } else if (!(useLayoutStore() as any).styles.showEditor || isScrollPreview) {
+  } else if (!useLayoutStore().styles.showEditor || isScrollPreview) {
     isScrollPreview = false;
     previewScrollTop += SCROLL_OFFSET;
     sectionDescList.some((sectionDesc: any) => {
@@ -133,11 +133,11 @@ const forceScrollSync = (): void => {
     doScrollSync();
   }
 };
-watch(() => (useDataStore() as any).layoutSettings.scrollSync, forceScrollSync);
+watch(() => useDataStore().layoutSettings.scrollSync, forceScrollSync);
 
 function isOverlayEnabled(): boolean {
   try {
-    const settings = (useDataStore() as any).computedSettings;
+    const settings = useDataStore().computedSettings as any;
     if (settings && settings.debug && typeof settings.debug.scrollSyncOverlay === 'boolean') {
       return settings.debug.scrollSyncOverlay;
     }
@@ -250,7 +250,7 @@ function mountSyncDebugOverlay(): void {
 watch(
   () => {
     try {
-      return !!(useDataStore() as any).computedSettings?.debug?.scrollSyncOverlay;
+      return !!(useDataStore().computedSettings as any)?.debug?.scrollSyncOverlay;
     } catch {
       return false;
     }
@@ -262,27 +262,6 @@ watch(
   { immediate: true },
 );
 
-// Track the editor `scrollHeight` we last re-measured against. CM6 grows
-// `scrollHeight` as it incrementally measures lines that come into the
-// viewport; once that delta exceeds `RESCALE_THRESHOLD_PX` the cached
-// section offsets (which were scaled to the old scrollHeight) need a
-// fresh re-measurement. Without this, drift accumulates as the user
-// scrolls deeper into the doc and never recovers.
-let lastMeasuredEditorScrollHeight = 0;
-const RESCALE_THRESHOLD_PX = 50;
-let rescaleTimeoutId: any;
-function maybeRescaleEditorOffsets(): void {
-  const ed = editorScrollerElt;
-  if (!ed) return;
-  if (Math.abs(ed.scrollHeight - lastMeasuredEditorScrollHeight) <= RESCALE_THRESHOLD_PX) return;
-  clearTimeout(rescaleTimeoutId);
-  rescaleTimeoutId = setTimeout(() => {
-    if (!editorScrollerElt) return;
-    if (Math.abs(editorScrollerElt.scrollHeight - lastMeasuredEditorScrollHeight) <= RESCALE_THRESHOLD_PX) return;
-    lastMeasuredEditorScrollHeight = editorScrollerElt.scrollHeight;
-    (editorSvc as any).measureSectionDimensions(false, false, true);
-  }, 120);
-}
 
 (editorSvc as any).$on('inited', () => {
   editorScrollerElt = (editorSvc as any).editorElt.parentNode;
@@ -325,11 +304,8 @@ function maybeRescaleEditorOffsets(): void {
 //
 // `sectionUtils.measureSectionDimensions` now derives editor section
 // heights deterministically from the source content (line type ×
-// known CSS pixel heights) and scales to the live scrollHeight, and
-// `maybeRescaleEditorOffsets` re-runs that measurement on the fly
-// whenever scrollHeight drifts past 50px from its last cached value as
-// CM6 incrementally measures new lines under scroll. So we no longer
-// depend on the heightmap being fully populated up-front, and the
+// known CSS pixel heights) and scales to the live scrollHeight, so we no
+// longer depend on the heightmap being fully populated up-front, and the
 // warmup is pure cost. Removed.
 
 (editorSvc as any).$on('sectionList', () => {
@@ -340,7 +316,7 @@ function maybeRescaleEditorOffsets(): void {
 
 (editorSvc as any).$on('previewCtx', () => {
   // Assume the user is writing in the editor
-  isScrollEditor = (useLayoutStore() as any).styles.showEditor;
+  isScrollEditor = useLayoutStore().styles.showEditor;
   // A preview scrolling event can occur if height is smaller
   timeoutId = setTimeout(() => {
     isPreviewRefreshing = false;
@@ -348,7 +324,7 @@ function maybeRescaleEditorOffsets(): void {
 });
 
 watch(
-  () => (useLayoutStore() as any).styles.showEditor,
+  () => useLayoutStore().styles.showEditor,
   (showEditor: boolean) => {
     isScrollEditor = showEditor;
     isScrollPreview = !showEditor;
@@ -364,9 +340,6 @@ useFileStore().$subscribe(() => {
 (editorSvc as any).$on('previewCtxMeasured', (previewCtxMeasured: any) => {
   if (previewCtxMeasured) {
     ({ sectionDescList } = previewCtxMeasured);
-    if (editorScrollerElt) {
-      lastMeasuredEditorScrollHeight = editorScrollerElt.scrollHeight;
-    }
     forceScrollSync();
   }
 });

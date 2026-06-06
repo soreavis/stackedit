@@ -155,7 +155,7 @@ export const useDiscussionStore = defineStore('discussion', {
       }
     },
     async createNewDiscussion(selection?: { start: number; end: number }): Promise<void> {
-      const loginToken = (useWorkspaceStore() as any).loginToken;
+      const loginToken = useWorkspaceStore().loginToken;
       if (!loginToken) {
         try {
           await useModalStore().open('signInForComment');
@@ -192,7 +192,7 @@ export const useDiscussionStore = defineStore('discussion', {
       });
 
       const { nextDiscussionId } = this;
-      (useContentStore() as any).patchCurrent(patch);
+      useContentStore().patchCurrent(patch);
       if (!this.currentDiscussion) {
         this.setCurrentDiscussionId(nextDiscussionId as string);
       }

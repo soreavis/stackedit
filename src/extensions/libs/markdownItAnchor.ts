@@ -2,16 +2,15 @@
 // pandoc's auto_identifiers convention. Output is `headingOpenToken.attrs
 // = [['id', anchor]]` plus two custom fields (`headingContent`,
 // `headingAnchor`) used by the TOC builder elsewhere.
-import type MarkdownIt from 'markdown-it';
 import type Token from 'markdown-it/lib/token.mjs';
 import type { TokenWithAnchor } from './types/tokens';
 
-export default function markdownItAnchor(md: MarkdownIt): void {
-  md.core.ruler.before('replacements', 'anchors', (state) => {
+export default function markdownItAnchor(md: any): void {
+  md.core.ruler.before('replacements', 'anchors', (state: any) => {
     const anchorHash: Record<string, true> = {};
     let headingOpenToken: Token | undefined;
     let headingContent = '';
-    state.tokens.forEach((token) => {
+    state.tokens.forEach((token: any) => {
       if (token.type === 'heading_open') {
         headingContent = '';
         headingOpenToken = token;
@@ -50,7 +49,7 @@ export default function markdownItAnchor(md: MarkdownIt): void {
         ];
         headingOpenToken = undefined;
       } else if (headingOpenToken && token.children) {
-        headingContent += token.children.reduce<string>((result, child) => {
+        headingContent += token.children.reduce((result: any, child: any) => {
           if (child.type !== 'footnote_ref') {
             return result + (child.content ?? '');
           }

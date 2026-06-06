@@ -7,7 +7,7 @@ import { useDataStore } from '../../../stores/data';
 const request = (token: any, options: any): Promise<any> => (networkSvc as any).request({
   ...options,
   headers: {
-    ...options.headers || {},
+    ...options.headers,
     Authorization: `Bearer ${token.accessToken}`,
   },
 })

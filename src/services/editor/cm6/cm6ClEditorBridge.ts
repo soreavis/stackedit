@@ -219,7 +219,6 @@ export function createCm6ClEditorBridge(
   let lastSelection = { from: 0, to: 0 };
   const $markers: Record<number, Cm6Marker> = Object.create(null);
   let options: BridgeInitOptions = {};
-  let initialized = false;
 
   // Mount with empty doc; init() supplies the real content.
   const view = new EditorView({
@@ -338,7 +337,6 @@ export function createCm6ClEditorBridge(
       bridge.parsingCtx.sectionList = options.sectionParser
         ? options.sectionParser(lastContent)
         : [];
-      initialized = true;
       // Synthesize a contentChanged on init so consumers (preview pipeline,
       // discussion markers) see the initial state.
       editorEmitter.emit(

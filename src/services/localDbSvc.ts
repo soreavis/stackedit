@@ -2,7 +2,7 @@ import { watch } from 'vue';
 import utils from './utils';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useFileStore } from '../stores/file';
-import { setItemByType, patchItemByType, deleteItemByType, getItemsByType } from '../stores/itemBridge';
+import { setItemByType, deleteItemByType, getItemsByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
 import welcomeFile from '../data/welcomeFile.md?raw';
 import workspaceSvc from './workspaceSvc';

@@ -19,7 +19,6 @@ import editorSvcUtils from './editor/editorSvcUtils';
 import utils from './utils';
 import { useContentStore } from '../stores/content';
 import { useContentStateStore } from '../stores/contentState';
-import { useModalStore } from '../stores/modal';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
 
@@ -128,7 +127,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
         return this.parsingCtx.sections;
       },
       getCursorFocusRatio: (): number => {
-        if ((useDataStore() as any).layoutSettings.focusMode) {
+        if (useDataStore().layoutSettings.focusMode) {
           return 1;
         }
         return 0.15;
@@ -349,8 +348,8 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
    */
   saveContentState: allowDebounce(() => {
     const scrollPosition = editorSvc.getScrollPosition() ||
-      (useContentStateStore() as any).current.scrollPosition;
-    (useContentStateStore() as any).patchCurrent({
+      useContentStateStore().current.scrollPosition;
+    useContentStateStore().patchCurrent({
       selectionStart: editorSvc.clEditor.selectionMgr.selectionStart,
       selectionEnd: editorSvc.clEditor.selectionMgr.selectionEnd,
       scrollPosition,
@@ -518,7 +517,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
     }, 100);
 
     let imgEltsToCache: any[] = [];
-    if ((useDataStore() as any).computedSettings.editor.inlineImages) {
+    if ((useDataStore().computedSettings as any).editor.inlineImages) {
       this.clEditor.highlighter.on('sectionHighlighted', (section: any) => {
         Array.from(section.elt.getElementsByClassName('token img')).forEach((imgTokenElt: any) => {
           const srcElt = imgTokenElt.querySelector('.token.cl-src');
@@ -528,7 +527,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
             const imgElt = document.createElement('img');
             imgElt.style.display = 'none';
             const uri = srcElt.textContent;
-            if (!/^unsafe/.test((htmlSanitizer as any).sanitizeUri(uri, true))) {
+            if (!(htmlSanitizer as any).sanitizeUri(uri, true).startsWith('unsafe')) {
               imgElt.onload = () => {
                 imgElt.style.display = '';
               };
@@ -591,7 +590,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
     let lastContentId: any = null;
     let lastProperties: any;
     watch(
-      () => (useContentStore() as any).currentChangeTrigger,
+      () => useContentStore().currentChangeTrigger,
       () => {
         const content: any = useContentStore().current;
         // Track ID changes
@@ -604,7 +603,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
         // Track properties changes
         if (content.properties !== lastProperties) {
           lastProperties = content.properties;
-          const options = (extensionSvc as any).getOptions((useContentStore() as any).currentProperties);
+          const options = (extensionSvc as any).getOptions(useContentStore().currentProperties);
           if (utils.serializeObject(options) !== utils.serializeObject(this.options)) {
             this.options = options;
             this.initPrism();
@@ -624,14 +623,14 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
 
     // Disable editor if hidden or if no content is loaded
     watch(
-      () => (useContentStore() as any).isCurrentEditable,
+      () => useContentStore().isCurrentEditable,
       (editable: any) => this.clEditor.toggleEditable(!!editable), {
         immediate: true,
       },
     );
 
     watch(
-      () => utils.serializeObject((useLayoutStore() as any).styles),
+      () => utils.serializeObject(useLayoutStore().styles),
       () => this.measureSectionDimensions(false, true, true),
     );
 

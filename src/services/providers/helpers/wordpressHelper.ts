@@ -10,7 +10,7 @@ const tokenExpirationMargin = 5 * 60 * 1000; // 5 min (WordPress tokens expire a
 const request = (token: any, options: any): Promise<any> => (networkSvc as any).request({
   ...options,
   headers: {
-    ...options.headers || {},
+    ...options.headers,
     Authorization: `Bearer ${token.accessToken}`,
   },
 })
