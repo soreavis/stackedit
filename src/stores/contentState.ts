@@ -12,7 +12,7 @@ export interface ContentState extends BaseItem {
 
 const emptyContentState = emptyContentStateRaw as unknown as (id?: string) => ContentState;
 
-export const useContentStateStore = createItemStore<ContentState>('contentState', emptyContentState, true, {
+export const useContentStateStore = createItemStore('contentState', emptyContentState, true, {
   extraGetters: {
     current(state: ItemStoreState<ContentState>): ContentState {
       const currentFileId = useFileStore().current.id;

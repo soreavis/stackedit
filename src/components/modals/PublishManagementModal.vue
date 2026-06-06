@@ -66,7 +66,7 @@ export default defineComponent({
       'config',
     ]),
     publishLocations(): any[] {
-      return (usePublishLocationStore() as any).current;
+      return usePublishLocationStore().current;
     },
     currentFileName() {
       return useFileStore().current.name;

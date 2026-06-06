@@ -75,21 +75,21 @@ export default defineComponent({
           };
           const patch: Partial<Content> = {
             comments: {
-              ...(useContentStore() as any).current.comments,
+              ...useContentStore().current.comments,
               [utils.uid()]: comment,
             },
           };
           if (discussionId === useDiscussionStore().newDiscussionId) {
             // Create discussion
             patch.discussions = {
-              ...(useContentStore() as any).current.discussions,
+              ...useContentStore().current.discussions,
               [discussionId as string]: useDiscussionStore().newDiscussionFromCurrent,
             };
             badgeSvc.addBadge('createDiscussion');
           } else {
             badgeSvc.addBadge('addComment');
           }
-          (useContentStore() as any).patchCurrent(patch);
+          useContentStore().patchCurrent(patch);
           useDiscussionStore().setNewCommentText(undefined);
           useDiscussionStore().setIsCommenting(false);
         }

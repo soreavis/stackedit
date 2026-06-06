@@ -155,7 +155,7 @@ export default {
     );
     ({ clEditor } = this);
     clEditor.on('contentChanged', (text: string) => {
-      const oldContent = (useContentStore() as any).current;
+      const oldContent = useContentStore().current;
       const newContent = {
         ...utils.deepCopy(oldContent),
         text: utils.sanitizeText(text),
@@ -170,16 +170,16 @@ export default {
         diffUtils.restoreDiscussionOffsets(newContent, markerKeys);
         syncDiscussionMarkers(newContent, false);
       }
-      (useContentStore() as any).patchCurrent(newContent);
+      useContentStore().patchCurrent(newContent);
       isChangePatch = false;
     });
     clEditor.on('focus', () => useDiscussionStore().setNewCommentFocus(false));
   },
   initClEditorInternal(opts: any) {
-    const content = (useContentStore() as any).current;
+    const content = useContentStore().current;
     if (content) {
       removeDiscussionMarkers(); // Markers will be recreated on contentChanged
-      const contentState = (useContentStateStore() as any).current;
+      const contentState = useContentStateStore().current;
       const options = Object.assign({
         selectionStart: contentState.selectionStart,
         selectionEnd: contentState.selectionEnd,
@@ -203,7 +203,7 @@ export default {
   },
   applyContent() {
     if (clEditor) {
-      const content = (useContentStore() as any).current;
+      const content = useContentStore().current;
       if (clEditor.setContent(content.text, true).range) {
         // Marker will be recreated on contentChange
         removeDiscussionMarkers();
@@ -228,7 +228,7 @@ export default {
   initHighlighters() {
     watch(
       () => useDiscussionStore().newDiscussionFromCurrent,
-      () => syncDiscussionMarkers((useContentStore() as any).current, false),
+      () => syncDiscussionMarkers(useContentStore().current, false),
     );
 
     watch(

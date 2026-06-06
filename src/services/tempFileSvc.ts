@@ -95,7 +95,7 @@ const svc: TempFileSvc = {
         // Close editor if file has changed for some reason
         svc.close();
       } else if (!svc.closed && editorSvc.previewCtx.html != null) {
-        const content = (useContentStore() as any).current;
+        const content = useContentStore().current;
         const properties = utils.computeProperties(content.properties);
         window.parent.postMessage({
           type: 'fileChange',

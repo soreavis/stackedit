@@ -170,10 +170,10 @@ export default defineComponent({
     // computeds with a real view shape so the template and script see
     // `.id`/`.url`/`.providerId`/`.length` instead of `unknown`.
     syncLocations(): LocationView[] {
-      return (useSyncLocationStore() as any).current as LocationView[];
+      return useSyncLocationStore().current as LocationView[];
     },
     publishLocations(): LocationView[] {
-      return (usePublishLocationStore() as any).current as LocationView[];
+      return usePublishLocationStore().current as LocationView[];
     },
     pagedownButtons() {
       return pagedownButtons.map((button: any) => ({
@@ -192,7 +192,7 @@ export default defineComponent({
       // `current` is an extraGetter not surfaced on the inferred store
       // type; cast the store to read it (loose store boundary).
       return useWorkspaceStore().syncToken ||
-        (useSyncLocationStore() as any).current.length;
+        useSyncLocationStore().current.length;
     },
     showSpinner() {
       return !useQueueStore().isEmpty;
@@ -243,7 +243,7 @@ export default defineComponent({
     metaParts() {
       const current = useFileStore().current;
       if (!current || !current.id) return null;
-      const content = (useContentStore() as any).current;
+      const content = useContentStore().current;
       const text = (content && content.text) || '';
       const bytes = new Blob([text]).size;
       const words = text.trim() ? text.trim().split(/\s+/).length : 0;

@@ -21,9 +21,12 @@ type ExtraGetters = Record<string, (...args: any[]) => any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ExtraActions = Record<string, (...args: any[]) => any>;
 
-interface CreateItemStoreOptions {
-  extraGetters?: ExtraGetters;
-  extraActions?: ExtraActions;
+interface CreateItemStoreOptions<
+  G extends ExtraGetters = ExtraGetters,
+  A extends ExtraActions = ExtraActions,
+> {
+  extraGetters?: G;
+  extraActions?: A;
 }
 
 // Pinia equivalent of src/store/moduleTemplate.js. Same shape: itemsById
@@ -41,11 +44,15 @@ interface CreateItemStoreOptions {
 //
 // Returns a `useFooStore = defineStore(...)` factory function — call it
 // inside your component / service to get the live store.
-export function createItemStore<T extends BaseItem>(
+export function createItemStore<
+  T extends BaseItem,
+  G extends ExtraGetters = {},
+  A extends ExtraActions = {},
+>(
   storeId: string,
   empty: (id?: string) => T,
   simpleHash = false,
-  { extraGetters = {}, extraActions = {} }: CreateItemStoreOptions = {},
+  { extraGetters, extraActions }: CreateItemStoreOptions<G, A> = {},
 ) {
   const hashFunc: (item: T) => number = simpleHash
     ? () => Date.now()
@@ -59,7 +66,7 @@ export function createItemStore<T extends BaseItem>(
       items(state): T[] {
         return Object.values(state.itemsById);
       },
-      ...extraGetters,
+      ...(extraGetters as G),
     },
     actions: {
       setItem(value: Partial<T> & { id: string }): void {
@@ -87,7 +94,7 @@ export function createItemStore<T extends BaseItem>(
         delete next[id];
         this.itemsById = next;
       },
-      ...extraActions,
+      ...(extraActions as A),
     },
   });
 }

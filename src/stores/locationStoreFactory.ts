@@ -32,7 +32,7 @@ export function createLocationStore<T extends LocationItem>(
   storeId: string,
   empty: (id?: string) => T,
 ) {
-  return createItemStore<T>(storeId, empty, false, {
+  return createItemStore(storeId, empty, false, {
     extraGetters: {
       groupedByFileId(state: { itemsById: Record<string, T> }): Record<string, T[]> {
         const groups: Record<string, T[]> = {};
