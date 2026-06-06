@@ -8,7 +8,7 @@
       <form-entry label="Project URL" error="projectUrl">
         <template #field><input class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
-          <b>Example:</b> {{ config.token.serverUrl }}/path/to/project
+          <b>Example:</b> {{ token.serverUrl }}/path/to/project
         </div>
       </form-entry>
       <form-entry label="File path" error="path">
@@ -32,18 +32,24 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import gitlabProvider from '../../../services/providers/gitlabProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 import utils from '../../../services/utils';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     branch: '',
     path: '',
   }),
-  computedLocalSettings: {
-    projectUrl: 'gitlabProjectUrl',
+  computed: {
+    projectUrl: localSetting('gitlabProjectUrl'),
+    token(): any {
+      return this.config.token;
+    },
   },
   created() {
     this.path = `${this.currentFileName}.md`;
@@ -58,7 +64,7 @@ export default modalTemplate({
         this.setError('path');
       }
       if (projectPath && this.path) {
-        const location = gitlabProvider.makeLocation(
+        const location = (gitlabProvider as any).makeLocation(
           this.config.token,
           projectPath,
           this.branch || 'main',

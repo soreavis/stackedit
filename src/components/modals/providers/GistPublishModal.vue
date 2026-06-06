@@ -44,18 +44,23 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import gistProvider from '../../../services/providers/gistProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
+import templatePickerModal from '../common/templatePickerModal';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal, templatePickerModal],
   data: () => ({
     filename: '',
     gistId: '',
+    templateSettingId: 'gistPublishTemplate',
   }),
-  computedLocalSettings: {
-    isPublic: 'gistIsPublic',
-    selectedTemplate: 'gistPublishTemplate',
+  computed: {
+    isPublic: localSetting('gistIsPublic'),
+    selectedTemplate: localSetting('gistPublishTemplate'),
   },
   created() {
     this.filename = `${this.currentFileName}.md`;
@@ -66,7 +71,7 @@ export default modalTemplate({
         this.setError('filename');
       } else {
         // Return new location
-        const location = gistProvider.makeLocation(
+        const location = (gistProvider as any).makeLocation(
           this.config.token,
           this.filename,
           this.isPublic,

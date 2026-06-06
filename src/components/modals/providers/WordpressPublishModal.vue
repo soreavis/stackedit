@@ -40,17 +40,22 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import wordpressProvider from '../../../services/providers/wordpressProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
+import templatePickerModal from '../common/templatePickerModal';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal, templatePickerModal],
   data: () => ({
     postId: '',
+    templateSettingId: 'wordpressPublishTemplate',
   }),
-  computedLocalSettings: {
-    domain: 'wordpressDomain',
-    selectedTemplate: 'wordpressPublishTemplate',
+  computed: {
+    domain: localSetting('wordpressDomain'),
+    selectedTemplate: localSetting('wordpressPublishTemplate'),
   },
   methods: {
     resolve() {
@@ -58,7 +63,7 @@ export default modalTemplate({
         this.setError('domain');
       } else {
         // Return new location
-        const location = wordpressProvider.makeLocation(
+        const location = (wordpressProvider as any).makeLocation(
           this.config.token,
           this.domain,
           this.postId,

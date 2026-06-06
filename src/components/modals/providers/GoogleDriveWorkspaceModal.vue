@@ -22,16 +22,19 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import googleHelper from '../../../services/providers/helpers/googleHelper';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 import utils from '../../../services/utils';
 import { useModalStore } from '../../../stores/modal';
 import { useDataStore } from '../../../stores/data';
 
-export default modalTemplate({
-  computedLocalSettings: {
-    folderId: 'googleDriveWorkspaceFolderId',
+export default defineComponent({
+  mixins: [baseModal],
+  computed: {
+    folderId: localSetting('googleDriveWorkspaceFolderId'),
   },
   methods: {
     openFolder() {
@@ -50,7 +53,7 @@ export default modalTemplate({
       const url = utils.addQueryParams('app', {
         providerId: 'googleDriveWorkspace',
         folderId: this.folderId,
-        sub: this.config.token.sub,
+        sub: (this.config.token as any).sub,
       }, true);
       this.config.resolve();
       window.open(url);

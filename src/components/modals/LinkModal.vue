@@ -13,15 +13,17 @@
   </modal-inner>
 </template>
 
-<script>
-import modalTemplate from './common/modalTemplate';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import baseModal from './common/baseModal';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     url: '',
   }),
   methods: {
-    resolve(evt) {
+    resolve(evt: Event) {
       evt.preventDefault(); // Fixes https://github.com/benweet/stackedit/issues/1503
       if (!this.url) {
         this.setError('url');

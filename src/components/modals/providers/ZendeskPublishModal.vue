@@ -44,18 +44,23 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import zendeskProvider from '../../../services/providers/zendeskProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
+import templatePickerModal from '../common/templatePickerModal';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal, templatePickerModal],
   data: () => ({
+    templateSettingId: 'zendeskPublishTemplate',
     articleId: '',
   }),
-  computedLocalSettings: {
-    sectionId: 'zendescPublishSectionId',
-    locale: 'zendescPublishLocale',
-    selectedTemplate: 'zendeskPublishTemplate',
+  computed: {
+    sectionId: localSetting('zendescPublishSectionId'),
+    locale: localSetting('zendescPublishLocale'),
+    selectedTemplate: localSetting('zendeskPublishTemplate'),
   },
   methods: {
     resolve() {
@@ -63,7 +68,7 @@ export default modalTemplate({
         this.setError('sectionId');
       } else {
         // Return new location
-        const location = zendeskProvider.makeLocation(
+        const location = (zendeskProvider as any).makeLocation(
           this.config.token,
           this.sectionId,
           this.locale || 'en-us',

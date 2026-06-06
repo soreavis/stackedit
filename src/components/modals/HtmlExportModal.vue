@@ -23,24 +23,29 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapActions as mapPiniaActions } from 'pinia';
 import exportSvc from '../../services/exportSvc';
-import modalTemplate from './common/modalTemplate';
+import baseModal from './common/baseModal';
+import templatePickerModal from './common/templatePickerModal';
+import { localSetting } from './common/localSetting';
 import { useFileStore } from '../../stores/file';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal, templatePickerModal],
   data: () => ({
     result: '',
+    templateSettingId: 'htmlExportTemplate',
   }),
-  computedLocalSettings: {
-    selectedTemplate: 'htmlExportTemplate',
+  computed: {
+    selectedTemplate: localSetting('htmlExportTemplate'),
   },
   mounted() {
-    let timeoutId;
-    this.$watch('selectedTemplate', (selectedTemplate) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    this.$watch('selectedTemplate', (selectedTemplate: string) => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(async () => {
         const currentFile = useFileStore().current;
