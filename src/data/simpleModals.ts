@@ -1,4 +1,14 @@
-const simpleModal = (contentHtml, rejectText, resolveText) => ({
+interface SimpleModalConfig {
+  contentHtml: (config?: any) => string;
+  rejectText?: string | null;
+  resolveText?: string | null;
+}
+
+const simpleModal = (
+  contentHtml: string | ((config?: any) => string),
+  rejectText?: string | null,
+  resolveText?: string | null,
+): SimpleModalConfig => ({
   contentHtml: typeof contentHtml === 'function' ? contentHtml : () => contentHtml,
   rejectText,
   resolveText,
@@ -7,7 +17,7 @@ const simpleModal = (contentHtml, rejectText, resolveText) => ({
 /* eslint sort-keys: "error" */
 export default {
   bulkDeletion: simpleModal(
-    (config) => {
+    (config: any) => {
       const parts = [];
       if (config.toTrash) {
         parts.push(`move ${config.toTrash} item${config.toTrash === 1 ? '' : 's'} to Trash`);
@@ -35,7 +45,7 @@ export default {
     'Yes, delete',
   ),
   emptyTrash: simpleModal(
-    config => `<p>You are about to permanently delete ${config.count} file${config.count === 1 ? '' : 's'} from Trash. Are you sure?</p>`,
+    (config: any) => `<p>You are about to permanently delete ${config.count} file${config.count === 1 ? '' : 's'} from Trash. Are you sure?</p>`,
     'No',
     'Yes, empty Trash',
   ),
@@ -45,12 +55,12 @@ export default {
     'Yes, revert',
   ),
   folderDeletion: simpleModal(
-    config => `<p>You are about to delete the folder <b>${config.item.name}</b>. Its files will be moved to Trash. Are you sure?</p>`,
+    (config: any) => `<p>You are about to delete the folder <b>${config.item.name}</b>. Its files will be moved to Trash. Are you sure?</p>`,
     'No',
     'Yes, delete',
   ),
   pathConflict: simpleModal(
-    config => `<p><b>${config.item.name}</b> already exists. Do you want to add a suffix?</p>`,
+    (config: any) => `<p><b>${config.item.name}</b> already exists. Do you want to add a suffix?</p>`,
     'No',
     'Yes, add suffix',
   ),
@@ -59,7 +69,7 @@ export default {
     'Ok',
   ),
   providerRedirection: simpleModal(
-    config => `<p>You are about to navigate to the <b>${config.name}</b> authorization page.</p>`,
+    (config: any) => `<p>You are about to navigate to the <b>${config.name}</b> authorization page.</p>`,
     'Cancel',
     'Ok, go on',
   ),
@@ -90,12 +100,12 @@ export default {
     'Ok, I understand',
   ),
   stripName: simpleModal(
-    config => `<p><b>${config.item.name}</b> contains illegal characters. Do you want to strip them?</p>`,
+    (config: any) => `<p><b>${config.item.name}</b> contains illegal characters. Do you want to strip them?</p>`,
     'No',
     'Yes, strip',
   ),
   tempFileDeletion: simpleModal(
-    config => `<p>You are about to permanently delete the temporary file <b>${config.item.name}</b>. Are you sure?</p>`,
+    (config: any) => `<p>You are about to permanently delete the temporary file <b>${config.item.name}</b>. Are you sure?</p>`,
     'No',
     'Yes, delete',
   ),
@@ -105,12 +115,12 @@ export default {
     'Yes, delete all',
   ),
   textStats: simpleModal(
-    (config) => {
+    (config: any) => {
       // Build a key:value table. `lines` is a flat array of {label, value}
       // entries plus optional {section: '...'} headers and {separator: true}
       // dividers. Renders as a definition-list-style block inside
       // .text-stats so each row aligns left/right.
-      const rows = config.lines.map((row) => {
+      const rows = config.lines.map((row: any) => {
         if (row.section) {
           return `<div class="text-stats__section">${row.section}</div>`;
         }
@@ -130,7 +140,7 @@ export default {
     'Ok',
   ),
   unauthorizedName: simpleModal(
-    config => `<p><b>${config.item.name}</b> is an unauthorized name.</p>`,
+    (config: any) => `<p><b>${config.item.name}</b> is an unauthorized name.</p>`,
     'Ok',
   ),
   workspaceGoogleRedirection: simpleModal(

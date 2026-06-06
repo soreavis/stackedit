@@ -2,20 +2,42 @@ import { debounce, findContainer } from '../../services/editor/sharedUtils';
 import editorSvc from '../../services/editorSvc';
 import utils from '../../services/utils';
 
-const nextTickCbs = [];
+type ClassGetter = string[] | (() => string[]);
+type Offset = { start: number; end: number } | null | undefined;
+type OffsetGetter = Offset | (() => Offset);
+
+const nextTickCbs: Array<() => void> = [];
 const nextTickExecCbs = debounce(() => {
   while (nextTickCbs.length) {
-    nextTickCbs.shift()();
+    nextTickCbs.shift()!();
   }
 });
 
-const nextTick = (cb) => {
+const nextTick = (cb: () => void) => {
   nextTickCbs.push(cb);
   nextTickExecCbs();
 };
 
 export default class PreviewClassApplier {
-  constructor(classGetter, offsetGetter, properties) {
+  classGetter: () => string[];
+
+  offsetGetter: () => Offset;
+
+  properties: Record<string, unknown>;
+
+  eltCollection: HTMLCollectionOf<Element>;
+
+  lastEltCount: number;
+
+  restoreClass: () => void;
+
+  stopped?: boolean;
+
+  constructor(
+    classGetter: ClassGetter,
+    offsetGetter: OffsetGetter,
+    properties?: Record<string, unknown>,
+  ) {
     this.classGetter = typeof classGetter === 'function' ? classGetter : () => classGetter;
     this.offsetGetter = typeof offsetGetter === 'function' ? offsetGetter : () => offsetGetter;
     this.properties = properties || {};
@@ -71,7 +93,7 @@ export default class PreviewClassApplier {
   }
 
   removeClass() {
-    utils.unwrapRange(this.eltCollection);
+    utils.unwrapRange(this.eltCollection as unknown as ArrayLike<HTMLElement>);
   }
 
   stop() {

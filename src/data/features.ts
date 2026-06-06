@@ -1,12 +1,34 @@
+interface Badge {
+  featureId: string;
+  name: string;
+  description: string;
+  children: Badge[] | null;
+  isEarned: boolean;
+  hasSomeEarned: boolean | null;
+}
+
 class Feature {
-  constructor(id, badgeName, description, children = null) {
+  id: string;
+
+  badgeName: string;
+
+  description: string;
+
+  children: Feature[] | null;
+
+  constructor(
+    id: string,
+    badgeName: string,
+    description: string,
+    children: Feature[] | null = null,
+  ) {
     this.id = id;
     this.badgeName = badgeName;
     this.description = description;
     this.children = children;
   }
 
-  toBadge(badgeCreations) {
+  toBadge(badgeCreations: { [id: string]: any }): Badge {
     const children = this.children
       ? this.children.map(child => child.toBadge(badgeCreations))
       : null;

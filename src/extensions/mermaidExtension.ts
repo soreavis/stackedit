@@ -48,9 +48,14 @@ const config = {
   },
 };
 
-let mermaidPromise = null;
+// `mermaid` ships its own types but the in-tree usage is loose; keep the
+// late-bound module reference as `any` so the dynamic import doesn't pin us
+// to a specific mermaid major version's surface.
+type MermaidModule = any;
 
-function getMermaid() {
+let mermaidPromise: Promise<MermaidModule> | null = null;
+
+function getMermaid(): Promise<MermaidModule> {
   if (!mermaidPromise) {
     mermaidPromise = import('mermaid').then((m) => {
       m.default.initialize(config);
@@ -199,7 +204,7 @@ const LIGHTBOX_STYLES = `
 `;
 
 let stylesInjected = false;
-function ensureStyles() {
+function ensureStyles(): void {
   if (stylesInjected) return;
   const style = document.createElement('style');
   style.setAttribute('data-mermaid-lightbox', '');
@@ -210,7 +215,7 @@ function ensureStyles() {
 
 // -------- Clipboard helper --------
 
-async function copyText(text) {
+async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(text);
@@ -236,7 +241,7 @@ async function copyText(text) {
   }
 }
 
-function flashSuccess(btn, originalText) {
+function flashSuccess(btn: HTMLElement, originalText: string): void {
   btn.classList.add('is-success');
   btn.textContent = '✓';
   setTimeout(() => {
@@ -250,8 +255,8 @@ function flashSuccess(btn, originalText) {
 // Build a portable, self-contained SVG string from the rendered diagram.
 // Mermaid already inlines its fonts and styles via a <style> child, so no
 // external fetches are needed — the resulting file opens in any viewer.
-function serializeSvg(sourceSvg) {
-  const clone = sourceSvg.cloneNode(true);
+function serializeSvg(sourceSvg: SVGSVGElement): string {
+  const clone = sourceSvg.cloneNode(true) as SVGSVGElement;
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
   // Strip any layout styles the lightbox may have set on the live node.
@@ -259,13 +264,13 @@ function serializeSvg(sourceSvg) {
   const vb = sourceSvg.viewBox && sourceSvg.viewBox.baseVal;
   if (vb && vb.width && vb.height) {
     // Pin intrinsic dimensions so external viewers render at a sane size.
-    clone.setAttribute('width', vb.width);
-    clone.setAttribute('height', vb.height);
+    clone.setAttribute('width', String(vb.width));
+    clone.setAttribute('height', String(vb.height));
   }
   return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n${new XMLSerializer().serializeToString(clone)}`;
 }
 
-function downloadBlob(blob, filename) {
+function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -278,12 +283,12 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function diagramFilename(ext) {
+function diagramFilename(ext: string): string {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   return `mermaid-${stamp}.${ext}`;
 }
 
-function exportSvg(sourceSvg) {
+function exportSvg(sourceSvg: SVGSVGElement): void {
   const svgText = serializeSvg(sourceSvg);
   const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
   downloadBlob(blob, diagramFilename('svg'));
@@ -299,21 +304,21 @@ function exportSvg(sourceSvg) {
 
 // Walk a foreignObject DOM and produce the label text as an array of lines,
 // splitting on <br> elements and block-level children (<div>, <p>).
-function extractLabelLines(root) {
-  const lines = [];
+function extractLabelLines(root: Node): string[] {
+  const lines: string[] = [];
   let current = '';
   const push = () => {
     const trimmed = current.replace(/\s+/g, ' ').trim();
     if (trimmed) lines.push(trimmed);
     current = '';
   };
-  const walk = (node) => {
+  const walk = (node: Node) => {
     if (node.nodeType === 3) { // Node.TEXT_NODE
       current += node.textContent;
       return;
     }
     if (node.nodeType !== 1) return; // Non-element, non-text: skip.
-    const tag = node.tagName.toUpperCase();
+    const tag = (node as Element).tagName.toUpperCase();
     if (tag === 'BR') {
       push();
       return;
@@ -328,16 +333,16 @@ function extractLabelLines(root) {
   return lines.length ? lines : [''];
 }
 
-function replaceForeignObjectsWithText(svg) {
+function replaceForeignObjectsWithText(svg: SVGSVGElement): SVGSVGElement {
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const LINE_HEIGHT = 16;
   const FONT_SIZE = 14;
   const foreignObjects = svg.querySelectorAll('foreignObject');
   foreignObjects.forEach((fo) => {
-    const x = parseFloat(fo.getAttribute('x')) || 0;
-    const y = parseFloat(fo.getAttribute('y')) || 0;
-    const w = parseFloat(fo.getAttribute('width')) || 0;
-    const h = parseFloat(fo.getAttribute('height')) || 0;
+    const x = parseFloat(fo.getAttribute('x') || '') || 0;
+    const y = parseFloat(fo.getAttribute('y') || '') || 0;
+    const w = parseFloat(fo.getAttribute('width') || '') || 0;
+    const h = parseFloat(fo.getAttribute('height') || '') || 0;
     const lines = extractLabelLines(fo);
 
     const cx = x + w / 2;
@@ -346,8 +351,8 @@ function replaceForeignObjectsWithText(svg) {
     const firstBaselineY = y + h / 2 - blockHeight / 2 + LINE_HEIGHT * 0.8;
 
     const replacement = document.createElementNS(SVG_NS, 'text');
-    replacement.setAttribute('x', cx);
-    replacement.setAttribute('y', firstBaselineY);
+    replacement.setAttribute('x', String(cx));
+    replacement.setAttribute('y', String(firstBaselineY));
     replacement.setAttribute('text-anchor', 'middle');
     replacement.setAttribute('font-family', '"trebuchet ms", verdana, arial, sans-serif');
     replacement.setAttribute('font-size', String(FONT_SIZE));
@@ -355,22 +360,22 @@ function replaceForeignObjectsWithText(svg) {
 
     lines.forEach((line, i) => {
       const tspan = document.createElementNS(SVG_NS, 'tspan');
-      tspan.setAttribute('x', cx);
+      tspan.setAttribute('x', String(cx));
       if (i > 0) tspan.setAttribute('dy', String(LINE_HEIGHT));
       tspan.textContent = line;
       replacement.appendChild(tspan);
     });
 
-    fo.parentNode.replaceChild(replacement, fo);
+    fo.parentNode!.replaceChild(replacement, fo);
   });
   return svg;
 }
 
-async function exportPng(sourceSvg, _sourceText, scale = 3) {
+async function exportPng(sourceSvg: SVGSVGElement, _sourceText: string | null, scale = 3): Promise<void> {
   let svgForExport = sourceSvg;
   if (sourceSvg.querySelector('foreignObject')) {
     // Work on a disposable clone; don't mutate the live preview SVG.
-    svgForExport = sourceSvg.cloneNode(true);
+    svgForExport = sourceSvg.cloneNode(true) as SVGSVGElement;
     replaceForeignObjectsWithText(svgForExport);
   }
 
@@ -384,7 +389,7 @@ async function exportPng(sourceSvg, _sourceText, scale = 3) {
   try {
     const img = new Image();
     img.decoding = 'sync';
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
       img.onerror = () => reject(new Error('SVG image load failed'));
       img.src = url;
@@ -393,13 +398,13 @@ async function exportPng(sourceSvg, _sourceText, scale = 3) {
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(naturalW * scale);
     canvas.height = Math.round(naturalH * scale);
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d')!;
     // Opaque white background — diagrams are designed against white.
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    const pngBlob = await new Promise((resolve, reject) => {
+    const pngBlob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
     });
     downloadBlob(pngBlob, diagramFilename('png'));
@@ -410,10 +415,10 @@ async function exportPng(sourceSvg, _sourceText, scale = 3) {
 
 // -------- Lightbox (pan + zoom) --------
 
-let activeOverlay = null;
-let activeCleanup = null;
+let activeOverlay: HTMLElement | null = null;
+let activeCleanup: (() => void) | null = null;
 
-function closeLightbox() {
+function closeLightbox(): void {
   if (!activeOverlay) return;
   if (activeCleanup) activeCleanup();
   activeOverlay.remove();
@@ -422,7 +427,7 @@ function closeLightbox() {
   activeCleanup = null;
 }
 
-function onEsc(evt) {
+function onEsc(evt: KeyboardEvent): void {
   if (evt.key === 'Escape') {
     evt.stopPropagation();
     closeLightbox();
@@ -431,9 +436,9 @@ function onEsc(evt) {
 
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 20;
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+const clamp = (v: number, min: number, max: number): number => Math.max(min, Math.min(max, v));
 
-function openLightbox(sourceSvg, sourceText) {
+function openLightbox(sourceSvg: SVGSVGElement | null, sourceText: string | null): void {
   if (!sourceSvg) return;
   ensureStyles();
   closeLightbox();
@@ -444,7 +449,7 @@ function openLightbox(sourceSvg, sourceText) {
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', 'Enlarged diagram');
 
-  const clone = sourceSvg.cloneNode(true);
+  const clone = sourceSvg.cloneNode(true) as SVGSVGElement;
   // Strip mermaid's own sizing hints. It emits `width="100%"` plus an inline
   // `style="max-width: <natural>px"` which, left in place, clamps our
   // style.width on zoom → diagram can't grow past its intrinsic size. We
@@ -459,7 +464,11 @@ function openLightbox(sourceSvg, sourceText) {
   toolbar.className = 'mermaid-lightbox-toolbar';
   overlay.appendChild(toolbar);
 
-  const mkToolBtn = (label, ariaLabel, onClick) => {
+  const mkToolBtn = (
+    label: string,
+    ariaLabel: string,
+    onClick: (btn: HTMLButtonElement) => void,
+  ): HTMLButtonElement => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'mermaid-lightbox-tool';
@@ -527,7 +536,7 @@ function openLightbox(sourceSvg, sourceText) {
   };
   apply();
 
-  const zoomAt = (cx, cy, factor) => {
+  const zoomAt = (cx: number, cy: number, factor: number) => {
     const newScale = clamp(scale * factor, MIN_SCALE, MAX_SCALE);
     const k = newScale / scale;
     panX = cx - (cx - panX) * k;
@@ -536,7 +545,7 @@ function openLightbox(sourceSvg, sourceText) {
     apply();
   };
 
-  const zoomCenter = (factor) => {
+  const zoomCenter = (factor: number) => {
     zoomAt(overlay.clientWidth / 2, overlay.clientHeight / 2, factor);
   };
 
@@ -584,7 +593,7 @@ function openLightbox(sourceSvg, sourceText) {
 
   // Wheel zoom (cursor-anchored). exp-of-deltaY gives mouse wheels ~5%/tick
   // and trackpads sub-percent increments — smooth on both.
-  const onWheel = (evt) => {
+  const onWheel = (evt: WheelEvent) => {
     evt.preventDefault();
     const rectOverlay = overlay.getBoundingClientRect();
     const cx = evt.clientX - rectOverlay.left;
@@ -600,7 +609,7 @@ function openLightbox(sourceSvg, sourceText) {
   let startY = 0;
   let startPanX = 0;
   let startPanY = 0;
-  const onDown = (evt) => {
+  const onDown = (evt: MouseEvent) => {
     if (evt.button !== 0) return;
     // Don't pan when grabbing a toolbar/close button (their listeners stopProp).
     dragging = true;
@@ -610,7 +619,7 @@ function openLightbox(sourceSvg, sourceText) {
     startPanY = panY;
     overlay.classList.add('mermaid-lightbox-overlay--dragging');
   };
-  const onMove = (evt) => {
+  const onMove = (evt: MouseEvent) => {
     if (!dragging) return;
     panX = startPanX + (evt.clientX - startX);
     panY = startPanY + (evt.clientY - startY);
@@ -643,8 +652,8 @@ function openLightbox(sourceSvg, sourceText) {
 
 // -------- Per-diagram action buttons (enlarge + copy) --------
 
-function addLightboxButton(wrapperElt, sourceText) {
-  const svg = wrapperElt.querySelector('svg');
+function addLightboxButton(wrapperElt: HTMLElement, sourceText: string | null): void {
+  const svg = wrapperElt.querySelector('svg') as SVGSVGElement | null;
   if (!svg) return;
   ensureStyles();
   wrapperElt.classList.add('mermaid-wrapper');
@@ -686,9 +695,9 @@ function addLightboxButton(wrapperElt, sourceText) {
 
 // -------- Render pipeline --------
 
-const render = async (elt) => {
+const render = async (elt: HTMLElement): Promise<void> => {
   try {
-    const source = elt.textContent; // Capture before innerHTML wipes it.
+    const source = elt.textContent || ''; // Capture before innerHTML wipes it.
     const mermaid = await getMermaid();
     const svgId = `mermaid-svg-${utils.uid()}`;
     const { svg } = await mermaid.render(svgId, source);
@@ -700,13 +709,14 @@ const render = async (elt) => {
 };
 
 extensionSvc.onGetOptions((options, properties) => {
-  options.mermaid = properties.extensions.mermaid.enabled;
+  const props = properties as { extensions: { mermaid: { enabled: boolean } } };
+  options.mermaid = props.extensions.mermaid.enabled;
 });
 
 extensionSvc.onSectionPreview((elt) => {
-  const pending = [];
+  const pending: Promise<void>[] = [];
   elt.querySelectorAll('.prism.language-mermaid')
-    .forEach(diagramElt => pending.push(render(diagramElt.parentNode)));
+    .forEach(diagramElt => pending.push(render(diagramElt.parentNode as HTMLElement)));
   // Returned so export callers that await sectionPreview can see the
   // rendered SVG in innerHTML. Live preview just ignores the promise.
   return Promise.all(pending);

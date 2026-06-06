@@ -2,11 +2,21 @@ import { debounce } from '../../services/editor/sharedUtils';
 import editorSvc from '../../services/editorSvc';
 import utils from '../../services/utils';
 
-let savedSelection = null;
-const nextTickCbs = [];
+interface SavedSelection {
+  start: number;
+  end: number;
+}
+
+type ClassGetter = string[] | (() => string[]);
+type Offset = { start: number; end: number };
+type OffsetGetter = Offset | (() => Offset);
+type Properties = Record<string, any>;
+
+let savedSelection: SavedSelection | null = null;
+const nextTickCbs: Array<() => void> = [];
 const nextTickExecCbs = debounce(() => {
   while (nextTickCbs.length) {
-    nextTickCbs.shift()();
+    nextTickCbs.shift()!();
   }
   if (savedSelection) {
     editorSvc.clEditor.selectionMgr.setSelectionStartEnd(
@@ -17,7 +27,7 @@ const nextTickExecCbs = debounce(() => {
   savedSelection = null;
 });
 
-const nextTick = (cb) => {
+const nextTick = (cb: () => void) => {
   nextTickCbs.push(cb);
   nextTickExecCbs();
 };
@@ -33,12 +43,21 @@ const nextTickRestoreSelection = () => {
 // Stage 3 batch 8: when the bridge is active, use the CM6 decoration field
 // instead of DOM-wrap. CM6 forbids direct DOM manipulation of the editor
 // surface, and decorations also auto-map across edits via the StateField.
-function isBridgeMode() {
+function isBridgeMode(): boolean {
   return editorSvc.clEditor && typeof editorSvc.clEditor.addClassRange === 'function';
 }
 
 export default class EditorClassApplier {
-  constructor(classGetter, offsetGetter, properties) {
+  classGetter: () => string[];
+  offsetGetter: () => Offset;
+  properties: Properties;
+  cm6RangeId: any;
+  eltCollection: any;
+  lastEltCount: number;
+  restoreClass!: () => void;
+  stopped?: boolean;
+
+  constructor(classGetter: ClassGetter, offsetGetter: OffsetGetter, properties?: Properties) {
     this.classGetter = typeof classGetter === 'function' ? classGetter : () => classGetter;
     this.offsetGetter = typeof offsetGetter === 'function' ? offsetGetter : () => offsetGetter;
     this.properties = properties || {};
@@ -84,7 +103,7 @@ export default class EditorClassApplier {
     if (isBridgeMode()) {
       // Convert dataset-style properties to plain attributes (CM6 attaches
       // the attrs object directly via .setAttribute on the decorated span).
-      const attrs = {};
+      const attrs: Record<string, string> = {};
       Object.entries(this.properties || {}).forEach(([k, v]) => {
         if (v == null) return;
         // EditorClassApplier consumers pass `discussionId` / similar as

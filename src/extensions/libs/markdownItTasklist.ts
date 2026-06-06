@@ -3,7 +3,6 @@
 // `task-list-item` class on the surrounding `<li>`. Replaces the dropped
 // `markdown-it-task-lists` package — same output shape, no maintenance
 // dependency.
-import type MarkdownIt from 'markdown-it';
 import type Token from 'markdown-it/lib/token.mjs';
 
 function attrSet(token: Token, name: string, value: string): void {
@@ -17,8 +16,8 @@ function attrSet(token: Token, name: string, value: string): void {
   }
 }
 
-export default function markdownItTasklist(md: MarkdownIt): void {
-  md.core.ruler.after('inline', 'tasklist', ({ tokens, Token: TokenCtor }) => {
+export default function markdownItTasklist(md: any): void {
+  md.core.ruler.after('inline', 'tasklist', ({ tokens, Token: TokenCtor }: { tokens: any[]; Token: any }) => {
     for (let i = 2; i < tokens.length; i += 1) {
       const token = tokens[i];
       if (

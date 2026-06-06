@@ -1,4 +1,10 @@
-export default [{
+export interface PagedownButton {
+  method?: string;
+  title?: string;
+  icon?: string;
+}
+
+const pagedownButtons: PagedownButton[] = [{
 }, {
   method: 'bold',
   title: 'Bold',
@@ -50,3 +56,5 @@ export default [{
   title: 'Image',
   icon: 'file-image',
 }];
+
+export default pagedownButtons;

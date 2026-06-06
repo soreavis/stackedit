@@ -11,7 +11,34 @@
 import { useModalStore } from '../stores/modal';
 import tidyMarkdown from './markdownTidy';
 
-function getSelection(editorSvc) {
+// The editor service object passed to every action. Its `clEditor` (cledit /
+// CM6 adapter) surface is loose internals — typed `any` here; a later pass
+// tightens it once the editor adapters have public types.
+type EditorSvc = any;
+
+interface Selection {
+  start: number;
+  end: number;
+  selected: string;
+  content: string;
+}
+
+interface DropdownItem {
+  name: string;
+  perform: (editorSvc: EditorSvc) => void;
+}
+
+export interface ToolbarButton {
+  method: string;
+  title: string;
+  icon: string;
+  action?: (editorSvc: EditorSvc) => void | Promise<void>;
+  dropdown?: boolean;
+  items?: DropdownItem[];
+  separated?: boolean;
+}
+
+function getSelection(editorSvc: EditorSvc): Selection {
   const sel = editorSvc.clEditor.selectionMgr;
   const start = Math.min(sel.selectionStart, sel.selectionEnd);
   const end = Math.max(sel.selectionStart, sel.selectionEnd);
@@ -19,7 +46,7 @@ function getSelection(editorSvc) {
   return { start, end, selected: content.slice(start, end), content };
 }
 
-function wrap(editorSvc, prefix, suffix = prefix, placeholder = '') {
+function wrap(editorSvc: EditorSvc, prefix: string, suffix: string = prefix, placeholder = '') {
   const { start, end, selected } = getSelection(editorSvc);
   const inner = selected || placeholder;
   const replacement = `${prefix}${inner}${suffix}`;
@@ -39,7 +66,7 @@ function wrap(editorSvc, prefix, suffix = prefix, placeholder = '') {
 // exactly one blank line above and below. Counts what's already there and
 // pads only the difference, so inserting before a blank-line-separated
 // paragraph doesn't compound to triple newlines.
-function padForBlock(content, start, end) {
+function padForBlock(content: string, start: number, end: number) {
   let preNL = 0;
   while (preNL < 2 && start - preNL - 1 >= 0 && content[start - preNL - 1] === '\n') {
     preNL += 1;
@@ -61,7 +88,7 @@ function padForBlock(content, start, end) {
 // without a selection it's a plain at-cursor insert. Cursor lands at the
 // end of the inserted block content (before the trailing pad) so typing
 // extends the block.
-function insertBlock(editorSvc, block) {
+function insertBlock(editorSvc: EditorSvc, block: string) {
   const { start, end, content } = getSelection(editorSvc);
   const { leadingPad, trailingPad } = padForBlock(content, start, end);
   const replacement = `${leadingPad}${block}${trailingPad}`;
@@ -71,28 +98,28 @@ function insertBlock(editorSvc, block) {
   sel.setSelectionStartEnd(caret, caret);
 }
 
-export const inlineCode = {
+export const inlineCode: ToolbarButton = {
   method: 'inlineCode',
   title: 'Inline code',
   icon: 'code-inline',
   action: editorSvc => wrap(editorSvc, '`', '`', 'code'),
 };
 
-export const horizontalRule = {
+export const horizontalRule: ToolbarButton = {
   method: 'horizontalRule',
   title: 'Horizontal rule',
   icon: 'horizontal-rule',
   action: editorSvc => insertBlock(editorSvc, '---'),
 };
 
-export const highlight = {
+export const highlight: ToolbarButton = {
   method: 'highlight',
   title: 'Highlight',
   icon: 'marker',
   action: editorSvc => wrap(editorSvc, '==', '==', 'highlighted'),
 };
 
-export const math = {
+export const math: ToolbarButton = {
   method: 'math',
   title: 'Math (KaTeX)',
   icon: 'math',
@@ -109,7 +136,7 @@ export const math = {
   },
 };
 
-export const mermaid = {
+export const mermaid: ToolbarButton = {
   method: 'mermaid',
   title: 'Mermaid diagram',
   icon: 'sitemap',
@@ -126,7 +153,7 @@ export const mermaid = {
   },
 };
 
-export const footnote = {
+export const footnote: ToolbarButton = {
   method: 'footnote',
   title: 'Footnote',
   icon: 'footnote',
@@ -151,21 +178,21 @@ export const footnote = {
   },
 };
 
-export const subscript = {
+export const subscript: ToolbarButton = {
   method: 'subscript',
   title: 'Subscript',
   icon: 'format-subscript',
   action: editorSvc => wrap(editorSvc, '~', '~', '2'),
 };
 
-export const superscript = {
+export const superscript: ToolbarButton = {
   method: 'superscript',
   title: 'Superscript',
   icon: 'format-superscript',
   action: editorSvc => wrap(editorSvc, '^', '^', '2'),
 };
 
-export const music = {
+export const music: ToolbarButton = {
   method: 'music',
   title: 'Music notation (ABC)',
   icon: 'music-note',
@@ -186,7 +213,7 @@ export const music = {
   },
 };
 
-export const tidy = {
+export const tidy: ToolbarButton = {
   method: 'tidy',
   title: 'Tidy markdown formatting',
   icon: 'auto-fix',
@@ -209,7 +236,7 @@ export const tidy = {
 
 // Pad helper for at-cursor inline insertions. No newlines added — caller
 // supplies any structure they want.
-function insertInline(editorSvc, text) {
+function insertInline(editorSvc: EditorSvc, text: string) {
   const { start, end } = getSelection(editorSvc);
   editorSvc.clEditor.replace(start, end, text);
   const sel = editorSvc.clEditor.selectionMgr;
@@ -220,7 +247,7 @@ function insertInline(editorSvc, text) {
 // Replace the lines covered by [start..end] with `mapper(line)`. Used by
 // the callout, sort-lines, and convert-case actions which all operate
 // on whole lines rather than character ranges.
-function transformLines(editorSvc, mapper) {
+function transformLines(editorSvc: EditorSvc, mapper: (block: string) => string) {
   const { start, end, content } = getSelection(editorSvc);
   const lineStart = content.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
   let lineEnd = content.indexOf('\n', end);
@@ -232,7 +259,7 @@ function transformLines(editorSvc, mapper) {
 
 // Replace the current selection with `fn(selection)`. No-op without a
 // selection (these are user-driven transforms, not at-cursor inserts).
-function transformSelection(editorSvc, fn) {
+function transformSelection(editorSvc: EditorSvc, fn: (selected: string) => string) {
   const { start, end, selected } = getSelection(editorSvc);
   if (!selected) return;
   const replacement = fn(selected);
@@ -244,7 +271,7 @@ function transformSelection(editorSvc, fn) {
 // Build a `> [!TYPE]\n> body…` callout block. Selection becomes the body
 // (with each line prefixed by `> `); empty selection drops a placeholder
 // line so the user has something to overwrite.
-function insertCallout(editorSvc, type) {
+function insertCallout(editorSvc: EditorSvc, type: string) {
   const { selected } = getSelection(editorSvc);
   const body = selected
     ? selected.split('\n').map(l => `> ${l}`).join('\n')
@@ -255,11 +282,11 @@ function insertCallout(editorSvc, type) {
 // Date formatting helpers — keep ISO format (YYYY-MM-DD, HH:mm) since
 // it's locale-neutral, sortable, and what every static-site generator
 // expects.
-const pad2 = n => String(n).padStart(2, '0');
-const isoDate = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-const isoTime = d => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const isoDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const isoTime = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 
-export const callout = {
+export const callout: ToolbarButton = {
   method: 'callout',
   title: 'Callout / admonition',
   icon: 'alert',
@@ -270,11 +297,11 @@ export const callout = {
   dropdown: true,
   items: ['NOTE', 'TIP', 'IMPORTANT', 'WARNING', 'CAUTION'].map(type => ({
     name: type[0] + type.slice(1).toLowerCase(),
-    perform: editorSvc => insertCallout(editorSvc, type),
+    perform: (editorSvc: EditorSvc) => insertCallout(editorSvc, type),
   })),
 };
 
-export const dateTime = {
+export const dateTime: ToolbarButton = {
   method: 'dateTime',
   title: 'Insert date',
   icon: 'calendar',
@@ -300,7 +327,7 @@ export const dateTime = {
   ],
 };
 
-export const frontmatter = {
+export const frontmatter: ToolbarButton = {
   method: 'frontmatter',
   title: 'YAML front-matter',
   icon: 'frontmatter',
@@ -318,7 +345,7 @@ export const frontmatter = {
   },
 };
 
-export const convertCase = {
+export const convertCase: ToolbarButton = {
   method: 'convertCase',
   title: 'Convert case',
   icon: 'case-sensitive-alt',
@@ -351,7 +378,7 @@ export const convertCase = {
   ],
 };
 
-export const sortLines = {
+export const sortLines: ToolbarButton = {
   method: 'sortLines',
   title: 'Sort lines alphabetically',
   icon: 'sort-alphabetical',
@@ -366,7 +393,7 @@ export const sortLines = {
 
 // A small palette of typographic / math / arrow chars that get reached
 // for daily but aren't on a keyboard.
-const SPECIAL_CHARS = [
+const SPECIAL_CHARS: [string, string][] = [
   ['—', 'Em dash'],
   ['–', 'En dash'],
   ['…', 'Ellipsis'],
@@ -393,18 +420,18 @@ const SPECIAL_CHARS = [
   ['≥', 'Greater or equal'],
 ];
 
-export const specialChars = {
+export const specialChars: ToolbarButton = {
   method: 'specialChars',
   title: 'Special characters',
   icon: 'omega',
   dropdown: true,
   items: SPECIAL_CHARS.map(([ch, label]) => ({
     name: `${ch}  ${label}`,
-    perform: editorSvc => insertInline(editorSvc, ch),
+    perform: (editorSvc: EditorSvc) => insertInline(editorSvc, ch),
   })),
 };
 
-export const wikiLink = {
+export const wikiLink: ToolbarButton = {
   method: 'wikiLink',
   title: 'Wiki-style link',
   icon: 'link-bracket',
@@ -414,7 +441,7 @@ export const wikiLink = {
   action: editorSvc => wrap(editorSvc, '[[', ']]', 'Page Name'),
 };
 
-export const imageWithSize = {
+export const imageWithSize: ToolbarButton = {
   method: 'imageWithSize',
   title: 'Image with dimensions',
   icon: 'file-image',
@@ -433,7 +460,7 @@ export const imageWithSize = {
 
 // Build a markdown table of `rows × cols` with header row and a left-
 // aligned separator. Cells are placeholder text the user overwrites.
-function buildTable(rows, cols) {
+function buildTable(rows: number, cols: number) {
   const header = `| ${Array.from({ length: cols }, (_, i) => `Col ${i + 1}`).join(' | ')} |`;
   const sep = `| ${Array.from({ length: cols }, () => '---').join(' | ')} |`;
   const body = Array.from({ length: rows - 1 }, () =>
@@ -441,7 +468,7 @@ function buildTable(rows, cols) {
   return body ? `${header}\n${sep}\n${body}` : `${header}\n${sep}`;
 }
 
-export const tableInsert = {
+export const tableInsert: ToolbarButton = {
   method: 'tableInsert',
   title: 'Insert table',
   icon: 'table',
@@ -458,7 +485,7 @@ export const tableInsert = {
   ],
 };
 
-export const textStats = {
+export const textStats: ToolbarButton = {
   method: 'textStats',
   title: 'Text statistics for selection',
   icon: 'information',
@@ -496,13 +523,13 @@ export const textStats = {
     // through, but for a stats popup this is good enough.
     const paragraphs = text
       .split(/\n\s*\n/)
-      .map(b => b.trim())
-      .filter(b => b && !/^(#{1,6}\s|```|~~~|>|---|===|\|)/.test(b))
+      .map((b: string) => b.trim())
+      .filter((b: string) => b && !/^(#{1,6}\s|```|~~~|>|---|===|\|)/.test(b))
       .length;
 
     // Markdown-aware structure (best-effort regex).
     const headingsByLevel = [0, 0, 0, 0, 0, 0];
-    (text.match(/^#{1,6}\s/gm) || []).forEach((m) => {
+    (text.match(/^#{1,6}\s/gm) || []).forEach((m: string) => {
       headingsByLevel[m.trim().length - 1] += 1;
     });
     const headingsTotal = headingsByLevel.reduce((a, b) => a + b, 0);
@@ -529,7 +556,7 @@ export const textStats = {
     const taskDone = (text.match(/^[ \t]*[-*+]\s+\[[xX]\]/gm) || []).length;
 
     const scope = selected ? 'Selection' : 'Whole document';
-    const lines = [
+    const lines: Record<string, unknown>[] = [
       { section: 'Counts' },
       { label: 'Characters', value: chars.toLocaleString() },
       { label: 'Characters (no whitespace)', value: charsNoSpace.toLocaleString() },
@@ -539,7 +566,7 @@ export const textStats = {
       { label: 'Sentences', value: sentences.toLocaleString() },
     ];
 
-    const structureRows = [];
+    const structureRows: Record<string, unknown>[] = [];
     if (headingsTotal > 0) {
       const breakdown = headingsByLevel
         .map((n, i) => (n > 0 ? `H${i + 1}: ${n}` : null))
@@ -578,7 +605,7 @@ export const textStats = {
   },
 };
 
-export const linkFromClipboard = {
+export const linkFromClipboard: ToolbarButton = {
   method: 'linkFromClipboard',
   title: 'Link from clipboard',
   icon: 'link-paste',
@@ -632,4 +659,4 @@ export default [
   sortLines,
   textStats,
   tidy,
-];
+] as ToolbarButton[];

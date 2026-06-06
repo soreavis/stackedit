@@ -1,4 +1,48 @@
-const zero = {
+interface MarkdownPreset {
+  abbr: boolean;
+  breaks: boolean;
+  deflist: boolean;
+  del: boolean;
+  fence: boolean;
+  footnote: boolean;
+  imgsize: boolean;
+  linkify: boolean;
+  mark: boolean;
+  sub: boolean;
+  sup: boolean;
+  table: boolean;
+  tasklist: boolean;
+  typographer: boolean;
+}
+
+interface EmojiPreset {
+  enabled: boolean;
+  // Enable shortcuts like :) :-(
+  shortcuts: boolean;
+}
+
+interface TogglePreset {
+  enabled: boolean;
+}
+
+interface Preset {
+  markdown: MarkdownPreset;
+  emoji: EmojiPreset;
+  abc: TogglePreset;
+  katex: TogglePreset;
+  mermaid: TogglePreset;
+}
+
+// Overrides layered on top of the `zero` baseline only set a subset of fields.
+interface PresetOverride {
+  markdown?: Partial<MarkdownPreset>;
+  emoji?: Partial<EmojiPreset>;
+  abc?: Partial<TogglePreset>;
+  katex?: Partial<TogglePreset>;
+  mermaid?: Partial<TogglePreset>;
+}
+
+const zero: Preset = {
   // Markdown extensions
   markdown: {
     abbr: false,
@@ -51,7 +95,7 @@ const zero = {
   },
 };
 
-export default {
+const presets: Record<string, Array<Preset | PresetOverride>> = {
   zero: [zero],
   commonmark: [zero, {
     markdown: {
@@ -102,3 +146,5 @@ export default {
     },
   }],
 };
+
+export default presets;

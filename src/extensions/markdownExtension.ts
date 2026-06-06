@@ -3,9 +3,9 @@ import markdownitAbbr from 'markdown-it-abbr';
 import markdownitDeflist from 'markdown-it-deflist';
 import markdownitFootnote from 'markdown-it-footnote';
 import markdownitMark from 'markdown-it-mark';
-import markdownitImgsize from '../libs/markdownItImsize';
 import markdownitSub from 'markdown-it-sub';
 import markdownitSup from 'markdown-it-sup';
+import markdownitImgsize from '../libs/markdownItImsize';
 import markdownitTasklist from './libs/markdownItTasklist';
 import markdownitAnchor from './libs/markdownItAnchor';
 import extensionSvc from '../services/extensionSvc';
@@ -59,10 +59,11 @@ const inlineBaseRules2 = [
   'fragments_join',
 ];
 
-extensionSvc.onGetOptions((options, properties) => Object
+extensionSvc.onGetOptions((options, properties: any) => Object
   .assign(options, properties.extensions.markdown));
 
-extensionSvc.onInitConverter(0, (markdown, options) => {
+extensionSvc.onInitConverter(0, (markdownRaw, options: any) => {
+  const markdown = markdownRaw as any;
   markdown.set({
     html: true,
     breaks: !!options.breaks,
@@ -122,14 +123,14 @@ extensionSvc.onInitConverter(0, (markdown, options) => {
   markdown.use(markdownitAnchor);
 
   // Wrap tables into a div for scrolling
-  markdown.renderer.rules.table_open = (tokens, idx, opts) =>
+  markdown.renderer.rules.table_open = (tokens: any, idx: number, opts: any) =>
     `<div class="table-wrapper">${markdown.renderer.renderToken(tokens, idx, opts)}`;
-  markdown.renderer.rules.table_close = (tokens, idx, opts) =>
+  markdown.renderer.rules.table_close = (tokens: any, idx: number, opts: any) =>
     `${markdown.renderer.renderToken(tokens, idx, opts)}</div>`;
 
   // Transform style into align attribute to pass the HTML sanitizer
   const textAlignLength = 'text-align:'.length;
-  markdown.renderer.rules.td_open = (tokens, idx, opts) => {
+  markdown.renderer.rules.td_open = (tokens: any, idx: number, opts: any) => {
     const token = tokens[idx];
     if (token.attrs && token.attrs.length && token.attrs[0][0] === 'style') {
       token.attrs = [
@@ -140,7 +141,7 @@ extensionSvc.onInitConverter(0, (markdown, options) => {
   };
   markdown.renderer.rules.th_open = markdown.renderer.rules.td_open;
 
-  markdown.renderer.rules.footnote_ref = (tokens, idx) => {
+  markdown.renderer.rules.footnote_ref = (tokens: any, idx: number) => {
     const n = `${Number(tokens[idx].meta.id + 1)}`;
     let id = `fnref${n}`;
     if (tokens[idx].meta.subId > 0) {
@@ -150,9 +151,9 @@ extensionSvc.onInitConverter(0, (markdown, options) => {
   };
 });
 
-extensionSvc.onSectionPreview((elt, options, isEditor) => {
+extensionSvc.onSectionPreview((elt: HTMLElement, options, isEditor: boolean) => {
   // Highlight with Prism
-  elt.querySelectorAll('.prism').forEach((prismElt) => {
+  elt.querySelectorAll('.prism').forEach((prismElt: any) => {
     if (!prismElt.$highlightedWithPrism) {
       Prism.highlightElement(prismElt);
       prismElt.$highlightedWithPrism = true;
@@ -160,16 +161,16 @@ extensionSvc.onSectionPreview((elt, options, isEditor) => {
   });
 
   // Transform task spans into checkboxes
-  elt.querySelectorAll('span.task-list-item-checkbox').forEach((spanElt) => {
+  elt.querySelectorAll('span.task-list-item-checkbox').forEach((spanElt: Element) => {
     const checkboxElt = document.createElement('input');
     checkboxElt.type = 'checkbox';
     checkboxElt.className = 'task-list-item-checkbox';
     if (spanElt.classList.contains('checked')) {
-      checkboxElt.setAttribute('checked', true);
+      checkboxElt.setAttribute('checked', 'true');
     }
     if (!isEditor) {
-      checkboxElt.disabled = 'disabled';
+      (checkboxElt as any).disabled = 'disabled';
     }
-    spanElt.parentNode.replaceChild(checkboxElt, spanElt);
+    spanElt.parentNode!.replaceChild(checkboxElt, spanElt);
   });
 });
