@@ -6,7 +6,7 @@
       </div>
       <p>Publish <b>{{ currentFileName }}</b> to a <b>Gist</b>.</p>
       <form-entry label="Filename" error="filename">
-        <input slot="field" class="textfield" type="text" v-model.trim="filename" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="filename" @keydown.enter="resolve()"></template>
       </form-entry>
       <div class="form-entry">
         <div class="form-entry__checkbox">
@@ -16,17 +16,19 @@
         </div>
       </div>
       <form-entry label="Existing Gist ID" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="gistId" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="gistId" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If the file exists in the Gist, it will be overwritten.
         </div>
       </form-entry>
       <form-entry label="Template">
-        <select slot="field" class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
-          <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
-            {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
-          </option>
-        </select>
+        <template #field>
+          <select class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
+            <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
+              {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
+            </option>
+          </select>
+        </template>
         <div class="form-entry__actions">
           <a href="javascript:void(0)" @click="configureTemplates">Configure templates</a>
         </div>

@@ -41,22 +41,23 @@
       </div>
     </div>
     <div class="modal__button-bar">
-      <button class="button button--resolve" @click="config.resolve()">Close</button>
+      <button class="button button--resolve" @click="(config as any).resolve()">Close</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
-
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import ModalInner from './common/ModalInner';
+import ModalInner from './common/ModalInner.vue';
 import { usePublishLocationStore } from '../../stores/publishLocation';
+import type { PublishLocation } from '../../stores/publishLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
   },
@@ -64,9 +65,9 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
-    ...mapPiniaState(usePublishLocationStore, {
-      publishLocations: 'current',
-    }),
+    publishLocations(): any[] {
+      return (usePublishLocationStore() as any).current;
+    },
     currentFileName() {
       return useFileStore().current.name;
     },
@@ -75,12 +76,12 @@ export default {
     ...mapPiniaActions(useNotificationStore, [
       'info',
     ]),
-    remove(location) {
+    remove(location: PublishLocation) {
       usePublishLocationStore().deleteItem(location.id);
       badgeSvc.addBadge('removePublishLocation');
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

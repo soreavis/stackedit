@@ -28,19 +28,20 @@
       <div class="modal__error modal__error--settings">{{ error }}</div>
     </div>
     <div class="modal__button-bar">
-      <button class="button" @click="config.reject()">Cancel</button>
+      <button class="button" @click="cfg.reject()">Cancel</button>
       <button class="button button--resolve" @click="resolve">Ok</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import yaml from 'js-yaml';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
-import ModalInner from './common/ModalInner';
-import Tab from './common/Tab';
-import CodeEditor from '../CodeEditor';
+import ModalInner from './common/ModalInner.vue';
+import Tab from './common/Tab.vue';
+import CodeEditor from '../CodeEditor.vue';
 import defaultSettings from '../../data/defaults/defaultSettings.yml?raw';
 import badgeSvc from '../../services/badgeSvc';
 import { useDataStore } from '../../stores/data';
@@ -49,7 +50,7 @@ const emptySettings = `# Add your custom settings here to override the
 # default settings.
 `;
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
     Tab,
@@ -58,15 +59,20 @@ export default {
   data: () => ({
     tab: 'custom',
     defaultSettings,
-    customSettings: null,
-    error: null,
+    customSettings: null as string | null,
+    error: null as string | null,
   }),
   computed: {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
+    // `config` is `ModalConfig | false`; this modal only renders when a
+    // modal is open (config is set), so expose it loosely for resolve/reject.
+    cfg(): any {
+      return this.config;
+    },
     strippedCustomSettings() {
-      return this.customSettings === emptySettings ? '\n' : this.customSettings.replace(/\t/g, '  ');
+      return this.customSettings === emptySettings ? '\n' : this.customSettings!.replace(/\t/g, '  ');
     },
   },
   created() {
@@ -74,36 +80,36 @@ export default {
     this.setCustomSettings(settings === '\n' ? emptySettings : settings);
   },
   methods: {
-    setCustomSettings(value) {
+    setCustomSettings(value: string) {
       this.customSettings = value;
       try {
         yaml.load(this.strippedCustomSettings);
         this.error = null;
       } catch (e) {
-        this.error = e.message;
+        this.error = (e as Error).message;
       }
     },
     async resolve() {
       if (!this.error) {
         const settings = this.strippedCustomSettings;
         await useDataStore().setSettings(settings);
-        const customSettings = yaml.load(settings);
+        const customSettings = yaml.load(settings) as any;
         if (customSettings.shortcuts) {
           badgeSvc.addBadge('changeShortcuts');
         }
-        const computedSettings = useDataStore().computedSettings;
+        const computedSettings = useDataStore().computedSettings as any;
         const customSettingsCount = Object
           .keys(customSettings)
-          .filter(key => key !== 'shortcuts' && computedSettings[key])
+          .filter((key: string) => key !== 'shortcuts' && computedSettings[key])
           .length;
         if (customSettingsCount) {
           badgeSvc.addBadge('changeSettings');
         }
-        this.config.resolve(settings);
+        (this.config as any).resolve(settings);
       }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

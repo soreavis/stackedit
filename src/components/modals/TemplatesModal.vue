@@ -46,26 +46,35 @@
       </div>
     </div>
     <div class="modal__button-bar">
-      <button class="button" @click="config.reject()">Cancel</button>
+      <button class="button" @click="cfg.reject()">Cancel</button>
       <button class="button button--resolve" @click="resolve()">Ok</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
 import utils from '../../services/utils';
 import badgeSvc from '../../services/badgeSvc';
-import ModalInner from './common/ModalInner';
-import CodeEditor from '../CodeEditor';
+import ModalInner from './common/ModalInner.vue';
+import CodeEditor from '../CodeEditor.vue';
 import emptyTemplateValue from '../../data/empties/emptyTemplateValue.html?raw';
 import emptyTemplateHelpers from '../../data/empties/emptyTemplateHelpers.js?raw';
 import { useDataStore } from '../../stores/data';
 
+interface Template {
+  name: string;
+  value: string;
+  helpers: string;
+  description?: string;
+  isAdditional?: boolean;
+}
+
 const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
 
-function fillEmptyFields(template) {
+function fillEmptyFields(template: Template) {
   if (template.value === '\n') {
     template.value = emptyTemplateValue;
   }
@@ -74,14 +83,14 @@ function fillEmptyFields(template) {
   }
 }
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
     CodeEditor,
   },
   data: () => ({
     selectedId: '',
-    templates: {},
+    templates: {} as Record<string, Template>,
     showHelpers: false,
     isEditing: false,
     editingName: '',
@@ -90,6 +99,9 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
+    cfg(): any {
+      return this.config;
+    },
     selectedTemplate() {
       return this.templates[this.selectedId];
     },
@@ -100,8 +112,8 @@ export default {
   created() {
     this.$watch(
       () => useDataStore().allTemplatesById,
-      (allTemplatesById) => {
-        const templates = {};
+      (allTemplatesById: Record<string, Template>) => {
+        const templates: Record<string, Template> = {};
         // Sort templates by name
         Object.entries(allTemplatesById)
           .sort(([, template1], [, template2]) => collator.compare(template1.name, template2.name))
@@ -111,7 +123,7 @@ export default {
             templates[id] = templateClone;
           });
         this.templates = templates;
-        this.selectedId = this.config.selectedId;
+        this.selectedId = (this.config as any).selectedId;
         if (!templates[this.selectedId]) {
           [this.selectedId] = Object.keys(templates);
         }
@@ -119,7 +131,7 @@ export default {
       },
       { immediate: true },
     );
-    this.$watch('selectedId', (selectedId) => {
+    this.$watch('selectedId', (selectedId: string) => {
       const template = this.templates[selectedId];
       this.showHelpers = template.helpers !== emptyTemplateHelpers;
       this.editingName = template.name;
@@ -149,7 +161,7 @@ export default {
       delete this.templates[this.selectedId];
       [this.selectedId] = Object.keys(this.templates);
     },
-    submitEdit(cancel) {
+    submitEdit(cancel?: boolean) {
       const template = this.templates[this.selectedId];
       if (!cancel && this.editingName) {
         template.name = utils.sanitizeName(this.editingName);
@@ -165,10 +177,10 @@ export default {
       await useDataStore().setTemplatesById(this.templates);
       const newTemplateIds = Object.keys(useDataStore().templatesById);
       const createdCount = newTemplateIds
-        .filter(id => !oldTemplateIds.includes(id))
+        .filter((id: string) => !oldTemplateIds.includes(id))
         .length;
       const removedCount = oldTemplateIds
-        .filter(id => !newTemplateIds.includes(id))
+        .filter((id: string) => !newTemplateIds.includes(id))
         .length;
       if (createdCount) {
         badgeSvc.addBadge('addTemplate');
@@ -176,13 +188,13 @@ export default {
       if (removedCount) {
         badgeSvc.addBadge('removeTemplate');
       }
-      this.config.resolve({
+      (this.config as any).resolve({
         templates: this.templates,
         selectedId: this.selectedId,
       });
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

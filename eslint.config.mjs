@@ -5,6 +5,8 @@
 import js from '@eslint/js';
 import vue from 'eslint-plugin-vue';
 import vueParser from 'vue-eslint-parser';
+import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 import globals from 'globals';
 
 const appGlobals = {
@@ -39,6 +41,10 @@ export default [
     languageOptions: {
       parser: vueParser,
       parserOptions: {
+        // vue-eslint-parser delegates the <script> block to this inner parser;
+        // @typescript-eslint/parser is needed so <script lang="ts"> blocks
+        // (the components migrated to TS) parse instead of throwing on `as`/`:`.
+        parser: tsParser,
         ecmaVersion: 'latest',
         sourceType: 'module',
       },
@@ -48,10 +54,17 @@ export default [
         ...appGlobals,
       },
     },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
     rules: {
       // Safety net basics only. Noisy style rules stay off.
       'no-console': 'off',
-      'no-unused-vars': ['warn', {
+      // TS-aware unused-vars: the base rule misflags type-position param names
+      // (e.g. `(token: any) => boolean`) inside the migrated `<script lang="ts">`
+      // components. The @typescript-eslint version understands type positions.
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         // Allow the common `try { ... } catch (e) { /* ignore */ }` pattern

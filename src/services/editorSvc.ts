@@ -3,7 +3,7 @@
 // shape stays loosely typed (`any`) until the underlying mixins define
 // shared editor-state interfaces.
 import { watch } from 'vue';
-import Vue from 'vue';
+import mitt from 'mitt';
 import DiffMatchPatch from 'diff-match-patch';
 import Prism from 'prismjs';
 // @ts-expect-error — no type declarations published for this package
@@ -55,8 +55,24 @@ class SectionDesc {
   }
 }
 
-// Use a vue instance as an event bus
-const editorSvc: any = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils, {
+// Vue 3 dropped the instance event emitter ($on/$off/$emit), so editorSvc —
+// always used as an event bus — is backed by mitt while preserving the
+// $on/$off/$once/$emit surface its ~15 call sites expect. Every emit carries
+// a single payload (or none), which maps directly onto mitt's (type, evt) API.
+function createEventBus() {
+  const emitter = mitt<Record<string, any>>();
+  return {
+    $on: (type: string, handler: (payload?: any) => void) => emitter.on(type, handler),
+    $off: (type: string, handler: (payload?: any) => void) => emitter.off(type, handler),
+    $once: (type: string, handler: (payload?: any) => void) => {
+      const wrap = (payload?: any): void => { emitter.off(type, wrap); handler(payload); };
+      emitter.on(type, wrap);
+    },
+    $emit: (type: string, payload?: any) => emitter.emit(type, payload),
+  };
+}
+
+const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, editorSvcUtils, {
   // Elements
   editorElt: null as any,
   previewElt: null as any,

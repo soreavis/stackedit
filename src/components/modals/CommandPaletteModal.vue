@@ -32,10 +32,11 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
-import ModalInner from './common/ModalInner';
+import ModalInner from './common/ModalInner.vue';
 import customToolbarButtons from '../../data/customToolbarButtons';
 import pagedownButtons from '../../data/pagedownButtons';
 import editorSvc from '../../services/editorSvc';
@@ -47,11 +48,18 @@ import {
 import { useContentStore } from '../../stores/content';
 import badgeSvc from '../../services/badgeSvc';
 
+interface PaletteCommand {
+  id: string;
+  name: string;
+  group: string;
+  perform: () => void;
+}
+
 // Build a flat list of executable commands from the toolbar configs.
-function buildCommands() {
-  const list = [];
+function buildCommands(): PaletteCommand[] {
+  const list: PaletteCommand[] = [];
   // Pagedown buttons (bold, italic, etc.)
-  pagedownButtons.forEach((btn) => {
+  pagedownButtons.forEach((btn: any) => {
     if (!btn.method) return;
     list.push({
       id: `pd:${btn.method}`,
@@ -59,22 +67,22 @@ function buildCommands() {
       group: 'Format',
       perform: () => {
         if (!useContentStore().isCurrentEditable) return;
-        const view = editorSvc.clEditor.view;
+        const view = (editorSvc as any).clEditor.view;
         const command = btn.method === 'link'
-          ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }))
+          ? makeCm6LinkCommand((cb: any) => useModalStore().open({ type: 'link', callback: cb }))
           : btn.method === 'image'
-            ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }))
-            : cm6Commands[btn.method === 'hr' ? 'horizontalRule' : btn.method];
+            ? makeCm6ImageCommand((cb: any) => useModalStore().open({ type: 'image', callback: cb }))
+            : (cm6Commands as any)[btn.method === 'hr' ? 'horizontalRule' : btn.method];
         if (command) command(view);
         badgeSvc.addBadge('formatButtons');
       },
     });
   });
   // Custom toolbar buttons (math, mermaid, callout, etc.)
-  customToolbarButtons.forEach((btn) => {
+  customToolbarButtons.forEach((btn: any) => {
     if (!btn.method) return;
     if (btn.dropdown) {
-      btn.items.forEach((item) => {
+      btn.items.forEach((item: any) => {
         list.push({
           id: `${btn.method}:${item.name}`,
           name: `${btn.title}: ${item.name}`,
@@ -98,7 +106,7 @@ const ALL_COMMANDS = buildCommands();
 
 // Lightweight fuzzy: every char of the query has to appear in the cmd name
 // in order. Cheap, no external dep, works for "mer dia" → "Mermaid diagram".
-function fuzzyMatch(query, name) {
+function fuzzyMatch(query: string, name: string) {
   if (!query) return true;
   const q = query.toLowerCase();
   const n = name.toLowerCase();
@@ -109,7 +117,7 @@ function fuzzyMatch(query, name) {
   return qi === q.length;
 }
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
   },
@@ -134,27 +142,28 @@ export default {
   },
   mounted() {
     this.$nextTick(() => {
-      if (this.$refs.input) this.$refs.input.focus();
+      const input = this.$refs.input as HTMLInputElement | undefined;
+      if (input) input.focus();
     });
   },
   methods: {
-    move(dir) {
+    move(dir: number) {
       const next = this.selectedIdx + dir;
       if (next < 0) this.selectedIdx = this.filtered.length - 1;
       else if (next >= this.filtered.length) this.selectedIdx = 0;
       else this.selectedIdx = next;
       // Scroll selected item into view if needed.
       this.$nextTick(() => {
-        const refArr = this.$refs[`item-${this.selectedIdx}`];
+        const refArr = this.$refs[`item-${this.selectedIdx}`] as HTMLElement | HTMLElement[] | undefined;
         const el = Array.isArray(refArr) ? refArr[0] : refArr;
         if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
       });
     },
-    run(idx) {
+    run(idx?: number) {
       const i = typeof idx === 'number' ? idx : this.selectedIdx;
       const cmd = this.filtered[i];
       if (!cmd) return;
-      this.config.resolve();
+      (this.config as any).resolve();
       // Defer execution one tick so the modal closes before the action runs
       // (some actions reach for the editor / open a dropdown).
       this.$nextTick(() => {
@@ -166,10 +175,10 @@ export default {
       });
     },
     close() {
-      this.config.reject();
+      (this.config as any).reject();
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

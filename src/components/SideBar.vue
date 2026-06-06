@@ -17,7 +17,6 @@
       <sync-menu v-else-if="panel === 'sync'"></sync-menu>
       <publish-menu v-else-if="panel === 'publish'"></publish-menu>
       <history-menu v-else-if="panel === 'history'"></history-menu>
-      <export-menu v-else-if="panel === 'export'"></export-menu>
       <import-export-menu v-else-if="panel === 'importExport'"></import-export-menu>
       <workspace-backup-menu v-else-if="panel === 'workspaceBackups'"></workspace-backup-menu>
       <div v-else-if="panel === 'help'" class="side-bar__panel side-bar__panel--help">
@@ -31,22 +30,23 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapActions as mapPiniaActions } from 'pinia';
-import Toc from './Toc';
-import MainMenu from './menus/MainMenu';
-import WorkspacesMenu from './menus/WorkspacesMenu';
-import SyncMenu from './menus/SyncMenu';
-import PublishMenu from './menus/PublishMenu';
-import HistoryMenu from './menus/HistoryMenu';
-import ImportExportMenu from './menus/ImportExportMenu';
-import WorkspaceBackupMenu from './menus/WorkspaceBackupMenu';
+import Toc from './Toc.vue';
+import MainMenu from './menus/MainMenu.vue';
+import WorkspacesMenu from './menus/WorkspacesMenu.vue';
+import SyncMenu from './menus/SyncMenu.vue';
+import PublishMenu from './menus/PublishMenu.vue';
+import HistoryMenu from './menus/HistoryMenu.vue';
+import ImportExportMenu from './menus/ImportExportMenu.vue';
+import WorkspaceBackupMenu from './menus/WorkspaceBackupMenu.vue';
 import markdownSample from '../data/markdownSample.md?raw';
 import markdownConversionSvc from '../services/markdownConversionSvc';
 import { useDataStore } from '../stores/data';
 import { useGlobalStore } from '../stores/global';
 
-const panelNames = {
+const panelNames: { [key: string]: string } = {
   menu: 'Menu',
   workspaces: 'Workspaces',
   help: 'Markdown cheat sheet',
@@ -58,7 +58,7 @@ const panelNames = {
   workspaceBackups: 'Workspace backups',
 };
 
-export default {
+export default defineComponent({
   components: {
     Toc,
     MainMenu,
@@ -73,15 +73,15 @@ export default {
     markdownSample: markdownConversionSvc.highlight(markdownSample),
   }),
   computed: {
-    panel() {
+    panel(): string | null {
       if (useGlobalStore().light) {
         return null; // No menu in light mode
       }
-      const result = useDataStore().layoutSettings.sideBarPanel;
+      const result = (useDataStore().layoutSettings as any).sideBarPanel as string;
       return panelNames[result] ? result : 'menu';
     },
-    panelName() {
-      return panelNames[this.panel];
+    panelName(): string | null {
+      return this.panel ? panelNames[this.panel] : null;
     },
   },
   methods: {
@@ -92,7 +92,7 @@ export default {
       setPanel: 'setSideBarPanel',
     }),
   },
-};
+});
 </script>
 
 <style lang="scss">

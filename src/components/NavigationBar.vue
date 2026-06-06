@@ -3,12 +3,12 @@
     <!-- Explorer -->
     <div class="navigation-bar__inner navigation-bar__inner--left navigation-bar__inner--button">
       <button class="navigation-bar__button navigation-bar__button--close button" v-if="light" @click="close()" v-title="'Close StackEdit'"><icon-check-circle></icon-check-circle></button>
-      <button class="navigation-bar__button navigation-bar__button--explorer-toggler button" v-else tour-step-anchor="explorer" @click="toggleExplorer()" v-title="styles.showExplorer ? 'Click to close file panel' : 'Click to open file panel'"><icon-folder></icon-folder></button>
+      <button class="navigation-bar__button navigation-bar__button--explorer-toggler button" v-else tour-step-anchor="explorer" @click="toggleExplorer(undefined)" v-title="styles.showExplorer ? 'Click to close file panel' : 'Click to open file panel'"><icon-folder></icon-folder></button>
     </div>
     <!-- Side bar -->
     <div class="navigation-bar__inner navigation-bar__inner--right navigation-bar__inner--button">
       <a class="navigation-bar__button navigation-bar__button--stackedit button" v-if="light" href="app" target="_blank" rel="noopener noreferrer" v-title="'Open StackEdit'"><icon-provider provider-id="stackedit"></icon-provider></a>
-      <button class="navigation-bar__button navigation-bar__button--stackedit button" v-else tour-step-anchor="menu" @click="toggleSideBar()" v-title="'Click to open menu'"><icon-provider provider-id="stackedit"></icon-provider></button>
+      <button class="navigation-bar__button navigation-bar__button--stackedit button" v-else tour-step-anchor="menu" @click="toggleSideBar(undefined)" v-title="'Click to open menu'"><icon-provider provider-id="stackedit"></icon-provider></button>
     </div>
     <div class="navigation-bar__inner navigation-bar__inner--right navigation-bar__inner--title flex flex--row">
       <!-- Spinner -->
@@ -33,7 +33,7 @@
       <!-- Revision -->
       <div class="flex flex--row" v-if="revisionContent">
         <button class="navigation-bar__button navigation-bar__button--revision navigation-bar__button--restore button" @click="restoreRevision">Restore</button>
-        <button class="navigation-bar__button navigation-bar__button--revision button" @click="setRevisionContent()" v-title="'Close revision'"><icon-close></icon-close></button>
+        <button class="navigation-bar__button navigation-bar__button--revision button" @click="setRevisionContent(null)" v-title="'Close revision'"><icon-close></icon-close></button>
       </div>
     </div>
     <div class="navigation-bar__inner navigation-bar__inner--edit-pagedownButtons">
@@ -55,7 +55,8 @@
   </nav>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, markRaw } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
@@ -85,32 +86,41 @@ import { useLayoutStore } from '../stores/layout';
 import { useExplorerStore } from '../stores/explorer';
 import { useGlobalStore } from '../stores/global';
 
+// Shape the location stores' `current` getter resolves to at runtime
+// (the getter itself is typed `unknown[]` at the loose store boundary).
+interface LocationView {
+  id: string;
+  url: string;
+  providerId: string;
+  [k: string]: unknown;
+}
+
 // According to mousetrap
 const mod = /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'Meta' : 'Ctrl';
 
-function formatBytes(n) {
+function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatNumber(n) {
+function formatNumber(n: number) {
   return n.toLocaleString();
 }
 
 // 220 wpm is a widely-cited mid-range average for adult silent reading;
 // round up so very short docs still show "1 min" rather than "0 min".
-function formatReadingTime(words) {
+function formatReadingTime(words: number) {
   if (!words) return '0 min';
   const mins = Math.max(1, Math.round(words / 220));
   return `${mins} min`;
 }
 
-const getShortcut = (method) => {
+const getShortcut = (method: string) => {
   let result = '';
-  Object.entries(useDataStore().computedSettings.shortcuts).some(([keys, shortcut]) => {
+  Object.entries((useDataStore().computedSettings as any).shortcuts).some(([keys, shortcut]: [string, any]) => {
     if (`${shortcut.method || shortcut}` === method) {
-      result = keys.split('+').map(key => key.toLowerCase()).map((key) => {
+      result = keys.split('+').map((key: string) => key.toLowerCase()).map((key: string) => {
         if (key === 'mod') {
           return mod;
         }
@@ -123,12 +133,17 @@ const getShortcut = (method) => {
   return result && ` – ${result}`;
 };
 
-export default {
+export default defineComponent({
   data: () => ({
     mounted: false,
     title: '',
     titleFocus: false,
     titleHover: false,
+    // DOM refs assigned in mounted(). Declared so Vue 3's render proxy
+    // doesn't warn when a computed reads them before mount; markRaw on
+    // assignment keeps the elements out of the reactive system.
+    titleFakeElt: null as HTMLElement | null,
+    titleInputElt: null as HTMLInputElement | null,
   }),
   computed: {
     ...mapPiniaState(useGlobalStore, [
@@ -150,28 +165,34 @@ export default {
     ...mapPiniaState(useLayoutStore, [
       'styles',
     ]),
-    ...mapPiniaState(useSyncLocationStore, {
-      syncLocations: 'current',
-    }),
-    ...mapPiniaState(usePublishLocationStore, {
-      publishLocations: 'current',
-    }),
+    // The location stores' `current` getter is intentionally typed
+    // `unknown[]` (loose store boundary). Re-expose it through explicit
+    // computeds with a real view shape so the template and script see
+    // `.id`/`.url`/`.providerId`/`.length` instead of `unknown`.
+    syncLocations(): LocationView[] {
+      return (useSyncLocationStore() as any).current as LocationView[];
+    },
+    publishLocations(): LocationView[] {
+      return (usePublishLocationStore() as any).current as LocationView[];
+    },
     pagedownButtons() {
-      return pagedownButtons.map(button => ({
+      return pagedownButtons.map((button: any) => ({
         ...button,
         titleWithShortcut: `${button.title}${getShortcut(button.method)}`,
         iconClass: `icon-${button.icon}`,
       }));
     },
     customButtons() {
-      return customToolbarButtons.map(button => ({
+      return customToolbarButtons.map((button: any) => ({
         ...button,
         iconClass: `icon-${button.icon}`,
       }));
     },
     isSyncPossible() {
+      // `current` is an extraGetter not surfaced on the inferred store
+      // type; cast the store to read it (loose store boundary).
       return useWorkspaceStore().syncToken ||
-        useSyncLocationStore().current.length;
+        (useSyncLocationStore() as any).current.length;
     },
     showSpinner() {
       return !useQueueStore().isEmpty;
@@ -184,9 +205,8 @@ export default {
       if (!this.mounted) {
         return 0;
       }
-      // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-      this.titleFakeElt.textContent = this.title;
-      const width = this.titleFakeElt.getBoundingClientRect().width + 2; // 2px for the caret
+      this.titleFakeElt!.textContent = this.title;
+      const width = this.titleFakeElt!.getBoundingClientRect().width + 2; // 2px for the caret
       return Math.min(width, this.styles.titleMaxWidth);
     },
     titleScrolling() {
@@ -194,13 +214,16 @@ export default {
       if (this.titleInputElt) {
         if (result) {
           const scrollLeft = this.titleInputElt.scrollWidth - this.titleInputElt.offsetWidth;
-          animationSvc.animate(this.titleInputElt)
+          // animationSvc's fluent setters (.scrollLeft/.duration/...) are
+          // attached to the prototype dynamically and aren't on the typed
+          // Animation surface — cast the chain head.
+          (animationSvc.animate(this.titleInputElt) as any)
             .scrollLeft(scrollLeft)
             .duration(scrollLeft * 10)
             .easing('inOut')
             .start();
         } else {
-          animationSvc.animate(this.titleInputElt)
+          (animationSvc.animate(this.titleInputElt) as any)
             .scrollLeft(0)
             .start();
         }
@@ -297,7 +320,7 @@ export default {
       useExplorerStore().setUserClosedFile(true);
       useFileStore().setCurrentId(null);
     },
-    async onTitleContextMenu(evt) {
+    async onTitleContextMenu(evt: MouseEvent) {
       if (!this.hasCurrentFile) return;
       evt.preventDefault();
       const item = await useContextMenuStore().open({
@@ -312,13 +335,14 @@ export default {
           name: 'Copy path',
           perform: () => this.copyCurrentFilePath(),
         }, {
+          name: '',
           type: 'separator',
         }, {
           name: 'Close file',
           perform: () => this.closeCurrentFile(),
         }],
       });
-      if (item) item.perform();
+      if (item) item.perform?.();
     },
     async copyCurrentFilePath() {
       const id = useFileStore().current.id;
@@ -330,7 +354,7 @@ export default {
         }
       } catch (e) { /* ignore */ }
     },
-    pagedownClick(name, evt) {
+    pagedownClick(name: string, evt: MouseEvent) {
       if (!useContentStore().isCurrentEditable) return;
       // Heading button opens a level picker (H1-H6) instead of cycling
       // through pagedown's 3 levels. More direct and exposes H4-H6 which
@@ -343,19 +367,19 @@ export default {
       // every toolbar action through cm6Commands; pagedown is gone.
       const view = editorSvc.clEditor.view;
       const command = name === 'link'
-        ? makeCm6LinkCommand(cb => useModalStore().open({ type: 'link', callback: cb }).catch(() => {}))
+        ? makeCm6LinkCommand((cb: any) => useModalStore().open({ type: 'link', callback: cb }).catch(() => {}))
         : name === 'image'
-          ? makeCm6ImageCommand(cb => useModalStore().open({ type: 'image', callback: cb }).catch(() => {}))
-          : cm6Commands[name === 'hr' ? 'horizontalRule' : name];
+          ? makeCm6ImageCommand((cb: any) => useModalStore().open({ type: 'image', callback: cb }).catch(() => {}))
+          : (cm6Commands as Record<string, any>)[name === 'hr' ? 'horizontalRule' : name];
       if (command) command(view);
       if (before !== editorSvc.clEditor.getContent()) {
         badgeSvc.addBadge('formatButtons');
       }
       return undefined;
     },
-    async openHeadingMenu(evt) {
-      const rect = evt.currentTarget.getBoundingClientRect();
-      const items = [1, 2, 3, 4, 5, 6].map(level => ({
+    async openHeadingMenu(evt: MouseEvent) {
+      const rect = (evt.currentTarget as HTMLElement).getBoundingClientRect();
+      const items = [1, 2, 3, 4, 5, 6].map((level: number) => ({
         name: `H${level}`,
         perform: () => this.applyHeading(level),
       }));
@@ -363,17 +387,17 @@ export default {
         coordinates: { left: rect.left, top: rect.bottom + 4 },
         items,
       });
-      if (item) item.perform();
+      if (item) item.perform?.();
     },
-    applyHeading(level) {
+    applyHeading(level: number) {
       // Stage 3 batch 11: CM6 bridge is the only editor — dispatch via
       // headingN command (strips an existing prefix instead of nesting).
       const view = editorSvc.clEditor.view;
-      const command = cm6Commands[`heading${level}`];
+      const command = (cm6Commands as Record<string, any>)[`heading${level}`];
       if (command) command(view);
       badgeSvc.addBadge('formatButtons');
     },
-    customClick(button, evt) {
+    customClick(button: any, evt: MouseEvent) {
       // Custom toolbar buttons (math, mermaid, inline code, etc.) bypass
       // pagedown's UIManager and operate on cledit directly. Action
       // functions live in src/data/customToolbarButtons.js. Buttons with
@@ -403,9 +427,9 @@ export default {
       }
       return undefined;
     },
-    async openCustomDropdown(button, evt) {
-      const rect = evt.currentTarget.getBoundingClientRect();
-      const items = button.items.map(item => ({
+    async openCustomDropdown(button: any, evt: MouseEvent) {
+      const rect = (evt.currentTarget as HTMLElement).getBoundingClientRect();
+      const items = button.items.map((item: any) => ({
         name: item.name,
         perform: () => item.perform(editorSvc),
       }));
@@ -415,16 +439,16 @@ export default {
       });
       if (item) {
         const before = editorSvc.clEditor.getContent();
-        item.perform();
+        item.perform?.();
         if (before !== editorSvc.clEditor.getContent()) {
           badgeSvc.addBadge('formatButtons');
         }
       }
     },
-    async editTitle(toggle) {
+    async editTitle(toggle: boolean) {
       this.titleFocus = toggle;
       if (toggle) {
-        this.titleInputElt.setSelectionRange(0, this.titleInputElt.value.length);
+        this.titleInputElt?.setSelectionRange(0, this.titleInputElt.value.length);
       } else {
         const title = this.title.trim();
         this.title = useFileStore().current.name;
@@ -441,11 +465,11 @@ export default {
         }
       }
     },
-    submitTitle(reset) {
+    submitTitle(reset: boolean) {
       if (reset) {
         this.title = '';
       }
-      this.titleInputElt.blur();
+      this.titleInputElt?.blur();
     },
     close() {
       tempFileSvc.close();
@@ -462,11 +486,11 @@ export default {
     );
   },
   mounted() {
-    this.titleFakeElt = this.$el.querySelector('.navigation-bar__title--fake');
-    this.titleInputElt = this.$el.querySelector('.navigation-bar__title--input');
+    this.titleFakeElt = markRaw(this.$el.querySelector('.navigation-bar__title--fake') as HTMLElement);
+    this.titleInputElt = markRaw(this.$el.querySelector('.navigation-bar__title--input') as HTMLInputElement);
     this.mounted = true;
   },
-};
+});
 </script>
 
 <style lang="scss">

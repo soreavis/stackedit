@@ -49,8 +49,8 @@
   </div>
 </template>
 
-<script>
-import Vue from 'vue';
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
 
@@ -62,10 +62,10 @@ const steps = [
   'end',
 ];
 
-export default {
+export default defineComponent({
   data: () => ({
     stepIdx: 0,
-    stepStyles: {},
+    stepStyles: {} as Record<string, Record<string, string>>,
   }),
   computed: {
     step() {
@@ -88,7 +88,7 @@ export default {
         const anchorRect = anchorElt.getBoundingClientRect();
         const anchorSteps = (anchorElt.getAttribute('tour-step-anchor') || '').split(',');
         anchorSteps.forEach((step) => {
-          const style = {
+          const style: Record<string, string> = {
             top: `${anchorRect.top + (anchorRect.height / 2)}px`,
             left: `${anchorRect.left + (anchorRect.width / 2)}px`,
           };
@@ -110,7 +110,7 @@ export default {
             default:
               return;
           }
-          Vue.set(this.stepStyles, step, style);
+          this.stepStyles[step] = style;
         });
       });
     },
@@ -119,11 +119,14 @@ export default {
         welcomeTourFinished: true,
       });
     },
+    skip() {
+      this.finish();
+    },
     next() {
       this.stepIdx += 1;
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

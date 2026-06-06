@@ -1,5 +1,5 @@
 <template>
-  <a class="menu-entry button flex flex--row flex--align-center" :class="{ 'menu-entry--disabled': disabled }" href="javascript:void(0)" :aria-disabled="disabled ? 'true' : null" @click.capture="onClick">
+  <a class="menu-entry button flex flex--row flex--align-center" :class="{ 'menu-entry--disabled': disabled }" href="javascript:void(0)" :aria-disabled="disabled ? 'true' : undefined" @click.capture="onClick">
     <div class="menu-entry__icon flex flex--column flex--center">
       <slot name="icon"></slot>
     </div>
@@ -9,20 +9,22 @@
   </a>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   props: {
     disabled: { type: Boolean, default: false },
   },
   methods: {
-    onClick(evt) {
+    onClick(evt: MouseEvent) {
       if (this.disabled) {
         evt.preventDefault();
         evt.stopImmediatePropagation();
       }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

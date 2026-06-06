@@ -2,7 +2,7 @@
   <div class="history side-bar__panel side-bar__panel--menu">
     <div class="side-bar__info">
       <p v-if="syncLocations.length > 1">
-        <select slot="field" class="textfield" v-model="syncLocationId" @keydown.enter="resolve()">
+        <select class="textfield" v-model="syncLocationId" @keydown.enter="(this as any).resolve?.()">
           <option v-for="location in syncLocations" :key="location.id" :value="location.id">
             {{ location.description }}
           </option>
@@ -32,7 +32,7 @@
           </div>
           <div class="revision__header flex flex--column">
             <user-name :user-id="revision.sub"></user-name>
-            <div class="revision__created">{{ revision.created | formatTime }}</div>
+            <div class="revision__created">{{ formatTime(revision.created) }}</div>
           </div>
         </a>
       </div>
@@ -44,11 +44,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
+import { formatTime } from '../common/vueGlobals';
 import providerRegistry from '../../services/providers/common/providerRegistry';
-import UserImage from '../UserImage';
-import UserName from '../UserName';
+import UserImage from '../UserImage.vue';
+import UserName from '../UserName.vue';
 import EditorClassApplier from '../common/EditorClassApplier';
 import PreviewClassApplier from '../common/PreviewClassApplier';
 import utils from '../../services/utils';
@@ -62,49 +64,66 @@ import { useQueueStore } from '../../stores/queue';
 import badgeSvc from '../../services/badgeSvc';
 import { useDataStore } from '../../stores/data';
 
-let editorClassAppliers = [];
-let previewClassAppliers = [];
+// The syncLocation store getter (currentWithWorkspaceSyncLocation) is loosely
+// typed as unknown[]; describe the shape this component actually consumes.
+interface SyncLocationShape {
+  id: string;
+  providerId: string;
+  url?: string;
+  description?: string;
+}
 
-let cachedHistoryContextHash;
-let revisionsPromise;
-let revisionContentPromises;
+let editorClassAppliers: any[] = [];
+let previewClassAppliers: any[] = [];
+
+let cachedHistoryContextHash: any;
+let revisionsPromise: any;
+let revisionContentPromises: any;
 const pageSize = 30;
 const spacerThreshold = 6 * 60 * 60 * 1000; // 6h
 
-export default {
+export default defineComponent({
   components: {
     UserImage,
     UserName,
   },
   data: () => ({
-    allRevisions: [],
+    allRevisions: [] as any[],
     loading: false,
     showCount: pageSize,
-    syncLocationId: null,
+    syncLocationId: null as string | null,
+    onKeyup: null as ((evt: KeyboardEvent) => void) | null,
+    destroyed: false,
   }),
   computed: {
     ...mapPiniaState(useDataStore, [
       'syncDataByItemId',
     ]),
-    ...mapPiniaState(useSyncLocationStore, {
-      syncLocations: 'currentWithWorkspaceSyncLocation',
-    }),
     ...mapPiniaState(useContentStore, [
       'revisionContent',
     ]),
-    syncLocation() {
+    // currentWithWorkspaceSyncLocation is typed unknown[] by the loose
+    // location store; narrow it to the shape this component reads.
+    syncLocations(): SyncLocationShape[] {
+      return (useSyncLocationStore() as any)
+        .currentWithWorkspaceSyncLocation as SyncLocationShape[];
+    },
+    // someResult may return undefined, but this menu only renders revision
+    // UI once a sync location is selected; the consumers guard truthiness at
+    // runtime, so expose the resolved shape (loose boundary cast).
+    syncLocation(): SyncLocationShape {
       return utils.someResult(this.syncLocations, (syncLocation) => {
         if (syncLocation.id === this.syncLocationId) {
           return syncLocation;
         }
         return null;
-      });
+      }) as SyncLocationShape;
     },
-    syncLocationProviderName() {
+    syncLocationProviderName(): string | null {
       if (!this.syncLocation) {
         return null;
       }
-      return providerRegistry.providersById[this.syncLocation.providerId].name;
+      return providerRegistry.providersById[this.syncLocation.providerId].name as string;
     },
     currentFileName() {
       return useFileStore().current.name;
@@ -112,7 +131,7 @@ export default {
     historyContext() {
       const { syncLocation } = this;
       if (syncLocation) {
-        const provider = providerRegistry.providersById[syncLocation.providerId];
+        const provider = providerRegistry.providersById[syncLocation.providerId] as any;
         const token = provider.getToken(syncLocation);
         const fileId = useFileStore().current.id;
         const contentId = `${fileId}/content`;
@@ -164,6 +183,7 @@ export default {
     },
   },
   methods: {
+    formatTime,
     ...mapPiniaActions(useContentStore, {
       setRevisionContent: 'setRevisionContentRaw',
     }),
@@ -181,12 +201,13 @@ export default {
     showMore() {
       this.showCount += pageSize;
     },
-    open(revision) {
+    open(revision: any) {
       let revisionContentPromise = revisionContentPromises[revision.id];
       if (!revisionContentPromise) {
         const historyContext = utils.deepCopy(this.historyContext);
         if (historyContext) {
-          const provider = providerRegistry.providersById[this.syncLocation.providerId];
+          const provider = providerRegistry
+            .providersById[this.syncLocation.providerId] as any;
           revisionContentPromise = new Promise((resolve, reject) => useQueueStore().enqueue(
             () => provider.getFileRevisionContent({
               ...historyContext,
@@ -195,26 +216,26 @@ export default {
               .then(resolve, reject),
           ));
           revisionContentPromises[revision.id] = revisionContentPromise;
-          revisionContentPromise.catch((err) => {
+          revisionContentPromise.catch((err: any) => {
             useNotificationStore().error(err);
             revisionContentPromises[revision.id] = null;
           });
         }
       }
       if (revisionContentPromise) {
-        revisionContentPromise.then(revisionContent =>
+        revisionContentPromise.then((revisionContent: any) =>
           useContentStore().setRevisionContent(revisionContent));
       }
     },
     refreshHighlighters() {
-      const { revisionContent } = this;
+      const revisionContent = this.revisionContent as any;
       editorClassAppliers.forEach(editorClassApplier => editorClassApplier.stop());
       editorClassAppliers = [];
       previewClassAppliers.forEach(previewClassApplier => previewClassApplier.stop());
       previewClassAppliers = [];
       if (revisionContent) {
         let offset = 0;
-        revisionContent.diffs.forEach(([type, text]) => {
+        revisionContent.diffs.forEach(([type, text]: [number, string]) => {
           if (type) {
             const classes = ['revision-diff', `revision-diff--${type > 0 ? 'insert' : 'delete'}`];
             const offsets = {
@@ -239,7 +260,7 @@ export default {
     // Fix syncLocationId
     syncLocation: {
       immediate: true,
-      handler(value) {
+      handler(value: any) {
         const firstSyncLocation = this.syncLocations[0];
         if (firstSyncLocation) {
           if (!value) {
@@ -258,16 +279,17 @@ export default {
         const historyContext = utils.deepCopy(this.historyContext);
         if (historyContext) {
           if (this.historyContextHash !== cachedHistoryContextHash) {
-            this.setRevisionContent();
+            this.setRevisionContent(null);
             cachedHistoryContextHash = this.historyContextHash;
             revisionContentPromises = {};
-            const provider = providerRegistry.providersById[this.syncLocation.providerId];
+            const provider = providerRegistry
+              .providersById[this.syncLocation.providerId] as any;
             revisionsPromise = new Promise((resolve, reject) => useQueueStore().enqueue(
               () => provider
                 .listFileRevisions(historyContext)
                 .then(resolve, reject),
             ))
-              .catch((err) => {
+              .catch((err: any) => {
                 useNotificationStore().error(err);
                 cachedHistoryContextHash = null;
                 return [];
@@ -275,7 +297,7 @@ export default {
           }
           if (revisionsPromise) {
             this.loading = true;
-            revisionsPromise.then((revisions) => {
+            revisionsPromise.then((revisions: any[]) => {
               this.loading = false;
               this.allRevisions = revisions;
             });
@@ -284,17 +306,18 @@ export default {
       },
     },
     // Load each revision on revision list changes
-    revisions(revisions) {
+    revisions(revisions: any[]) {
       const { historyContext } = this;
       if (historyContext) {
         useQueueStore().enqueue(
-          () => utils.awaitSequence(revisions, async (revision) => {
+          () => utils.awaitSequence(revisions, async (revision: any) => {
             // Make sure revisions and historyContext haven't changed
             if (!this.destroyed
               && this.revisions === revisions
               && this.historyContext === historyContext
             ) {
-              const provider = providerRegistry.providersById[this.syncLocation.providerId];
+              const provider = providerRegistry
+                .providersById[this.syncLocation.providerId] as any;
               await provider.loadFileRevision({
                 ...historyContext,
                 revision,
@@ -314,25 +337,28 @@ export default {
   },
   created() {
     // Close revision on escape
-    this.onKeyup = (evt) => {
+    const onKeyup = (evt: KeyboardEvent) => {
       if (evt.which === 27) {
         // Esc key
-        this.setRevisionContent();
+        this.setRevisionContent(null);
       }
     };
-    window.addEventListener('keyup', this.onKeyup);
+    this.onKeyup = onKeyup;
+    window.addEventListener('keyup', onKeyup);
   },
-  destroyed() {
+  unmounted() {
     // Close revision
-    this.setRevisionContent();
+    this.setRevisionContent(null);
     // Remove highlighters
     this.refreshHighlighters();
     // Remove event listener
-    window.removeEventListener('keyup', this.onKeyup);
+    if (this.onKeyup) {
+      window.removeEventListener('keyup', this.onKeyup);
+    }
     // Cancel loading revisions
     this.destroyed = true;
   },
-};
+});
 </script>
 
 <style lang="scss">

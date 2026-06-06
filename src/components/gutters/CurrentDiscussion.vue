@@ -15,7 +15,7 @@
           <button class="current-discussion__button current-discussion__button--remove button" v-if="showRemove" @click="removeDiscussion" v-title="'Remove discussion'">
             <icon-delete></icon-delete>
           </button>
-          <button class="current-discussion__button button" @click="setCurrentDiscussionId()" v-title="'Close discussion'">
+          <button class="current-discussion__button button" @click="(setCurrentDiscussionId as any)()" v-title="'Close discussion'">
             <icon-close></icon-close>
           </button>
         </div>
@@ -27,29 +27,36 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapActions as mapPiniaActions, mapState as mapPiniaState } from 'pinia';
 import { useNotificationStore } from '../../stores/notification';
 import editorSvc from '../../services/editorSvc';
 import animationSvc from '../../services/animationSvc';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
 import htmlSanitizer from '../../libs/htmlSanitizer';
-import StickyComment from './StickyComment';
+import StickyComment from './StickyComment.vue';
 import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
 import { useDataStore } from '../../stores/data';
 import { useLayoutStore } from '../../stores/layout';
 import { useDiscussionStore } from '../../stores/discussion';
 
-export default {
+export default defineComponent({
   components: {
     StickyComment,
   },
   computed: {
     ...mapPiniaState(useDiscussionStore, [
-      'stickyComment',
       'currentDiscussionId',
     ]),
+    // stickyComment is a position marker ('top' | 'bottom' | null) at runtime
+    // even though the store types its state field as Comment | null (see
+    // CommentList.vue setStickyComment). Expose the runtime string type so the
+    // template's `=== 'bottom'` comparison type-checks.
+    stickyComment(): string | null {
+      return useDiscussionStore().stickyComment as unknown as string | null;
+    },
     ...mapPiniaState(useDiscussionStore, [
       'currentDiscussion',
       'previousDiscussionId',
@@ -61,7 +68,7 @@ export default {
       'constants',
     ]),
     text() {
-      return htmlSanitizer.sanitizeHtml(markdownConversionSvc.highlight(this.currentDiscussion.text));
+      return htmlSanitizer.sanitizeHtml(markdownConversionSvc.highlight(this.currentDiscussion?.text ?? ''));
     },
     showNext() {
       return this.nextDiscussionId && this.nextDiscussionId !== this.currentDiscussionId;
@@ -77,10 +84,11 @@ export default {
     ...mapPiniaActions(useNotificationStore, [
       'info',
     ]),
-    goToDiscussion(discussionId = this.currentDiscussionId) {
-      this.setCurrentDiscussionId(discussionId);
-      const layoutSettings = useDataStore().layoutSettings;
-      const discussion = this.currentFileDiscussions[discussionId];
+    goToDiscussion(discussionId?: string | null) {
+      const targetId = discussionId ?? this.currentDiscussionId;
+      this.setCurrentDiscussionId(targetId);
+      const layoutSettings = useDataStore().layoutSettings as { showEditor?: boolean };
+      const discussion = this.currentFileDiscussions[targetId as string];
       const coordinates = layoutSettings.showEditor
         ? editorSvc.clEditor.selectionMgr.getCoordinates(discussion.end)
         : editorSvc.getPreviewOffsetCoordinates(editorSvc.getPreviewOffset(discussion.end));
@@ -97,7 +105,7 @@ export default {
         } else if (scrollTop > maxScrollTop) {
           scrollTop = maxScrollTop;
         }
-        animationSvc.animate(scrollerElt)
+        (animationSvc.animate(scrollerElt) as any)
           .scrollTop(scrollTop)
           .duration(200)
           .start();
@@ -115,7 +123,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

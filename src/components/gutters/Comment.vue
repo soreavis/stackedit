@@ -10,7 +10,7 @@
         </button>
         <user-name :user-id="comment.sub"></user-name>
       </div>
-      <div class="comment__created">{{ comment.created | formatTime }}</div>
+      <div class="comment__created">{{ formatTime(comment.created) }}</div>
     </div>
     <div class="comment__text">
       <div class="comment__text-inner" v-html="text"></div>
@@ -21,18 +21,20 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
+import { defineComponent } from 'vue';
 import { mapActions as mapPiniaActions } from 'pinia';
-import UserImage from '../UserImage';
-import UserName from '../UserName';
+import { formatTime } from '../common/vueGlobals';
+import UserImage from '../UserImage.vue';
+import UserName from '../UserName.vue';
 import editorSvc from '../../services/editorSvc';
 import htmlSanitizer from '../../libs/htmlSanitizer';
 import { useModalStore } from '../../stores/modal';
 import badgeSvc from '../../services/badgeSvc';
 import { useDiscussionStore } from '../../stores/discussion';
 
-export default {
+export default defineComponent({
   components: {
     UserImage,
     UserName,
@@ -48,6 +50,7 @@ export default {
     },
   },
   methods: {
+    formatTime,
     ...mapPiniaActions(useDiscussionStore, [
       'setIsCommenting',
     ]),
@@ -62,15 +65,16 @@ export default {
     },
   },
   mounted() {
-    const isSticky = this.$el.parentNode.classList.contains('sticky-comment');
+    const parentElt = this.$el.parentNode as HTMLElement | null;
+    const isSticky = parentElt && parentElt.classList.contains('sticky-comment');
     if (isSticky) {
       const commentId = useDiscussionStore().currentDiscussionLastCommentId;
-      const scrollerElt = this.$el.querySelector('.comment__text-inner');
+      const scrollerElt = this.$el.querySelector('.comment__text-inner') as HTMLElement;
 
-      let scrollerMirrorElt;
+      let scrollerMirrorElt: HTMLElement | null = null;
       const getScrollerMirrorElt = () => {
         if (!scrollerMirrorElt) {
-          scrollerMirrorElt = document.querySelector(`.comment-list .comment--${commentId} .comment__text-inner`);
+          scrollerMirrorElt = document.querySelector<HTMLElement>(`.comment-list .comment--${commentId} .comment__text-inner`);
         }
         return scrollerMirrorElt || { scrollTop: 0 };
       };
@@ -81,5 +85,5 @@ export default {
       });
     }
   },
-};
+});
 </script>

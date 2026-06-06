@@ -19,15 +19,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState } from 'pinia';
 import { useNotificationStore } from '../stores/notification';
 
-export default {
+export default defineComponent({
   computed: mapState(useNotificationStore, [
     'items',
   ]),
-};
+});
 </script>
 
 <style lang="scss">

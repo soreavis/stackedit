@@ -20,25 +20,34 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import UserImage from '../UserImage';
+import UserImage from '../UserImage.vue';
 import utils from '../../services/utils';
 import userSvc from '../../services/userSvc';
-import { useWorkspaceStore } from '../../stores/workspace';
-import { useContentStore } from '../../stores/content';
+import { useWorkspaceStore, Token } from '../../stores/workspace';
+import { useContentStore, Content } from '../../stores/content';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 import { useDiscussionStore } from '../../stores/discussion';
 
-export default {
+export default defineComponent({
   components: {
     UserImage,
   },
   computed: {
-    ...mapPiniaState(useWorkspaceStore, [
-      'loginToken',
-    ]),
+    ...mapPiniaState(useWorkspaceStore, {
+      workspaceLoginToken: 'loginToken',
+    }),
+    // The new-comment gutter only renders for a logged-in workspace, so a
+    // login token is always present here even though the store getter is
+    // typed `Token | undefined`. Return-type annotations on object methods
+    // break the espree-backed ESLint parse, so narrow via a body cast.
+    loginToken() {
+      const token = (this as { workspaceLoginToken: Token | undefined }).workspaceLoginToken;
+      return token as Token;
+    },
     userId() {
       return userSvc.getCurrentUserId();
     },
@@ -64,7 +73,7 @@ export default {
             text,
             created: Date.now(),
           };
-          const patch = {
+          const patch: Partial<Content> = {
             comments: {
               ...useContentStore().current.comments,
               [utils.uid()]: comment,
@@ -74,22 +83,22 @@ export default {
             // Create discussion
             patch.discussions = {
               ...useContentStore().current.discussions,
-              [discussionId]: useDiscussionStore().newDiscussionFromCurrent,
+              [discussionId as string]: useDiscussionStore().newDiscussionFromCurrent,
             };
             badgeSvc.addBadge('createDiscussion');
           } else {
             badgeSvc.addBadge('addComment');
           }
           useContentStore().patchCurrent(patch);
-          useDiscussionStore().setNewCommentText();
-          useDiscussionStore().setIsCommenting();
+          useDiscussionStore().setNewCommentText(undefined);
+          useDiscussionStore().setIsCommenting(false);
         }
       }
     },
   },
   async mounted() {
-    const preElt = this.$el.querySelector('pre.markdown-highlighting');
-    const scrollerElt = this.$el.querySelector('.comment__text-inner');
+    const preElt = this.$el.querySelector('pre.markdown-highlighting') as HTMLElement;
+    const scrollerElt = this.$el.querySelector('.comment__text-inner') as HTMLElement;
     // Lazy-load the CM6 small-editor builder so flag-off main bundle
     // stays small. This component mounts after the app is ready.
     const { mountSmallEditor } = await import('../../services/editor/cm6/cm6SmallEditor');
@@ -102,14 +111,14 @@ export default {
     clEditor.on('focus', () => this.setNewCommentFocus(true));
 
     // Save typed content and selection
-    clEditor.on('contentChanged', value =>
+    clEditor.on('contentChanged', (value: string) =>
       useDiscussionStore().setNewCommentText(value));
-    clEditor.selectionMgr.on('selectionChanged', (start, end) =>
+    clEditor.selectionMgr.on('selectionChanged', (start: number, end: number) =>
       useDiscussionStore().setNewCommentSelection({
         start, end,
       }));
 
-    const isSticky = this.$el.parentNode.classList.contains('sticky-comment');
+    const isSticky = (this.$el.parentNode as HTMLElement).classList.contains('sticky-comment');
     const isVisible = () => isSticky || useDiscussionStore().stickyComment === null;
 
     this.$watch(
@@ -125,10 +134,10 @@ export default {
     );
 
     if (isSticky) {
-      let scrollerMirrorElt;
+      let scrollerMirrorElt: HTMLElement | null;
       const getScrollerMirrorElt = () => {
         if (!scrollerMirrorElt) {
-          scrollerMirrorElt = document.querySelector('.comment-list .comment--new .comment__text-inner');
+          scrollerMirrorElt = document.querySelector('.comment-list .comment--new .comment__text-inner') as HTMLElement | null;
         }
         return scrollerMirrorElt || { scrollTop: 0 };
       };
@@ -141,7 +150,7 @@ export default {
       // Maintain the state with the sticky comment
       this.$watch(
         () => isVisible(),
-        (visible) => {
+        (visible: boolean) => {
           clEditor.toggleEditable(visible);
           if (visible) {
             const text = useDiscussionStore().newCommentText;
@@ -157,9 +166,9 @@ export default {
       );
       this.$watch(
         () => useDiscussionStore().newCommentText,
-        newCommentText => clEditor.setContent(newCommentText),
+        (newCommentText: string) => clEditor.setContent(newCommentText),
       );
     }
   },
-};
+});
 </script>

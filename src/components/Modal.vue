@@ -1,6 +1,6 @@
 <template>
   <transition name="modal-fade">
-    <div class="modal" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.enter="onEnter" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
+    <div class="modal" ref="modalEl" :class="{ 'modal--with-banner': !isSponsor }" v-if="config" @keydown.esc.stop="onEscape" @keydown.enter="onEnter" @keydown.tab="onTab" @focusin="onFocusInOut" @focusout="onFocusInOut">
       <div class="modal__sponsor-banner" v-if="!isSponsor">
         StackEdit is <a class="not-tabbable" target="_blank" rel="noopener noreferrer" href="https://github.com/benweet/stackedit/">open source</a>, please consider
         <a class="not-tabbable" href="javascript:void(0)" @click="sponsor">sponsoring</a> for just $5.
@@ -9,15 +9,16 @@
       <modal-inner v-else aria-label="Dialog">
         <div class="modal__content" v-html="simpleModal.contentHtml(config)"></div>
         <div class="modal__button-bar">
-          <button class="button" v-if="simpleModal.rejectText" @click="config.reject()">{{ simpleModal.rejectText }}</button>
-          <button class="button button--resolve" v-if="simpleModal.resolveText" @click="config.resolve()">{{ simpleModal.resolveText }}</button>
+          <button class="button" v-if="simpleModal.rejectText" @click="cfg.reject()">{{ simpleModal.rejectText }}</button>
+          <button class="button button--resolve" v-if="simpleModal.resolveText" @click="cfg.resolve()">{{ simpleModal.resolveText }}</button>
         </div>
       </modal-inner>
     </div>
   </transition>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import simpleModals from '../data/simpleModals';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
@@ -26,59 +27,63 @@ import { mapState as mapPiniaState } from 'pinia';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useModalStore } from '../stores/modal';
 
-import ModalInner from './modals/common/ModalInner';
-import FilePropertiesModal from './modals/FilePropertiesModal';
-import SettingsModal from './modals/SettingsModal';
-import TemplatesModal from './modals/TemplatesModal';
-import AboutModal from './modals/AboutModal';
-import HtmlExportModal from './modals/HtmlExportModal';
-import PdfExportModal from './modals/PdfExportModal';
-import PandocExportModal from './modals/PandocExportModal';
-import LinkModal from './modals/LinkModal';
-import ImageModal from './modals/ImageModal';
-import SyncManagementModal from './modals/SyncManagementModal';
-import PublishManagementModal from './modals/PublishManagementModal';
-import WorkspaceManagementModal from './modals/WorkspaceManagementModal';
-import AccountManagementModal from './modals/AccountManagementModal';
-import BadgeManagementModal from './modals/BadgeManagementModal';
-import SponsorModal from './modals/SponsorModal';
-import CommandPaletteModal from './modals/CommandPaletteModal';
+import ModalInner from './modals/common/ModalInner.vue';
+import FilePropertiesModal from './modals/FilePropertiesModal.vue';
+import SettingsModal from './modals/SettingsModal.vue';
+import TemplatesModal from './modals/TemplatesModal.vue';
+import AboutModal from './modals/AboutModal.vue';
+import HtmlExportModal from './modals/HtmlExportModal.vue';
+import PdfExportModal from './modals/PdfExportModal.vue';
+import PandocExportModal from './modals/PandocExportModal.vue';
+import LinkModal from './modals/LinkModal.vue';
+import ImageModal from './modals/ImageModal.vue';
+import SyncManagementModal from './modals/SyncManagementModal.vue';
+import PublishManagementModal from './modals/PublishManagementModal.vue';
+import WorkspaceManagementModal from './modals/WorkspaceManagementModal.vue';
+import AccountManagementModal from './modals/AccountManagementModal.vue';
+import BadgeManagementModal from './modals/BadgeManagementModal.vue';
+import SponsorModal from './modals/SponsorModal.vue';
+import CommandPaletteModal from './modals/CommandPaletteModal.vue';
 
 // Providers
-import GooglePhotoModal from './modals/providers/GooglePhotoModal';
-import GoogleDriveAccountModal from './modals/providers/GoogleDriveAccountModal';
-import GoogleDriveSaveModal from './modals/providers/GoogleDriveSaveModal';
-import GoogleDriveWorkspaceModal from './modals/providers/GoogleDriveWorkspaceModal';
-import GoogleDrivePublishModal from './modals/providers/GoogleDrivePublishModal';
-import DropboxAccountModal from './modals/providers/DropboxAccountModal';
-import DropboxSaveModal from './modals/providers/DropboxSaveModal';
-import DropboxPublishModal from './modals/providers/DropboxPublishModal';
-import GithubAccountModal from './modals/providers/GithubAccountModal';
-import GithubOpenModal from './modals/providers/GithubOpenModal';
-import GithubSaveModal from './modals/providers/GithubSaveModal';
-import GithubWorkspaceModal from './modals/providers/GithubWorkspaceModal';
-import GithubPublishModal from './modals/providers/GithubPublishModal';
-import GistSyncModal from './modals/providers/GistSyncModal';
-import GistPublishModal from './modals/providers/GistPublishModal';
-import GitlabAccountModal from './modals/providers/GitlabAccountModal';
-import GitlabOpenModal from './modals/providers/GitlabOpenModal';
-import GitlabPublishModal from './modals/providers/GitlabPublishModal';
-import GitlabSaveModal from './modals/providers/GitlabSaveModal';
-import GitlabWorkspaceModal from './modals/providers/GitlabWorkspaceModal';
-import WordpressPublishModal from './modals/providers/WordpressPublishModal';
-import BloggerPublishModal from './modals/providers/BloggerPublishModal';
-import BloggerPagePublishModal from './modals/providers/BloggerPagePublishModal';
-import ZendeskAccountModal from './modals/providers/ZendeskAccountModal';
-import ZendeskPublishModal from './modals/providers/ZendeskPublishModal';
-import CouchdbWorkspaceModal from './modals/providers/CouchdbWorkspaceModal';
-import CouchdbCredentialsModal from './modals/providers/CouchdbCredentialsModal';
+import GooglePhotoModal from './modals/providers/GooglePhotoModal.vue';
+import GoogleDriveAccountModal from './modals/providers/GoogleDriveAccountModal.vue';
+import GoogleDriveSaveModal from './modals/providers/GoogleDriveSaveModal.vue';
+import GoogleDriveWorkspaceModal from './modals/providers/GoogleDriveWorkspaceModal.vue';
+import GoogleDrivePublishModal from './modals/providers/GoogleDrivePublishModal.vue';
+import DropboxAccountModal from './modals/providers/DropboxAccountModal.vue';
+import DropboxSaveModal from './modals/providers/DropboxSaveModal.vue';
+import DropboxPublishModal from './modals/providers/DropboxPublishModal.vue';
+import GithubAccountModal from './modals/providers/GithubAccountModal.vue';
+import GithubOpenModal from './modals/providers/GithubOpenModal.vue';
+import GithubSaveModal from './modals/providers/GithubSaveModal.vue';
+import GithubWorkspaceModal from './modals/providers/GithubWorkspaceModal.vue';
+import GithubPublishModal from './modals/providers/GithubPublishModal.vue';
+import GistSyncModal from './modals/providers/GistSyncModal.vue';
+import GistPublishModal from './modals/providers/GistPublishModal.vue';
+import GitlabAccountModal from './modals/providers/GitlabAccountModal.vue';
+import GitlabOpenModal from './modals/providers/GitlabOpenModal.vue';
+import GitlabPublishModal from './modals/providers/GitlabPublishModal.vue';
+import GitlabSaveModal from './modals/providers/GitlabSaveModal.vue';
+import GitlabWorkspaceModal from './modals/providers/GitlabWorkspaceModal.vue';
+import WordpressPublishModal from './modals/providers/WordpressPublishModal.vue';
+import BloggerPublishModal from './modals/providers/BloggerPublishModal.vue';
+import BloggerPagePublishModal from './modals/providers/BloggerPagePublishModal.vue';
+import ZendeskAccountModal from './modals/providers/ZendeskAccountModal.vue';
+import ZendeskPublishModal from './modals/providers/ZendeskPublishModal.vue';
+import CouchdbWorkspaceModal from './modals/providers/CouchdbWorkspaceModal.vue';
+import CouchdbCredentialsModal from './modals/providers/CouchdbCredentialsModal.vue';
 import { useGlobalStore } from '../stores/global';
 
-const getTabbables = container => Array.from(container.querySelectorAll('a[href], button, .textfield, input[type=checkbox]'))
+const getTabbables = (container: Element): HTMLElement[] => Array.from(
+  container.querySelectorAll<HTMLElement>('a[href], button, .textfield, input[type=checkbox]'),
+)
   // Filter enabled and visible element
-  .filter(el => !el.disabled && el.offsetParent !== null && !el.classList.contains('not-tabbable'));
+  .filter(el => !(el as HTMLButtonElement).disabled
+    && el.offsetParent !== null
+    && !el.classList.contains('not-tabbable'));
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
     FilePropertiesModal,
@@ -134,29 +139,47 @@ export default {
       'config',
     ]),
     currentModalComponent() {
-      if (this.config.type) {
-        let componentName = this.config.type[0].toUpperCase();
-        componentName += this.config.type.slice(1);
+      const config = this.config as { type?: string } | false;
+      if (config && config.type) {
+        let componentName = config.type[0].toUpperCase();
+        componentName += config.type.slice(1);
         componentName += 'Modal';
-        if (this.$options.components[componentName]) {
+        const components = this.$options.components as Record<string, unknown> | undefined;
+        if (components && components[componentName]) {
           return componentName;
         }
       }
       return null;
     },
-    simpleModal() {
-      return simpleModals[this.config.type] || {};
+    simpleModal(): any {
+      const config = this.config as { type?: string } | false;
+      const type = config ? config.type : undefined;
+      return (simpleModals as Record<string, unknown>)[type as string] || {};
+    },
+    // The modal store `config` getter is typed `ModalConfig | false`; these
+    // resolve/reject handlers only fire while a modal is open (the template's
+    // `v-if="config"` guard). Expose it loosely so the template can invoke
+    // config.resolve()/config.reject() without false "possibly undefined" errors.
+    cfg(): any {
+      return this.config;
     },
   },
   mounted() {
     this.$watch(
       () => this.config,
-      (isOpen) => {
+      (isOpen: unknown) => {
         if (isOpen) {
-          const tabbables = getTabbables(this.$el);
-          if (tabbables[0]) {
-            tabbables[0].focus();
-          }
+          // Defer to the next tick: the template root is a <transition>, so in
+          // Vue 3 this.$el is a placeholder comment node until the v-if content
+          // mounts. Use the ref on the rendered .modal element instead.
+          this.$nextTick(() => {
+            const el = this.$refs.modalEl as Element | undefined;
+            if (!el) return;
+            const tabbables = getTabbables(el);
+            if (tabbables[0]) {
+              tabbables[0].focus();
+            }
+          });
         }
       },
       { immediate: true },
@@ -177,25 +200,30 @@ export default {
       } catch (e) { /* cancel */ }
     },
     onEscape() {
-      this.config.reject();
+      const config = this.config as { reject?: () => void } | false;
+      if (config && config.reject) config.reject();
       editorSvc.clEditor.focus();
     },
-    onEnter(evt) {
+    onEnter(evt: KeyboardEvent) {
       // Skip when the user is typing into a multi-line textarea or a
       // contenteditable region — Enter there should insert a newline.
       // Select / input / button targets all forward Enter to the resolve
       // button as the universal "confirm" action.
-      const target = evt.target;
+      const target = evt.target as HTMLElement | null;
       if (target && target.tagName === 'TEXTAREA') return;
       if (target && target.isContentEditable) return;
-      const resolve = this.$el && this.$el.querySelector('.button--resolve');
+      const modalEl = this.$refs.modalEl as Element | undefined;
+      const resolve = modalEl
+        && modalEl.querySelector<HTMLButtonElement>('.button--resolve');
       if (resolve && !resolve.disabled) {
         evt.preventDefault();
         resolve.click();
       }
     },
-    onTab(evt) {
-      const tabbables = getTabbables(this.$el);
+    onTab(evt: KeyboardEvent) {
+      const modalEl = this.$refs.modalEl as Element | undefined;
+      if (!modalEl) return;
+      const tabbables = getTabbables(modalEl);
       const firstTabbable = tabbables[0];
       const lastTabbable = tabbables[tabbables.length - 1];
       if (evt.shiftKey && firstTabbable === evt.target) {
@@ -206,13 +234,14 @@ export default {
         firstTabbable.focus();
       }
     },
-    onFocusInOut(evt) {
-      const { parentNode } = evt.target;
+    onFocusInOut(evt: FocusEvent) {
+      const parentNode = (evt.target as HTMLElement | null)?.parentNode as HTMLElement | null;
       if (parentNode && parentNode.parentNode) {
+        const grandParent = parentNode.parentNode as HTMLElement;
         // Focus effect
         if (parentNode.classList.contains('form-entry__field')
-          && parentNode.parentNode.classList.contains('form-entry')) {
-          parentNode.parentNode.classList.toggle(
+          && grandParent.classList.contains('form-entry')) {
+          grandParent.classList.toggle(
             'form-entry--focused',
             evt.type === 'focusin',
           );
@@ -220,7 +249,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">
