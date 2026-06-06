@@ -67,15 +67,16 @@
       </menu-entry>
     </div>
     <div class="modal__button-bar">
-      <button class="button button--resolve" @click="config.resolve()">Close</button>
+      <button class="button button--resolve" @click="cfg.resolve()">Close</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import ModalInner from './common/ModalInner';
-import MenuEntry from '../menus/common/MenuEntry';
+import ModalInner from './common/ModalInner.vue';
+import MenuEntry from '../menus/common/MenuEntry.vue';
 import { useModalStore } from '../../stores/modal';
 import utils from '../../services/utils';
 import googleHelper from '../../services/providers/helpers/googleHelper';
@@ -87,7 +88,7 @@ import zendeskHelper from '../../services/providers/helpers/zendeskHelper';
 import badgeSvc from '../../services/badgeSvc';
 import { useDataStore } from '../../stores/data';
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
     MenuEntry,
@@ -96,36 +97,39 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
-    entries() {
+    cfg(): any {
+      return this.config;
+    },
+    entries(): any[] {
       return [
-        ...Object.values(useDataStore().googleTokensBySub).map(token => ({
+        ...Object.values(useDataStore().googleTokensBySub).map((token: any) => ({
           token,
           providerId: 'google',
           userId: token.sub,
           name: token.name,
           scopes: ['openid', 'profile', ...token.scopes
-            .map(scope => scope.replace(/^https:\/\/www.googleapis.com\/auth\//, ''))],
+            .map((scope: string) => scope.replace(/^https:\/\/www.googleapis.com\/auth\//, ''))],
         })),
-        ...Object.values(useDataStore().couchdbTokensBySub).map(token => ({
+        ...Object.values(useDataStore().couchdbTokensBySub).map((token: any) => ({
           token,
           providerId: 'couchdb',
           url: token.dbUrl,
           name: token.name,
         })),
-        ...Object.values(useDataStore().dropboxTokensBySub).map(token => ({
+        ...Object.values(useDataStore().dropboxTokensBySub).map((token: any) => ({
           token,
           providerId: 'dropbox',
           userId: token.sub,
           name: token.name,
         })),
-        ...Object.values(useDataStore().githubTokensBySub).map(token => ({
+        ...Object.values(useDataStore().githubTokensBySub).map((token: any) => ({
           token,
           providerId: 'github',
           userId: token.sub,
           name: token.name,
           scopes: token.scopes,
         })),
-        ...Object.values(useDataStore().gitlabTokensBySub).map(token => ({
+        ...Object.values(useDataStore().gitlabTokensBySub).map((token: any) => ({
           token,
           providerId: 'gitlab',
           url: token.serverUrl,
@@ -133,14 +137,14 @@ export default {
           name: token.name,
           scopes: ['api'],
         })),
-        ...Object.values(useDataStore().wordpressTokensBySub).map(token => ({
+        ...Object.values(useDataStore().wordpressTokensBySub).map((token: any) => ({
           token,
           providerId: 'wordpress',
           userId: token.sub,
           name: token.name,
           scopes: ['global'],
         })),
-        ...Object.values(useDataStore().zendeskTokensBySub).map(token => ({
+        ...Object.values(useDataStore().zendeskTokensBySub).map((token: any) => ({
           token,
           providerId: 'zendesk',
           url: `https://${token.subdomain}.zendesk.com/`,
@@ -152,8 +156,8 @@ export default {
     },
   },
   methods: {
-    async remove(entry) {
-      const tokensBySub = utils.deepCopy(useDataStore()[`${entry.providerId}TokensBySub`]);
+    async remove(entry: any) {
+      const tokensBySub = utils.deepCopy((useDataStore() as any)[`${entry.providerId}TokensBySub`]);
       delete tokensBySub[entry.token.sub];
       await useDataStore().patchTokensByType({
         [entry.providerId]: tokensBySub,
@@ -179,7 +183,7 @@ export default {
     },
     async addGitlabAccount() {
       try {
-        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' }) as { serverUrl: string; applicationId: string };
         await gitlabHelper.addAccount(serverUrl, applicationId);
       } catch (e) { /* cancel */ }
     },
@@ -196,12 +200,12 @@ export default {
     },
     async addZendeskAccount() {
       try {
-        const { subdomain, clientId } = await useModalStore().open({ type: 'zendeskAccount' });
+        const { subdomain, clientId } = await useModalStore().open({ type: 'zendeskAccount' }) as { subdomain: string; clientId: string };
         await zendeskHelper.addAccount(subdomain, clientId);
       } catch (e) { /* cancel */ }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

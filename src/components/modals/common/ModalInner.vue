@@ -1,7 +1,7 @@
 <template>
   <div class="modal__inner-1" role="dialog">
     <div class="modal__inner-2">
-      <button class="modal__close-button button not-tabbable" @click="config.reject()" v-title="'Close modal'">
+      <button class="modal__close-button button not-tabbable" @click="cfg.reject()" v-title="'Close modal'">
         <icon-close></icon-close>
       </button>
       <slot></slot>
@@ -9,17 +9,23 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../../stores/modal';
 
-export default {
+export default defineComponent({
   computed: {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
+    // `config` is `ModalConfig | false`, but this inner is only rendered
+    // when a modal is open, so config is always set here.
+    cfg(): any {
+      return this.config;
+    },
   },
-};
+});
 </script>
 
 <style lang="scss">

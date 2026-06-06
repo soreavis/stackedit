@@ -57,15 +57,16 @@
       </div>
     </div>
     <div class="modal__button-bar">
-      <button class="button button--resolve" @click="config.resolve()">Close</button>
+      <button class="button button--resolve" @click="cfg.resolve()">Close</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
 
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import ModalInner from './common/ModalInner';
+import ModalInner from './common/ModalInner.vue';
 import workspaceSvc from '../../services/workspaceSvc';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useModalStore } from '../../stores/modal';
@@ -73,14 +74,14 @@ import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 import localDbSvc from '../../services/localDbSvc';
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
   },
   data: () => ({
-    editedId: null,
+    editedId: null as string | null,
     editingName: '',
-    availableOffline: {},
+    availableOffline: {} as Record<string, boolean>,
   }),
   computed: {
     ...mapPiniaState(useModalStore, [
@@ -91,33 +92,40 @@ export default {
       'mainWorkspace',
       'currentWorkspace',
     ]),
+    // The modal store `config` getter is `ModalConfig | false`; this modal only
+    // renders while a config is set, so expose a loosely-typed alias for the
+    // template's `cfg.resolve()` call (config is guaranteed present here).
+    cfg(): any {
+      return this.config;
+    },
   },
   methods: {
     ...mapPiniaActions(useNotificationStore, [
       'info',
     ]),
-    edit(id) {
+    edit(id: string) {
       this.editedId = id;
-      this.editingName = this.workspacesById[id].name;
+      this.editingName = this.workspacesById[id].name as string;
     },
-    submitEdit(cancel) {
-      const workspace = this.workspacesById[this.editedId];
+    submitEdit(cancel?: boolean) {
+      const editedId = this.editedId as string;
+      const workspace = this.workspacesById[editedId];
       if (workspace) {
         if (!cancel && this.editingName && this.editingName !== workspace.name) {
           useWorkspaceStore().patchWorkspacesById({
-            [this.editedId]: {
+            [editedId]: {
               ...workspace,
               name: this.editingName,
             },
           });
           badgeSvc.addBadge('renameWorkspace');
         } else {
-          this.editingName = workspace.name;
+          this.editingName = workspace.name as string;
         }
       }
       this.editedId = null;
     },
-    async remove(id) {
+    async remove(id: string) {
       if (id === this.mainWorkspace.id) {
         this.info('Your main workspace can not be removed.');
       } else if (id === this.currentWorkspace.id) {
@@ -132,14 +140,14 @@ export default {
     },
   },
   created() {
-    Object.keys(this.workspacesById).forEach(async (workspaceId) => {
+    Object.keys(this.workspacesById).forEach(async (workspaceId: string) => {
       const cancel = localDbSvc.getWorkspaceItems(workspaceId, () => {
         this.availableOffline[workspaceId] = true;
         cancel();
       });
     });
   },
-};
+});
 </script>
 
 <style lang="scss">

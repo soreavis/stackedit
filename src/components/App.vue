@@ -8,15 +8,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import '../styles';
 import '../styles/markdownHighlighting.scss';
 import '../styles/app.scss';
-import Layout from './Layout';
-import Modal from './Modal';
-import Notification from './Notification';
-import ContextMenu from './ContextMenu';
-import SplashScreen from './SplashScreen';
+import Layout from './Layout.vue';
+import Modal from './Modal.vue';
+import Notification from './Notification.vue';
+import ContextMenu from './ContextMenu.vue';
+import SplashScreen from './SplashScreen.vue';
 import syncSvc from '../services/syncSvc';
 import networkSvc from '../services/networkSvc';
 import tempFileSvc from '../services/tempFileSvc';
@@ -25,12 +26,12 @@ import { setCm6BridgeFactory } from '../services/editor/editorSvcDiscussions';
 import { useNotificationStore } from '../stores/notification';
 import { useDataStore } from '../stores/data';
 
-const themeClasses = {
+const themeClasses: Record<string, string[]> = {
   light: ['app--light'],
   dark: ['app--dark'],
 };
 
-export default {
+export default defineComponent({
   components: {
     Layout,
     Modal,
@@ -43,7 +44,7 @@ export default {
   }),
   computed: {
     classes() {
-      const result = themeClasses[useDataStore().computedSettings.colorTheme];
+      const result = themeClasses[useDataStore().computedSettings.colorTheme as string];
       return Array.isArray(result) ? result : themeClasses.light;
     },
   },
@@ -69,11 +70,12 @@ export default {
       this.ready = true;
       tempFileSvc.setReady();
     } catch (err) {
-      if (err && err.message === 'RELOAD') {
+      const e = err as any;
+      if (e && e.message === 'RELOAD') {
         window.location.reload();
-      } else if (err && err.message !== 'RELOAD') {
-        console.error(err);  
-        useNotificationStore().error(err);
+      } else if (e && e.message !== 'RELOAD') {
+        console.error(e);
+        useNotificationStore().error(e);
       }
     }
   },
@@ -82,5 +84,5 @@ export default {
       tempFileSvc.close();
     },
   },
-};
+});
 </script>

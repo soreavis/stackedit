@@ -2,18 +2,20 @@
   <pre class="code-editor textfield prism" :disabled="disabled"></pre>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
+
 // `lang` is the upstream prop value (e.g. 'yaml', 'handlebars') —
 // map it to one of the CM6 small-editor language values. YAML is
 // the only non-trivial mapping today; everything else falls through
 // to plain monospace.
-function mapLang(value) {
+function mapLang(value: string): 'markdown' | 'yaml' | 'plain' {
   if (value === 'yaml') return 'yaml';
   if (value === 'markdown') return 'markdown';
   return 'plain';
 }
 
-export default {
+export default defineComponent({
   props: ['value', 'lang', 'disabled'],
   async mounted() {
     const preElt = this.$el;
@@ -26,9 +28,9 @@ export default {
       language: mapLang(this.lang),
       readOnly: !!this.disabled,
     });
-    clEditor.on('contentChanged', value => this.$emit('changed', value));
+    clEditor.on('contentChanged', (value: string) => this.$emit('changed', value));
   },
-};</script>
+});</script>
 
 <style lang="scss">
 @use '../styles/variables.scss' as *;

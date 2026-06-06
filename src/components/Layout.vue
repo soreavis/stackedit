@@ -1,7 +1,7 @@
 <template>
   <div class="layout" :class="{'layout--revision': revisionContent}">
     <div class="layout__panel flex flex--row" :class="{'flex--end': styles.showSideBar}">
-      <div class="layout__panel layout__panel--explorer" v-show="styles.showExplorer" :aria-hidden="String(!styles.showExplorer)" :style="{width: styles.layoutOverflow ? '100%' : constants.explorerWidth + 'px'}">
+      <div class="layout__panel layout__panel--explorer" v-show="styles.showExplorer" :aria-hidden="explorerAriaHidden" :style="{width: styles.layoutOverflow ? '100%' : constants.explorerWidth + 'px'}">
         <explorer></explorer>
       </div>
       <div class="layout__panel flex flex--column" tour-step-anchor="welcome,end" :style="{width: styles.innerWidth + 'px'}">
@@ -58,19 +58,20 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import NavigationBar from './NavigationBar';
-import ButtonBar from './ButtonBar';
-import StatusBar from './StatusBar';
-import Explorer from './Explorer';
-import SideBar from './SideBar';
-import Editor from './Editor';
-import Preview from './Preview';
-import Tour from './Tour';
-import StickyComment from './gutters/StickyComment';
-import CurrentDiscussion from './gutters/CurrentDiscussion';
-import FindReplace from './FindReplace';
+import NavigationBar from './NavigationBar.vue';
+import ButtonBar from './ButtonBar.vue';
+import StatusBar from './StatusBar.vue';
+import Explorer from './Explorer.vue';
+import SideBar from './SideBar.vue';
+import Editor from './Editor.vue';
+import Preview from './Preview.vue';
+import Tour from './Tour.vue';
+import StickyComment from './gutters/StickyComment.vue';
+import CurrentDiscussion from './gutters/CurrentDiscussion.vue';
+import FindReplace from './FindReplace.vue';
 import editorSvc from '../services/editorSvc';
 import markdownConversionSvc from '../services/markdownConversionSvc';
 import workspaceSvc from '../services/workspaceSvc';
@@ -83,7 +84,7 @@ import { useLayoutStore } from '../stores/layout';
 import { useDiscussionStore } from '../stores/discussion';
 import { useGlobalStore } from '../stores/global';
 
-export default {
+export default defineComponent({
   components: {
     NavigationBar,
     ButtonBar,
@@ -104,9 +105,18 @@ export default {
     ...mapPiniaState(useContentStore, [
       'revisionContent',
     ]),
-    ...mapPiniaState(useDiscussionStore, [
-      'stickyComment',
-    ]),
+    // The discussion store types `stickyComment` as `Comment | null`, but at
+    // runtime it holds the gutter position string ('top' | 'bottom' | null)
+    // — see CommentList.vue where it's assigned. Surface the real runtime
+    // type so the template's `stickyComment === 'top'` comparison type-checks.
+    stickyComment(): string | null {
+      return useDiscussionStore().stickyComment as unknown as string | null;
+    },
+    // aria-hidden expects Booleanish; String() widens to `string`, so derive
+    // the 'true' | 'false' literal in script and bind that instead.
+    explorerAriaHidden(): 'true' | 'false' {
+      return String(!this.styles.showExplorer) as 'true' | 'false';
+    },
     ...mapPiniaState(useLayoutStore, [
       'constants',
       'styles',
@@ -172,13 +182,13 @@ export default {
     this.$watch(() => this.styles.showEditor, focus);
   },
   unmounted() {
-    window.removeEventListener('resize', this.updateStyle);
+    window.removeEventListener('resize', this.updateBodySize);
     window.removeEventListener('keyup', this.saveSelection);
     window.removeEventListener('mouseup', this.saveSelection);
     window.removeEventListener('focusin', this.saveSelection);
     window.removeEventListener('contextmenu', this.saveSelection);
   },
-};
+});
 </script>
 
 <style lang="scss">

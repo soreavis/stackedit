@@ -18,17 +18,18 @@
       @leave="onLeave"
     >
       <div class="explorer-node__children" v-if="node.isFolder && isOpen">
-        <explorer-node v-for="node in node.folders" :key="node.item.id" :node="node" :depth="depth + 1"></explorer-node>
+        <explorer-node v-for="childNode in node.folders" :key="childNode.item.id" :node="childNode" :depth="depth + 1"></explorer-node>
         <div v-if="newChild" class="explorer-node__new-child" :class="{'explorer-node__new-child--folder': newChild.isFolder}" :style="{paddingLeft: childLeftPadding}">
           <input type="text" class="text-input" v-focus @blur="submitNewChild()" @keydown.stop @keydown.enter="submitNewChild()" @keydown.esc.stop="submitNewChild(true)" v-model.trim="newChildName">
         </div>
-        <explorer-node v-for="node in node.files" :key="node.item.id" :node="node" :depth="depth + 1"></explorer-node>
+        <explorer-node v-for="childNode in node.files" :key="childNode.item.id" :node="childNode" :depth="depth + 1"></explorer-node>
       </div>
     </transition>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, PropType } from 'vue';
 import { mapActions as mapPiniaActions } from 'pinia';
 import workspaceSvc from '../services/workspaceSvc';
 import explorerSvc from '../services/explorerSvc';
@@ -36,20 +37,32 @@ import fileImportSvc from '../services/fileImportSvc';
 import draftFilesSvc from '../services/draftFilesSvc';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
-import { useContextMenuStore } from '../stores/contextMenu';
+import { useContextMenuStore, ContextMenuItem } from '../stores/contextMenu';
 import badgeSvc from '../services/badgeSvc';
 import { useDataStore } from '../stores/data';
 import { useExplorerStore } from '../stores/explorer';
 import { useFolderStore } from '../stores/folder';
 import { useGlobalStore } from '../stores/global';
 
-export default {
+export default defineComponent({
   name: 'explorer-node', // Required for recursivity
-  props: ['node', 'depth'],
+  // The node tree carries many ad-hoc fields (isFolder, isTrash, locations,
+  // recentLabel, …) and the component renders itself recursively, so the
+  // prop is typed loosely as `any` to avoid a circular inference loop.
+  props: {
+    node: {
+      type: Object as PropType<any>,
+      required: true,
+    },
+    depth: {
+      type: Number,
+      required: true,
+    },
+  },
   data: () => ({
     editingValue: '',
     infoOpen: false,
-    infoPopoverStyle: null,
+    infoPopoverStyle: null as Record<string, string> | null,
   }),
   computed: {
     leftPadding() {
@@ -87,7 +100,7 @@ export default {
       if (!this.node.isFolder || this.node.isTrash || this.node.isTemp || this.node.isRecent || this.node.isRoot) {
         return false;
       }
-      const pinned = (useDataStore().localSettings || {}).pinnedFolderIds || {};
+      const pinned = ((useDataStore().localSettings || {}).pinnedFolderIds || {}) as Record<string, boolean>;
       return !!pinned[this.node.item.id];
     },
     showNerdInfo() {
@@ -110,7 +123,7 @@ export default {
         { k: 'ID', v: id },
       ];
       if (this.node.isFolder) {
-        const directFiles = (this.node.files || []).filter(f => f.item.id !== 'fake').length;
+        const directFiles = (this.node.files || []).filter((f: any) => f.item.id !== 'fake').length;
         const directFolders = (this.node.folders || []).length;
         const parts = [];
         if (directFiles) parts.push(`${directFiles} ${directFiles === 1 ? 'file' : 'files'}`);
@@ -119,8 +132,8 @@ export default {
         // node.fileCount is the recursive file total. Add a recursive
         // subfolder count so we can surface a single "Total items" row when
         // there's nesting beyond what "Contains" covers.
-        const countSubfolders = node => (node.folders || [])
-          .reduce((sum, f) => sum + 1 + countSubfolders(f), 0);
+        const countSubfolders = (node: any): number => (node.folders || [])
+          .reduce((sum: number, f: any) => sum + 1 + countSubfolders(f), 0);
         const totalItems = (this.node.fileCount || 0) + countSubfolders(this.node);
         if (totalItems > directFiles + directFolders) {
           rows.push({ k: 'Total', v: `${totalItems} items` });
@@ -201,7 +214,7 @@ export default {
       get() {
         return useExplorerStore().newChildNode.item.name;
       },
-      set(value) {
+      set(value: string) {
         useExplorerStore().setNewItemName(value);
       },
     },
@@ -209,7 +222,7 @@ export default {
       get() {
         return useExplorerStore().editingNode.item.name;
       },
-      set(value) {
+      set(value: string) {
         this.editingValue = value.trim();
       },
     },
@@ -221,7 +234,8 @@ export default {
     ...mapPiniaActions(useExplorerStore, [
       'setDragTarget',
     ]),
-    select(id = this.node.item.id, doOpen = true) {
+    select(idArg?: string, doOpen = true) {
+      const id: string = idArg ?? this.node.item.id;
       const node = useExplorerStore().nodeMap[id];
       if (!node) {
         return false;
@@ -244,7 +258,7 @@ export default {
       }
       return true;
     },
-    onClick(evt) {
+    onClick(evt: MouseEvent) {
       const id = this.node.item.id;
       // Sentinel nodes (trash/temp/recent/root) don't participate in multi-
       // select. A plain click just toggles their open state.
@@ -288,7 +302,7 @@ export default {
       }
       this.setEditingId(node.item.id);
     },
-    collectRange(anchorId, targetId) {
+    collectRange(anchorId: string | null, targetId: string): string[] {
       // Use the live DOM to get visible nodes in render order.
       const nodes = Array.from(document.querySelectorAll('.explorer__tree .explorer-node__item[data-node-id]'));
       const ids = nodes
@@ -296,7 +310,7 @@ export default {
         // Exclude the virtual sentinels (Trash/Temp/Recent) and the bottom
         // spacer so a shift-range can't drag Recent into the selection (and
         // from there into the bulk-delete path).
-        .filter(id => id && id !== 'trash' && id !== 'temp' && id !== 'recent' && id !== 'fake');
+        .filter((id): id is string => !!id && id !== 'trash' && id !== 'temp' && id !== 'recent' && id !== 'fake');
       if (!anchorId || !ids.includes(anchorId)) return [targetId];
       const a = ids.indexOf(anchorId);
       const b = ids.indexOf(targetId);
@@ -304,7 +318,7 @@ export default {
       const [lo, hi] = a < b ? [a, b] : [b, a];
       return ids.slice(lo, hi + 1);
     },
-    onDragStart(evt) {
+    onDragStart(evt: DragEvent) {
       if (this.node.noDrag) {
         evt.preventDefault();
         return;
@@ -315,9 +329,10 @@ export default {
       const ids = isInMulti ? Object.keys(selected) : [id];
       useExplorerStore().setDragSourceId(id);
       useExplorerStore().setDragSourceIds(ids);
+      const dataTransfer = evt.dataTransfer as DataTransfer;
       // Fix for Firefox
       // See https://stackoverflow.com/a/3977637/1333165
-      evt.dataTransfer.setData('Text', '');
+      dataTransfer.setData('Text', '');
 
       // If the file's content is already loaded in memory, attach a
       // DownloadURL + text/plain payload so dragging onto the OS /
@@ -330,9 +345,9 @@ export default {
             const blob = new Blob([entry.text], { type: 'text/markdown' });
             const url = URL.createObjectURL(blob);
             const filename = `${this.node.item.name || 'untitled'}.md`;
-            evt.dataTransfer.setData('DownloadURL', `text/markdown:${filename}:${url}`);
-            evt.dataTransfer.setData('text/plain', entry.text);
-            this._dragBlobUrl = url;
+            dataTransfer.setData('DownloadURL', `text/markdown:${filename}:${url}`);
+            dataTransfer.setData('text/plain', entry.text);
+            (this as any)._dragBlobUrl = url;
           } catch (e) {
             // Swallow — internal drag still works.
           }
@@ -340,19 +355,19 @@ export default {
       }
     },
     onDragEnd() {
-      this.setDragTarget();
-      if (this._dragBlobUrl) {
-        URL.revokeObjectURL(this._dragBlobUrl);
-        this._dragBlobUrl = null;
+      this.setDragTarget(undefined);
+      if ((this as any)._dragBlobUrl) {
+        URL.revokeObjectURL((this as any)._dragBlobUrl);
+        (this as any)._dragBlobUrl = null;
       }
     },
-    async submitNewChild(cancel) {
+    async submitNewChild(cancel?: boolean) {
       const { newChildNode } = useExplorerStore();
       if (!cancel && !newChildNode.isNil && newChildNode.item.name) {
         try {
           if (newChildNode.isFolder) {
             const item = await workspaceSvc.storeItem(newChildNode.item);
-            this.select(item.id);
+            this.select(item!.id);
             badgeSvc.addBadge('createFolder');
           } else {
             const item = await workspaceSvc.createFile(newChildNode.item);
@@ -366,7 +381,7 @@ export default {
       }
       useExplorerStore().setNewItem(null);
     },
-    async submitEdit(cancel) {
+    async submitEdit(cancel?: boolean) {
       const { item, isFolder } = useExplorerStore().editingNode;
       const value = this.editingValue;
       this.setEditingId(null);
@@ -382,16 +397,17 @@ export default {
         }
       }
     },
-    async onDrop(evt) {
+    async onDrop(evt: DragEvent) {
       const targetNode = useExplorerStore().dragTargetNodeFolder;
-      this.setDragTarget();
+      this.setDragTarget(undefined);
       if (targetNode.isNil) return;
 
+      const dataTransfer = evt.dataTransfer as DataTransfer;
       // External file drop (from OS) — import .md files into the drop target.
-      if (fileImportSvc.hasMarkdownPayload(evt.dataTransfer)) {
+      if (fileImportSvc.hasMarkdownPayload(dataTransfer)) {
         const parentId = targetNode.isRoot ? null : targetNode.item.id;
         try {
-          await fileImportSvc.importDataTransfer(evt.dataTransfer, parentId);
+          await fileImportSvc.importDataTransfer(dataTransfer, parentId);
         } catch (e) {
           console.error(e);
         }
@@ -403,12 +419,12 @@ export default {
       const { nodeMap } = useExplorerStore().nodeStructure;
       let folderMoved = false;
       let fileMoved = false;
-      sourceIds.forEach((sourceId) => {
+      sourceIds.forEach((sourceId: string) => {
         const sourceNode = nodeMap[sourceId];
         if (!sourceNode || sourceNode.isNil) return;
         if (sourceNode.item.id === targetNode.item.id) return;
         // Prevent moving a folder into itself or its own descendants.
-        for (let walk = targetNode; walk; walk = nodeMap[walk.item.parentId]) {
+        for (let walk = targetNode; walk; walk = nodeMap[walk.item.parentId as string]) {
           if (walk.item.id === sourceNode.item.id) return;
         }
         workspaceSvc.storeItem({
@@ -421,7 +437,7 @@ export default {
       if (folderMoved) badgeSvc.addBadge('moveFolder');
       else if (fileMoved) badgeSvc.addBadge('moveFile');
     },
-    async onContextMenu(evt) {
+    async onContextMenu(evt: MouseEvent) {
       if (this.select(undefined, false)) {
         evt.preventDefault();
         evt.stopPropagation();
@@ -494,10 +510,10 @@ export default {
             // a recursive delete would trash every recently-opened file.
             disabled: this.node.isTrash || this.node.isRecent,
             perform: () => explorerSvc.deleteItem(),
-          }],
+          }] as ContextMenuItem[],
         });
         if (item) {
-          item.perform();
+          item.perform?.();
         }
       }
     },
@@ -506,7 +522,7 @@ export default {
         const original = useFileStore().itemsById[this.node.item.id];
         if (!original) return;
         const content = await (await import('../services/localDbSvc')).default
-          .loadItem(`${original.id}/content`);
+          .loadItem(`${original.id}/content`) as any;
         const copy = await workspaceSvc.createFile({
           name: `${original.name} (copy)`,
           parentId: original.parentId || null,
@@ -538,8 +554,8 @@ export default {
     revealInEditor() {
       useFileStore().setCurrentId(this.node.item.id);
     },
-    onInfoEnter(evt) {
-      const r = evt.currentTarget.getBoundingClientRect();
+    onInfoEnter(evt: MouseEvent) {
+      const r = (evt.currentTarget as HTMLElement).getBoundingClientRect();
       // Anchor the popover just below the icon, aligned to its right edge
       // so it doesn't clip off-screen when the explorer is at the left.
       this.infoPopoverStyle = {
@@ -552,19 +568,19 @@ export default {
       this.infoOpen = false;
     },
     togglePin() {
-      const pinned = { ...((useDataStore().localSettings || {}).pinnedFolderIds || {}) };
+      const pinned: Record<string, boolean> = { ...((useDataStore().localSettings || {}).pinnedFolderIds || {}) };
       const id = this.node.item.id;
       if (pinned[id]) delete pinned[id];
       else pinned[id] = true;
       useDataStore().patchLocalSettings({ pinnedFolderIds: pinned });
     },
-    collectFolderIds(node, acc) {
+    collectFolderIds(node: any, acc: string[]): string[] {
       // This folder + every descendant folder id (depth-first) so the
       // expand/collapse action applies to the whole subtree, not just one
       // level. Files are ignored — only folders have an open/closed state.
       if (!node || !node.isFolder) return acc;
       if (node.item && node.item.id) acc.push(node.item.id);
-      (node.folders || []).forEach(child => this.collectFolderIds(child, acc));
+      (node.folders || []).forEach((child: any) => this.collectFolderIds(child, acc));
       return acc;
     },
     expandSubtree() {
@@ -581,8 +597,8 @@ export default {
       // Mirrors Explorer.vue's expandAll — every real folder plus the
       // Trash/Temp/Recent sentinels. Used when Expand is invoked on a leaf
       // file, which has no subtree of its own to expand.
-      const open = {};
-      useFolderStore().items.forEach((f) => { open[f.id] = true; });
+      const open: Record<string, boolean> = {};
+      useFolderStore().items.forEach((f: any) => { open[f.id] = true; });
       open.trash = true;
       open.temp = true;
       open.recent = true;
@@ -596,11 +612,13 @@ export default {
     // element is mounted, drive `style.height` from 0 → that value (or
     // back), then unset so nested children can grow freely. Reduced-motion
     // users get an instant toggle (the CSS rule strips the transition).
-    onBeforeEnter(el) {
+    onBeforeEnter(element: Element) {
+      const el = element as HTMLElement;
       el.style.height = '0';
       el.style.overflow = 'hidden';
     },
-    onEnter(el, done) {
+    onEnter(element: Element, done: () => void) {
+      const el = element as HTMLElement;
       const h = el.scrollHeight;
       // Empty children container has scrollHeight 0 — the 0→0 height
       // assignment fires no transitionend, so onAfterEnter never runs and
@@ -620,15 +638,18 @@ export default {
       };
       el.addEventListener('transitionend', onEnd);
     },
-    onAfterEnter(el) {
+    onAfterEnter(element: Element) {
+      const el = element as HTMLElement;
       el.style.height = '';
       el.style.overflow = '';
     },
-    onBeforeLeave(el) {
+    onBeforeLeave(element: Element) {
+      const el = element as HTMLElement;
       el.style.height = `${el.scrollHeight}px`;
       el.style.overflow = 'hidden';
     },
-    onLeave(el, done) {
+    onLeave(element: Element, done: () => void) {
+      const el = element as HTMLElement;
       // Symmetric guard: an empty container (scrollHeight 0) won't fire a
       // transitionend on the 0→0 leave, so Vue would never unmount it.
       if (el.scrollHeight === 0) {
@@ -644,7 +665,7 @@ export default {
       el.addEventListener('transitionend', onEnd);
     },
   },
-};
+});
 </script>
 
 <style lang="scss">
