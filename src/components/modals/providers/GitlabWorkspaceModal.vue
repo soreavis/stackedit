@@ -8,7 +8,7 @@
       <form-entry label="Project URL" error="projectUrl">
         <template #field><input class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
-          <b>Example:</b> {{ config.token.serverUrl }}/path/to/project
+          <b>Example:</b> {{ token.serverUrl }}/path/to/project
         </div>
       </form-entry>
       <form-entry label="Folder path" info="optional">
@@ -31,17 +31,23 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import utils from '../../../services/utils';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     branch: '',
     path: '',
   }),
-  computedLocalSettings: {
-    projectUrl: 'gitlabWorkspaceProjectUrl',
+  computed: {
+    projectUrl: localSetting('gitlabWorkspaceProjectUrl'),
+    token(): any {
+      return this.config.token;
+    },
   },
   methods: {
     resolve() {
@@ -52,11 +58,11 @@ export default modalTemplate({
         const path = this.path && this.path.replace(/^\//, '');
         const url = utils.addQueryParams('app', {
           providerId: 'gitlabWorkspace',
-          serverUrl: this.config.token.serverUrl,
+          serverUrl: this.token.serverUrl,
           projectPath,
           branch: this.branch || 'main',
           path: path || undefined,
-          sub: this.config.token.sub,
+          sub: this.token.sub,
         }, true);
         this.config.resolve();
         window.open(url);

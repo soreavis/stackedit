@@ -25,12 +25,15 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import FileSaver from 'file-saver';
 import exportSvc from '../../services/exportSvc';
 import networkSvc from '../../services/networkSvc';
 import googleHelper from '../../services/providers/helpers/googleHelper';
-import modalTemplate from './common/modalTemplate';
+import baseModal from './common/baseModal';
+import { localSetting } from './common/localSetting';
+import templatePickerModal from './common/templatePickerModal';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
@@ -39,9 +42,13 @@ import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
 import { useDataStore } from '../../stores/data';
 
-export default modalTemplate({
-  computedLocalSettings: {
-    selectedTemplate: 'pdfExportTemplate',
+export default defineComponent({
+  mixins: [baseModal, templatePickerModal],
+  data: () => ({
+    templateSettingId: 'pdfExportTemplate',
+  }),
+  computed: {
+    selectedTemplate: localSetting('pdfExportTemplate'),
   },
   methods: {
     async resolve() {
@@ -75,7 +82,7 @@ export default modalTemplate({
           });
           FileSaver.saveAs(body, `${currentFile.name}.pdf`);
           badgeSvc.addBadge('exportPdf');
-        } catch (err) {
+        } catch (err: any) {
           if (err.status === 401) {
             useModalStore().open('sponsorOnly');
           } else {

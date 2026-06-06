@@ -20,12 +20,15 @@
   </modal-inner>
 </template>
 
-<script>
-import modalTemplate from '../common/modalTemplate';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 
-export default modalTemplate({
-  computedLocalSettings: {
-    repoFullAccess: 'githubRepoFullAccess',
+export default defineComponent({
+  mixins: [baseModal],
+  computed: {
+    repoFullAccess: localSetting('githubRepoFullAccess'),
   },
 });
 </script>

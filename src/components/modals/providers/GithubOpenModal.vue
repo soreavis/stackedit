@@ -31,18 +31,21 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import githubProvider from '../../../services/providers/githubProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 import utils from '../../../services/utils';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     branch: '',
     path: '',
   }),
-  computedLocalSettings: {
-    repoUrl: 'githubRepoUrl',
+  computed: {
+    repoUrl: localSetting('githubRepoUrl'),
   },
   methods: {
     resolve() {
@@ -55,7 +58,7 @@ export default modalTemplate({
       }
       if (parsedRepo && this.path) {
         // Return new location
-        const location = githubProvider.makeLocation(
+        const location = (githubProvider as any).makeLocation(
           this.config.token,
           parsedRepo.owner,
           parsedRepo.repo,
