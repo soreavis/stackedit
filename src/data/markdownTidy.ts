@@ -30,8 +30,10 @@
 // MD037 space trim, table column-width padding (the user wants compact
 // tables, not aligned ones), reference-link rewriting.
 
+type Align = 'left' | 'right' | 'center' | 'none';
+
 const FENCE_RE = /^(\s*)(```|~~~)/;
-const isBlank = line => line.trim() === '';
+const isBlank = (line: string): boolean => line.trim() === '';
 
 // ---------------------------------------------------------------------------
 // Table helpers
@@ -40,11 +42,11 @@ const isBlank = line => line.trim() === '';
 // Split a markdown table row into trimmed cell strings. Strips a single
 // leading/trailing pipe (the optional GFM edge delimiters) then splits on
 // pipes that aren't backslash-escaped and aren't inside an inline code span.
-function splitTableRow(row) {
+function splitTableRow(row: string): string[] {
   let s = row.trim();
   if (s.startsWith('|')) s = s.slice(1);
   if (s.endsWith('|') && !s.endsWith('\\|')) s = s.slice(0, -1);
-  const cells = [];
+  const cells: string[] = [];
   let cur = '';
   let inCode = false;
   for (let i = 0; i < s.length; i += 1) {
@@ -66,18 +68,18 @@ function splitTableRow(row) {
   return cells;
 }
 
-const rowHasPipe = line => /\|/.test(line);
+const rowHasPipe = (line: string): boolean => /\|/.test(line);
 
 // A delimiter row is `---`, `:--`, `--:`, `:-:` cells separated by pipes.
 // Requiring an actual pipe keeps a bare `---` (setext underline / thematic
 // break) from being mistaken for a one-column table.
-function isDelimiterRow(line) {
+function isDelimiterRow(line: string): boolean {
   if (!line || !rowHasPipe(line) || isBlank(line)) return false;
   const cells = splitTableRow(line);
   return cells.length > 0 && cells.every(c => /^:?-+:?$/.test(c));
 }
 
-function parseAlign(cell) {
+function parseAlign(cell: string): Align {
   const left = cell.startsWith(':');
   const right = cell.endsWith(':');
   if (left && right) return 'center';
@@ -86,7 +88,7 @@ function parseAlign(cell) {
   return 'none';
 }
 
-function delimMarker(align) {
+function delimMarker(align: Align): string {
   switch (align) {
     case 'left': return ':---';
     case 'right': return '---:';
@@ -97,8 +99,8 @@ function delimMarker(align) {
 
 // Rewrite every detected pipe table in compact form: single-space cells and
 // a tight delimiter row. Column count is the widest row so no cells are lost.
-function reflowTables(lines) {
-  const out = [];
+function reflowTables(lines: string[]): string[] {
+  const out: string[] = [];
   let inFence = false;
   let i = 0;
   while (i < lines.length) {
@@ -123,7 +125,7 @@ function reflowTables(lines) {
     const indent = (line.match(/^(\s*)/) || ['', ''])[1];
     const header = splitTableRow(line);
     const aligns = splitTableRow(lines[i + 1]).map(parseAlign);
-    const body = [];
+    const body: string[][] = [];
     let j = i + 2;
     while (j < lines.length
       && !isBlank(lines[j])
@@ -134,13 +136,13 @@ function reflowTables(lines) {
     }
 
     const ncols = Math.max(header.length, aligns.length, ...body.map(r => r.length));
-    const padCols = (cells) => {
+    const padCols = (cells: string[]): string[] => {
       const c = cells.slice();
       while (c.length < ncols) c.push('');
       return c;
     };
-    const fmtRow = cells => `${indent}| ${padCols(cells).join(' | ')} |`;
-    const fmtDelim = () => `${indent}|${
+    const fmtRow = (cells: string[]): string => `${indent}| ${padCols(cells).join(' | ')} |`;
+    const fmtDelim = (): string => `${indent}|${
       Array.from({ length: ncols }, (_, k) => delimMarker(aligns[k] || 'none')).join('|')
     }|`;
 
@@ -164,14 +166,14 @@ function reflowTables(lines) {
 
 // True for a `*`/`_` thematic break (`***`, `___`, `* * *`) — but not `**`
 // (too few) and not `**bold**` (not all marker chars).
-function isStarOrUnderscoreHr(trimmed) {
+function isStarOrUnderscoreHr(trimmed: string): boolean {
   const compact = trimmed.replace(/ /g, '');
   return /^\*{3,}$/.test(compact) || /^_{3,}$/.test(compact);
 }
 
 // Remove spaces immediately inside double emphasis markers, outside inline
 // code, without touching intraword text or single-marker arithmetic.
-function fixEmphasis(line) {
+function fixEmphasis(line: string): string {
   return line
     .split(/(`+[^`]*`+)/g)
     .map((seg, idx) => (idx % 2 === 1
@@ -183,8 +185,8 @@ function fixEmphasis(line) {
     .join('');
 }
 
-function lineCleanup(lines) {
-  const out = [];
+function lineCleanup(lines: string[]): string[] {
+  const out: string[] = [];
   let inFence = false;
   let blankRun = 0;
   for (let i = 0; i < lines.length; i += 1) {
@@ -243,10 +245,15 @@ function lineCleanup(lines) {
 const ORDERED_RE = /^(\s*)(\d+)([.)])(\s+)(.*)$/;
 const UNORDERED_RE = /^(\s*)[-*+](\s+)/;
 
-function renumberOrdered(lines) {
-  const out = [];
+interface OrderedLevel {
+  indent: number;
+  next: number;
+}
+
+function renumberOrdered(lines: string[]): string[] {
+  const out: string[] = [];
   let inFence = false;
-  const stack = []; // [{ indent, next }] per nesting level
+  const stack: OrderedLevel[] = []; // [{ indent, next }] per nesting level
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     if (FENCE_RE.test(line)) {
@@ -289,13 +296,13 @@ function renumberOrdered(lines) {
 // Block spacing
 // ---------------------------------------------------------------------------
 
-const isHeading = l => /^#{1,6}\s/.test(l);
-const isListItem = l => /^\s*([-*+]|\d+[.)])(\s|$)/.test(l);
+const isHeading = (l: string): boolean => /^#{1,6}\s/.test(l);
+const isListItem = (l: string): boolean => /^\s*([-*+]|\d+[.)])(\s|$)/.test(l);
 
 // Surround ATX headings with one blank line (MD022). Blank runs were already
 // collapsed, so checking the immediate neighbour avoids creating doubles.
-function headingBlanks(lines) {
-  const out = [];
+function headingBlanks(lines: string[]): string[] {
+  const out: string[] = [];
   let inFence = false;
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
@@ -319,12 +326,12 @@ function headingBlanks(lines) {
 // Blank line around top-level fenced code blocks (MD031) and around lists
 // (MD032). Never inserts a blank between two list items — that would turn a
 // tight list loose and change the rendered output.
-function blockBlanks(lines) {
-  const out = [];
+function blockBlanks(lines: string[]): string[] {
+  const out: string[] = [];
   let inFence = false;
   let fenceIndent = 0;
   let inList = false;
-  const last = () => (out.length ? out[out.length - 1] : '');
+  const last = (): string => (out.length ? out[out.length - 1] : '');
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
 
@@ -380,8 +387,8 @@ function blockBlanks(lines) {
 
 // Collapse 2+ blanks to one (fence-aware), trim leading/trailing blanks, end
 // with exactly one newline.
-function finalize(lines) {
-  const out = [];
+function finalize(lines: string[]): string {
+  const out: string[] = [];
   let inFence = false;
   let blankRun = 0;
   for (let i = 0; i < lines.length; i += 1) {
@@ -406,7 +413,7 @@ function finalize(lines) {
   return `${out.join('\n')}\n`;
 }
 
-export default function tidyMarkdown(text) {
+export default function tidyMarkdown(text: string): string {
   let lines = text.split('\n');
   lines = lineCleanup(lines);
   lines = renumberOrdered(lines);

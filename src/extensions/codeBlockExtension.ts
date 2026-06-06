@@ -33,7 +33,7 @@ const STYLES = `
 `;
 
 let stylesInjected = false;
-function ensureStyles() {
+function ensureStyles(): void {
   if (stylesInjected) return;
   const style = document.createElement('style');
   style.textContent = STYLES;
@@ -43,7 +43,7 @@ function ensureStyles() {
 
 // -------- Clipboard helper --------
 
-async function copyText(text) {
+async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(text);
@@ -68,7 +68,7 @@ async function copyText(text) {
   }
 }
 
-function flashSuccess(btn, originalText) {
+function flashSuccess(btn: HTMLButtonElement, originalText: string): void {
   btn.classList.add('is-success');
   btn.textContent = '✓';
   setTimeout(() => {
@@ -79,7 +79,7 @@ function flashSuccess(btn, originalText) {
 
 // -------- Copy button injection --------
 
-function addCopyButton(preElt, codeElt) {
+function addCopyButton(preElt: any, codeElt: HTMLElement): void {
   if (preElt.$hasCodeCopyBtn) return;
   ensureStyles();
   preElt.classList.add('code-block-wrapper');
@@ -90,10 +90,10 @@ function addCopyButton(preElt, codeElt) {
   btn.textContent = '⧉';
   btn.title = 'Copy code';
   btn.setAttribute('aria-label', 'Copy code');
-  btn.addEventListener('click', async (evt) => {
+  btn.addEventListener('click', async (evt: MouseEvent) => {
     evt.preventDefault();
     evt.stopPropagation();
-    const ok = await copyText(codeElt.textContent);
+    const ok = await copyText(codeElt.textContent || '');
     if (ok) flashSuccess(btn, '⧉');
   });
 
@@ -101,10 +101,10 @@ function addCopyButton(preElt, codeElt) {
   preElt.$hasCodeCopyBtn = true;
 }
 
-extensionSvc.onSectionPreview((elt) => {
+extensionSvc.onSectionPreview((elt: HTMLElement) => {
   elt.querySelectorAll('pre > code.prism').forEach((codeElt) => {
     if (codeElt.classList.contains('language-mermaid')) return;
-    addCopyButton(codeElt.parentNode, codeElt);
+    addCopyButton(codeElt.parentNode, codeElt as HTMLElement);
   });
 });
 

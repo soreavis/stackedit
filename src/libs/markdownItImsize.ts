@@ -2,7 +2,6 @@
 // recognize `![alt](url =WIDTHxHEIGHT)` syntax (note the space before `=`)
 // and emit `width` / `height` HTML attributes accordingly. Width-only
 // (`=300x`) and height-only (`=x150`) variants are both supported.
-import type MarkdownIt from 'markdown-it';
 import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
 
 interface NumberParseResult {
@@ -52,7 +51,7 @@ function parseImageSize(str: string, posIn: number, max: number): ImageSizeParse
   return result;
 }
 
-function imageWithSize(md: MarkdownIt) {
+function imageWithSize(md: any) {
   return function image(state: StateInline, silent: boolean): boolean {
     let attrs: Array<[string, string]>;
     let code: number;
@@ -66,7 +65,7 @@ function imageWithSize(md: MarkdownIt) {
     let width = '';
     let height = '';
     let token;
-    let tokens;
+    let tokens: any[];
     let start;
     let href = '';
     const oldPos = state.pos;
@@ -180,7 +179,7 @@ function imageWithSize(md: MarkdownIt) {
       // though the typings don't always expose it cleanly — cast the access
       // path to keep this surgical.
       const InlineState = (state.md.inline as unknown as {
-        State: new (src: string, md: MarkdownIt, env: unknown, tokens: unknown[]) => StateInline;
+        State: new (src: string, md: any, env: unknown, tokens: unknown[]) => StateInline;
       }).State;
       const newState = new InlineState(
         state.src.slice(labelStart, labelEnd),
@@ -205,6 +204,6 @@ function imageWithSize(md: MarkdownIt) {
   };
 }
 
-export default function imsizePlugin(md: MarkdownIt): void {
+export default function imsizePlugin(md: any): void {
   md.inline.ruler.before('emphasis', 'image', imageWithSize(md));
 }

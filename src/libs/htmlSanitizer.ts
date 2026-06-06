@@ -4,7 +4,7 @@ const ALLOWED_URI_SCHEMES = /^(https?|ftp|mailto|tel|file|blob):/i;
 const ALLOWED_IMG_URI_SCHEMES = /^((https?|ftp|file|blob):|data:image\/)/i;
 
 const urlParsingNode = window.document.createElement('a');
-function sanitizeUri(uri, isImage) {
+function sanitizeUri(uri: string, isImage: boolean): string {
   const regex = isImage ? ALLOWED_IMG_URI_SCHEMES : ALLOWED_URI_SCHEMES;
   urlParsingNode.setAttribute('href', uri);
   const normalized = urlParsingNode.href;
@@ -23,7 +23,7 @@ const ADD_ATTR = [
   'xmlns', 'xmlns:xlink', 'xlink:href',
 ];
 
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+DOMPurify.addHook('afterSanitizeAttributes', (node: Element) => {
   if (node.tagName === 'A' && node.hasAttribute('target') && node.getAttribute('target') === '_blank') {
     node.setAttribute('rel', 'noopener noreferrer');
   }
@@ -33,7 +33,7 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
   }
 });
 
-function sanitizeHtml(html) {
+function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
     ADD_TAGS,
     ADD_ATTR,

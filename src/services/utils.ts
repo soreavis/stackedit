@@ -89,7 +89,7 @@ interface Constants {
   defaultName: string;
   [key: string]: unknown;
 }
-const consts = constants as Constants;
+const consts = constants as unknown as Constants;
 
 interface Item {
   id?: string;

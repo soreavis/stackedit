@@ -12,15 +12,25 @@ import './extensions';
 import './services/optional';
 import icons from './icons';
 import vueGlobals from './components/common/vueGlobals';
-import App from './components/App';
+import App from './components/App.vue';
 import { useNotificationStore } from './stores/notification';
 import localDbSvc from './services/localDbSvc';
 import { useGlobalStore } from './stores/global';
 
+// Non-standard localStorage flags (`updated`, `installPrompted`) are read/written
+// as properties; cast to bypass the Storage index typing.
+const ls = localStorage as Storage & Record<string, string>;
+
+// `beforeinstallprompt` is non-standard and not in the DOM lib.
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => void;
+  userChoice: Promise<unknown>;
+}
+
 // Skew protection: when a Vite deploy ships new chunk hashes, a long-open
 // tab may fail to dynamically load the old hash. Catch and reload to pick
 // up the latest manifest. Must register before any dynamic import().
-window.addEventListener('vite:preloadError', (event) => {
+window.addEventListener('vite:preloadError', (event: Event) => {
   event.preventDefault();
   window.location.reload();
 });
@@ -29,12 +39,13 @@ window.addEventListener('vite:preloadError', (event) => {
 injectAnalytics();
 injectSpeedInsights();
 
-if (window.trustedTypes && window.trustedTypes.createPolicy) {
+const trustedTypes = (window as { trustedTypes?: any }).trustedTypes;
+if (trustedTypes && trustedTypes.createPolicy) {
   try {
-    window.trustedTypes.createPolicy('default', {
-      createHTML: html => DOMPurify.sanitize(html),
-      createScript: s => s,
-      createScriptURL: s => s,
+    trustedTypes.createPolicy('default', {
+      createHTML: (html: string) => DOMPurify.sanitize(html),
+      createScript: (s: string) => s,
+      createScriptURL: (s: string) => s,
     });
   } catch {
     // policy already exists (HMR) — ignore
@@ -55,7 +66,7 @@ const updateSW = registerSW({
     try {
       await useNotificationStore().confirm('A new version of StackEdit is ready. Reload now?');
       await localDbSvc.sync();
-      localStorage.updated = true;
+      ls.updated = 'true';
       updateSW(true);
     } catch {
       // user dismissed — they'll get prompted again on next focus or
@@ -64,24 +75,24 @@ const updateSW = registerSW({
   },
 });
 
-if (localStorage.updated) {
+if (ls.updated) {
   useNotificationStore().info('StackEdit has just updated itself!');
   setTimeout(() => localStorage.removeItem('updated'), 2000);
 }
 
-if (!localStorage.installPrompted) {
-  window.addEventListener('beforeinstallprompt', async (promptEvent) => {
+if (!ls.installPrompted) {
+  window.addEventListener('beforeinstallprompt', async (promptEvent: Event) => {
     // Prevent Chrome 67 and earlier from automatically showing the prompt
     promptEvent.preventDefault();
 
     try {
       await useNotificationStore().confirm('Add StackEdit to your home screen?');
-      promptEvent.prompt();
-      await promptEvent.userChoice;
-    } catch (err) {
+      (promptEvent as BeforeInstallPromptEvent).prompt();
+      await (promptEvent as BeforeInstallPromptEvent).userChoice;
+    } catch {
       // Cancel
     }
-    localStorage.installPrompted = true;
+    ls.installPrompted = 'true';
   });
 }
 

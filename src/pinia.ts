@@ -11,9 +11,9 @@
 // Vue 3 path: no PiniaVuePlugin (that's the Vue-2 shim). The app wires
 // pinia via `app.use(pinia)` in index.js; setActivePinia covers the
 // outside-component usage during bootstrap.
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, setActivePinia, type Pinia } from 'pinia';
 
-const pinia = createPinia();
+const pinia: Pinia = createPinia();
 setActivePinia(pinia);
 
 export default pinia;
