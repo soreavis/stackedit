@@ -55,21 +55,26 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import googleHelper from '../../../services/providers/helpers/googleHelper';
 import googleDriveProvider from '../../../services/providers/googleDriveProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
+import templatePickerModal from '../common/templatePickerModal';
 import { useModalStore } from '../../../stores/modal';
 import { useDataStore } from '../../../stores/data';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal, templatePickerModal],
   data: () => ({
     fileId: '',
+    templateSettingId: 'googleDrivePublishTemplate',
   }),
-  computedLocalSettings: {
-    folderId: 'googleDriveFolderId',
-    selectedTemplate: 'googleDrivePublishTemplate',
-    format: 'googleDrivePublishFormat',
+  computed: {
+    folderId: localSetting('googleDriveFolderId'),
+    selectedTemplate: localSetting('googleDrivePublishTemplate'),
+    format: localSetting('googleDrivePublishFormat'),
   },
   methods: {
     openFolder() {
@@ -86,7 +91,7 @@ export default modalTemplate({
     },
     resolve() {
       // Return new location
-      const location = googleDriveProvider.makeLocation(this.config.token, this.fileId);
+      const location = (googleDriveProvider as any).makeLocation(this.config.token, this.fileId);
       if (this.format === 'html') {
         location.templateId = this.selectedTemplate;
       }
