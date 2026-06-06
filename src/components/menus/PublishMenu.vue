@@ -113,9 +113,10 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import MenuEntry from './common/MenuEntry';
+import MenuEntry from './common/MenuEntry.vue';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import dropboxHelper from '../../services/providers/helpers/dropboxHelper';
 import githubHelper from '../../services/providers/helpers/githubHelper';
@@ -123,27 +124,27 @@ import gitlabHelper from '../../services/providers/helpers/gitlabHelper';
 import wordpressHelper from '../../services/providers/helpers/wordpressHelper';
 import zendeskHelper from '../../services/providers/helpers/zendeskHelper';
 import publishSvc from '../../services/publishSvc';
-import { usePublishLocationStore } from '../../stores/publishLocation';
+import { usePublishLocationStore, PublishLocation } from '../../stores/publishLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useDataStore } from '../../stores/data';
 import { useQueueStore } from '../../stores/queue';
 
-const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
-  .filter(token => filter(token))
-  .sort((token1, token2) => token1.name.localeCompare(token2.name));
+const tokensToArray = (tokens: Record<string, any>, filter: (token: any) => boolean = () => true) => Object.values(tokens)
+  .filter((token: any) => filter(token))
+  .sort((token1: any, token2: any) => token1.name.localeCompare(token2.name));
 
-const publishModalOpener = (type, featureId) => async (token) => {
+const publishModalOpener = (type: string, featureId: string) => async (token: any) => {
   try {
     const publishLocation = await useModalStore().open({
       type,
       token,
-    });
-    publishSvc.createPublishLocation(publishLocation, featureId);
+    }) as PublishLocation;
+    publishSvc.createPublishLocation(publishLocation as any, featureId);
   } catch (e) { /* cancel */ }
 };
 
-export default {
+export default defineComponent({
   components: {
     MenuEntry,
   },
@@ -154,9 +155,11 @@ export default {
     ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
-    ...mapPiniaState(usePublishLocationStore, {
-      publishLocations: 'current',
-    }),
+    publishLocations(): unknown[] {
+      // current/currentWithWorkspaceSyncLocation are runtime getters on the
+      // location-store factory that aren't surfaced in its inferred type.
+      return (usePublishLocationStore() as any).current;
+    },
     locationCount() {
       return Object.keys(this.publishLocations).length;
     },
@@ -164,7 +167,7 @@ export default {
       return `"${useFileStore().current.name}"`;
     },
     bloggerTokens() {
-      return tokensToArray(useDataStore().googleTokensBySub, token => token.isBlogger);
+      return tokensToArray(useDataStore().googleTokensBySub, (token: any) => token.isBlogger);
     },
     dropboxTokens() {
       return tokensToArray(useDataStore().dropboxTokensBySub);
@@ -176,7 +179,7 @@ export default {
       return tokensToArray(useDataStore().gitlabTokensBySub);
     },
     googleDriveTokens() {
-      return tokensToArray(useDataStore().googleTokensBySub, token => token.isDrive);
+      return tokensToArray(useDataStore().googleTokensBySub, (token: any) => token.isDrive);
     },
     wordpressTokens() {
       return tokensToArray(useDataStore().wordpressTokensBySub);
@@ -224,7 +227,7 @@ export default {
     },
     async addGitlabAccount() {
       try {
-        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' }) as any;
         await gitlabHelper.addAccount(serverUrl, applicationId);
       } catch (e) { /* cancel */ }
     },
@@ -241,7 +244,7 @@ export default {
     },
     async addZendeskAccount() {
       try {
-        const { subdomain, clientId } = await useModalStore().open({ type: 'zendeskAccount' });
+        const { subdomain, clientId } = await useModalStore().open({ type: 'zendeskAccount' }) as any;
         await zendeskHelper.addAccount(subdomain, clientId);
       } catch (e) { /* cancel */ }
     },
@@ -255,5 +258,5 @@ export default {
     publishWordpress: publishModalOpener('wordpressPublish', 'publishToWordPress'),
     publishZendesk: publishModalOpener('zendeskPublish', 'publishToZendesk'),
   },
-};
+});
 </script>

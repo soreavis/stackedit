@@ -16,28 +16,31 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import FileSaver from 'file-saver';
-import MenuEntry from './common/MenuEntry';
+import MenuEntry from './common/MenuEntry.vue';
 import { useWorkspaceStore } from '../../stores/workspace';
 import { useNotificationStore } from '../../stores/notification';
 import backupSvc from '../../services/backupSvc';
 import localDbSvc from '../../services/localDbSvc';
 
-export default {
+export default defineComponent({
   components: {
     MenuEntry,
   },
   computed: {
-    workspaceId: () => useWorkspaceStore().currentWorkspace.id,
+    workspaceId(): string {
+      return useWorkspaceStore().currentWorkspace.id as string;
+    },
   },
   methods: {
-    onImportBackup(evt) {
-      const file = evt.target.files[0];
+    onImportBackup(evt: Event) {
+      const file = (evt.target as HTMLInputElement).files?.[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          const text = e.target.result;
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+          const text = e.target?.result as string;
           if (text.match(/\uFFFD/)) {
             useNotificationStore().error('File is not readable.');
           } else {
@@ -49,7 +52,7 @@ export default {
       }
     },
     exportWorkspace() {
-      const allItemsById = {};
+      const allItemsById: Record<string, unknown> = {};
       localDbSvc.getWorkspaceItems(this.workspaceId, (item) => {
         allItemsById[item.id] = item;
       }, () => {
@@ -61,5 +64,5 @@ export default {
       });
     },
   },
-};
+});
 </script>

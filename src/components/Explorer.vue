@@ -67,9 +67,10 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import ExplorerNode from './ExplorerNode';
+import ExplorerNode from './ExplorerNode.vue';
 import explorerSvc from '../services/explorerSvc';
 import fileImportSvc from '../services/fileImportSvc';
 import workspaceSvc from '../services/workspaceSvc';
@@ -81,12 +82,13 @@ import { useExplorerStore } from '../stores/explorer';
 import { useGlobalStore } from '../stores/global';
 import { useContextMenuStore } from '../stores/contextMenu';
 
-export default {
+export default defineComponent({
   components: {
     ExplorerNode,
   },
   data: () => ({
-    marquee: null, // { x, y, w, h, baseIds, additive } while dragging; null otherwise
+    // { x, y, w, h } while dragging; null otherwise
+    marquee: null as { x: number; y: number; w: number; h: number } | null,
   }),
   computed: {
     ...mapPiniaState(useGlobalStore, [
@@ -116,18 +118,20 @@ export default {
     isMultiSelect() {
       return Object.keys(useExplorerStore().selectedIds).length > 1;
     },
-    sortMode() {
-      return (useDataStore().localSettings || {}).explorerSort || 'name';
+    sortMode(): string {
+      return ((useDataStore().localSettings || {}).explorerSort as string) || 'name';
     },
     sortLabel() {
-      return { name: 'by name', modified: 'recently opened', created: 'recently created' }[this.sortMode];
+      const labels: Record<string, string> = { name: 'by name', modified: 'recently opened', created: 'recently created' };
+      return labels[this.sortMode];
     },
     sortGlyph() {
-      return { name: 'A↓', modified: '◷', created: '✱' }[this.sortMode];
+      const glyphs: Record<string, string> = { name: 'A↓', modified: '◷', created: '✱' };
+      return glyphs[this.sortMode];
     },
     searchQuery: {
       get() { return useExplorerStore().searchQuery; },
-      set(value) { useExplorerStore().setSearchQuery(value); },
+      set(value: string) { useExplorerStore().setSearchQuery(value); },
     },
     marqueeStyle() {
       if (!this.marquee) return null;
@@ -147,11 +151,11 @@ export default {
     ...mapPiniaActions(useExplorerStore, [
       'setDragTarget',
     ]),
-    newItem: isFolder => explorerSvc.newItem(isFolder),
+    newItem: (isFolder?: boolean) => explorerSvc.newItem(isFolder),
     deleteItem: () => explorerSvc.deleteItem(),
     expandAll() {
-      const open = {};
-      useFolderStore().items.forEach((f) => { open[f.id] = true; });
+      const open: Record<string, boolean> = {};
+      useFolderStore().items.forEach((f: any) => { open[f.id] = true; });
       open.trash = true;
       open.temp = true;
       open.recent = true;
@@ -160,12 +164,12 @@ export default {
     collapseAll() {
       useExplorerStore().setOpenNodes({});
     },
-    async onTreeContextMenu(evt) {
+    async onTreeContextMenu(evt: MouseEvent) {
       // Only act on genuinely empty tree space. Real file/folder rows have
       // their own menu (ExplorerNode.onContextMenu) and stop propagation
       // before this fires; the row guard also covers the sentinel/filler
       // rows (Recent, the fake bottom spacer) that bubble up here.
-      if (evt.target.closest('.explorer-node__item, .explorer-node__item-editor')) return;
+      if ((evt.target as Element).closest('.explorer-node__item, .explorer-node__item-editor')) return;
       evt.preventDefault();
       const hasFolders = useFolderStore().items.length > 0;
       const item = await useContextMenuStore().open({
@@ -182,6 +186,7 @@ export default {
           name: 'New folder',
           perform: () => explorerSvc.newItem(true, true),
         }, {
+          name: '',
           type: 'separator',
         }, {
           name: 'Expand all folders',
@@ -194,7 +199,7 @@ export default {
         }],
       });
       if (item) {
-        item.perform();
+        item.perform?.();
       }
     },
     cycleSort() {
@@ -204,14 +209,15 @@ export default {
       useDataStore().patchLocalSettings({ explorerSort: next });
     },
     visibleNodeIds() {
-      const els = this.$refs.tree
-        ? Array.from(this.$refs.tree.querySelectorAll('.explorer-node__item[data-node-id]'))
+      const treeElt = this.$refs.tree as HTMLElement | undefined;
+      const els = treeElt
+        ? Array.from(treeElt.querySelectorAll('.explorer-node__item[data-node-id]'))
         : [];
       return els
-        .map(el => el.getAttribute('data-node-id'))
-        .filter(id => id && id !== 'fake' && id !== 'trash' && id !== 'temp' && id !== 'recent');
+        .map((el: Element) => el.getAttribute('data-node-id'))
+        .filter((id): id is string => !!id && id !== 'fake' && id !== 'trash' && id !== 'temp' && id !== 'recent');
     },
-    onTreeKeyDown(evt) {
+    onTreeKeyDown(evt: KeyboardEvent) {
       // Let the Delete-key handler on the template own removal.
       if (evt.key === 'Delete' || evt.key === 'Backspace') return;
 
@@ -221,7 +227,7 @@ export default {
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
         if (!ids.length) return;
         evt.preventDefault();
-        const currentIdx = ids.indexOf(primaryId);
+        const currentIdx = ids.indexOf(primaryId ?? '');
         const step = evt.key === 'ArrowDown' ? 1 : -1;
         let nextIdx = currentIdx === -1
           ? (step > 0 ? 0 : ids.length - 1)
@@ -238,7 +244,8 @@ export default {
           useExplorerStore().setSelectedIds([nextId]);
         }
         this.$nextTick(() => {
-          const el = this.$refs.tree && this.$refs.tree
+          const treeElt = this.$refs.tree as HTMLElement | undefined;
+          const el = treeElt && treeElt
             .querySelector(`.explorer-node__item[data-node-id="${nextId}"]`);
           if (el) el.scrollIntoView({ block: 'nearest' });
         });
@@ -282,7 +289,7 @@ export default {
       if (!original) return;
       try {
         const localDbSvc = (await import('../services/localDbSvc')).default;
-        const content = await localDbSvc.loadItem(`${original.id}/content`);
+        const content = await localDbSvc.loadItem(`${original.id}/content`) as any;
         const copy = await workspaceSvc.createFile({
           name: `${original.name} (copy)`,
           parentId: original.parentId || null,
@@ -306,22 +313,22 @@ export default {
       // Route through the 'fake' sentinel so dragTargetNodeFolder → rootNode.
       this.setDragTarget(this.rootNode);
     },
-    onTreeDragLeave(evt) {
+    onTreeDragLeave(evt: DragEvent) {
       // Only clear when the drag genuinely leaves the tree, not when
       // moving into a descendant explorer-node. The per-row dragleave
       // no longer clears (Chrome fires the new row's dragenter BEFORE
       // the old row's dragleave, which would race-clear a freshly-set
       // target), so the tree-level handler is the single point that
       // resets when the cursor exits the explorer entirely.
-      if (evt.currentTarget.contains(evt.relatedTarget)) return;
-      this.setDragTarget();
+      if ((evt.currentTarget as Node).contains(evt.relatedTarget as Node | null)) return;
+      this.setDragTarget(undefined);
     },
-    async onTreeDrop(evt) {
-      this.setDragTarget();
+    async onTreeDrop(evt: DragEvent) {
+      this.setDragTarget(undefined);
 
       if (fileImportSvc.hasMarkdownPayload(evt.dataTransfer)) {
         try {
-          await fileImportSvc.importDataTransfer(evt.dataTransfer, null);
+          await fileImportSvc.importDataTransfer(evt.dataTransfer as DataTransfer, null);
         } catch (e) {
           console.error(e);
         }
@@ -332,7 +339,7 @@ export default {
       const { nodeMap } = useExplorerStore().nodeStructure;
       let folderMoved = false;
       let fileMoved = false;
-      sourceIds.forEach((sourceId) => {
+      sourceIds.forEach((sourceId: string) => {
         const sourceNode = nodeMap[sourceId];
         if (!sourceNode || sourceNode.isNil) return;
         if (sourceNode.item.parentId === null) return;
@@ -346,12 +353,12 @@ export default {
       if (folderMoved) badgeSvc.addBadge('moveFolder');
       else if (fileMoved) badgeSvc.addBadge('moveFile');
     },
-    onTreeMouseDown(evt) {
+    onTreeMouseDown(evt: MouseEvent) {
       if (evt.button !== 0) return;
       // Ignore clicks originating on a node — those are handled per-node and
       // participate in the native HTML5 drag start for reparenting.
-      if (evt.target.closest('.explorer-node__item, .explorer-node__item-editor')) return;
-      const treeElt = this.$refs.tree;
+      if ((evt.target as Element).closest('.explorer-node__item, .explorer-node__item-editor')) return;
+      const treeElt = this.$refs.tree as HTMLElement | undefined;
       if (!treeElt) return;
       const rect = treeElt.getBoundingClientRect();
       const startX = evt.clientX - rect.left + treeElt.scrollLeft;
@@ -362,7 +369,7 @@ export default {
         : [];
 
       let moved = false;
-      const onMove = (moveEvt) => {
+      const onMove = (moveEvt: MouseEvent) => {
         const cx = moveEvt.clientX - rect.left + treeElt.scrollLeft;
         const cy = moveEvt.clientY - rect.top + treeElt.scrollTop;
         const x = Math.min(startX, cx);
@@ -386,8 +393,8 @@ export default {
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onUp);
     },
-    commitMarquee(baseIds, additive) {
-      const treeElt = this.$refs.tree;
+    commitMarquee(baseIds: string[], additive: boolean) {
+      const treeElt = this.$refs.tree as HTMLElement | undefined;
       if (!treeElt || !this.marquee) return;
       const { x, y, w, h } = this.marquee;
       const left = x - treeElt.scrollLeft;
@@ -396,7 +403,7 @@ export default {
       const bottom = top + h;
       const treeRect = treeElt.getBoundingClientRect();
       const hit = new Set(additive ? baseIds : []);
-      treeElt.querySelectorAll('.explorer-node__item[data-node-id]').forEach((el) => {
+      treeElt.querySelectorAll('.explorer-node__item[data-node-id]').forEach((el: Element) => {
         const id = el.getAttribute('data-node-id');
         // Skip the virtual sentinels (Trash/Temp/Recent) and the bottom
         // spacer — same exclusions as visibleNodeIds. Selecting Recent would
@@ -417,7 +424,7 @@ export default {
   created() {
     this.$watch(
       () => useFileStore().current.id,
-      (currentFileId) => {
+      (currentFileId: string) => {
         useExplorerStore().setSelectedIds(currentFileId ? [currentFileId] : []);
         useExplorerStore().openNode(currentFileId);
       }, {
@@ -425,7 +432,7 @@ export default {
       },
     );
   },
-};
+});
 </script>
 
 <style lang="scss">

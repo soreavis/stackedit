@@ -16,15 +16,16 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../../stores/modal';
-import ModalInner from '../common/ModalInner';
-import FormEntry from '../common/FormEntry';
+import ModalInner from '../common/ModalInner.vue';
+import FormEntry from '../common/FormEntry.vue';
 
-const makeThumbnail = (url, size) => `${url}=s${size}`;
+const makeThumbnail = (url: string, size: number) => `${url}=s${size}`;
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
     FormEntry,
@@ -34,8 +35,15 @@ export default {
     size: '',
   }),
   computed: {
-    thumbnailUrl() {
-      return `url(${makeThumbnail(this.config.url, 320)})`;
+    // The modal store `config` getter is `ModalConfig | false`; this modal only
+    // renders when a modal is open, so `config` is always set here. Cast at the
+    // boundary so the GooglePhoto-specific fields (url/callback/resolve/reject)
+    // are accessible without changing the runtime guards.
+    cfg(): any {
+      return this.config;
+    },
+    thumbnailUrl(): string {
+      return `url(${makeThumbnail(this.cfg.url, 320)})`;
     },
     ...mapPiniaState(useModalStore, [
       'config',
@@ -43,7 +51,7 @@ export default {
   },
   methods: {
     resolve() {
-      let { url } = this.config;
+      let { url } = this.cfg;
       const size = parseInt(this.size, 10);
       if (!Number.isNaN(size)) {
         url = makeThumbnail(url, size);
@@ -51,17 +59,17 @@ export default {
       if (this.title) {
         url += ` "${this.title}"`;
       }
-      const { callback } = this.config;
-      this.config.resolve();
+      const { callback } = this.cfg;
+      this.cfg.resolve();
       callback(url);
     },
     reject() {
-      const { callback } = this.config;
-      this.config.reject();
+      const { callback } = this.cfg;
+      this.cfg.reject();
       callback(null);
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

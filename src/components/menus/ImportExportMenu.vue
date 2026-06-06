@@ -49,11 +49,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import TurndownService from 'turndown/lib/turndown.browser.umd';
 import htmlSanitizer from '../../libs/htmlSanitizer';
-import MenuEntry from './common/MenuEntry';
+import MenuEntry from './common/MenuEntry.vue';
 import Provider from '../../services/providers/common/Provider';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
@@ -80,16 +81,16 @@ const MARKDOWN_PATTERNS = [
   /^\s*---\s*$/m,
   /`[^`\n]+`/,
 ];
-const looksLikeMarkdown = (text) => {
+const looksLikeMarkdown = (text: string) => {
   if (!text || text.length < 3) return false;
   return MARKDOWN_PATTERNS.filter(re => re.test(text)).length >= 2;
 };
 
-const readFile = file => new Promise((resolve) => {
+const readFile = (file: File) => new Promise<string>((resolve) => {
   if (file) {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target.result;
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      const content = e.target!.result as string;
       if (content.match(/\uFFFD/)) {
         useNotificationStore().error('File is not readable.');
       } else {
@@ -100,7 +101,7 @@ const readFile = file => new Promise((resolve) => {
   }
 });
 
-export default {
+export default defineComponent({
   components: {
     MenuEntry,
   },
@@ -111,23 +112,23 @@ export default {
     },
   },
   methods: {
-    async onImportMarkdown(evt) {
-      const file = evt.target.files[0];
+    async onImportMarkdown(evt: Event) {
+      const file = (evt.target as HTMLInputElement).files![0];
       const content = await readFile(file);
       const item = await workspaceSvc.createFile({
-        ...Provider.parseContent(content),
+        ...Provider.parseContent(content, undefined as unknown as string),
         name: file.name,
       });
       useFileStore().setCurrentId(item.id);
       badgeSvc.addBadge('importMarkdown');
     },
-    async onImportHtml(evt) {
-      const file = evt.target.files[0];
+    async onImportHtml(evt: Event) {
+      const file = (evt.target as HTMLInputElement).files![0];
       const content = await readFile(file);
       const sanitizedContent = htmlSanitizer.sanitizeHtml(content)
         .replace(/&#160;/g, ' '); // Replace non-breaking spaces with classic spaces
       const item = await workspaceSvc.createFile({
-        ...Provider.parseContent(turndownService.turndown(sanitizedContent)),
+        ...Provider.parseContent(turndownService.turndown(sanitizedContent), undefined as unknown as string),
         name: file.name,
       });
       useFileStore().setCurrentId(item.id);
@@ -178,13 +179,13 @@ export default {
         const headingMatch = markdown.match(/^#{1,6}\s+(.+?)\s*$/m);
         const name = headingMatch ? headingMatch[1] : 'Clipboard';
         const item = await workspaceSvc.createFile({
-          ...Provider.parseContent(markdown),
+          ...Provider.parseContent(markdown, undefined as unknown as string),
           name,
         });
         useFileStore().setCurrentId(item.id);
         badgeSvc.addBadge('importClipboard');
       } catch (err) {
-        if (err && err.name === 'NotAllowedError') {
+        if (err && (err as Error).name === 'NotAllowedError') {
           useNotificationStore().error('Clipboard permission denied. Allow clipboard access and try again.');
         } else {
           useNotificationStore().error('Could not read clipboard.');
@@ -215,5 +216,5 @@ export default {
       } catch (e) { /* Cancel */ }
     },
   },
-};
+});
 </script>

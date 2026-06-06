@@ -32,15 +32,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import MenuEntry from './common/MenuEntry';
+import MenuEntry from './common/MenuEntry.vue';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import gitlabHelper from '../../services/providers/helpers/gitlabHelper';
 import { useModalStore } from '../../stores/modal';
 import { useWorkspaceStore } from '../../stores/workspace';
 
-export default {
+export default defineComponent({
   components: {
     MenuEntry,
   },
@@ -70,7 +71,7 @@ export default {
     },
     async addGitlabWorkspace() {
       try {
-        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' }) as any;
         const token = await gitlabHelper.addAccount(serverUrl, applicationId);
         useModalStore().open({
           type: 'gitlabWorkspace',
@@ -93,7 +94,7 @@ export default {
       } catch (e) { /* Cancel */ }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

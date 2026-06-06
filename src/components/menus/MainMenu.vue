@@ -120,11 +120,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import MenuEntry from './common/MenuEntry';
+import MenuEntry from './common/MenuEntry.vue';
 import providerRegistry from '../../services/providers/common/providerRegistry';
-import UserImage from '../UserImage';
+import UserImage from '../UserImage.vue';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import syncSvc from '../../services/syncSvc';
 import userSvc from '../../services/userSvc';
@@ -135,7 +136,7 @@ import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useDataStore } from '../../stores/data';
 
-export default {
+export default defineComponent({
   components: {
     MenuEntry,
     UserImage,
@@ -150,17 +151,18 @@ export default {
       return userSvc.getCurrentUserId();
     },
     workspaceLocationUrl() {
-      const provider = providerRegistry.providersById[this.currentWorkspace.providerId];
+      const provider = (providerRegistry as any)
+        .providersById[this.currentWorkspace.providerId as string];
       return provider.getWorkspaceLocationUrl(this.currentWorkspace);
     },
     workspaceCount() {
       return Object.keys(useWorkspaceStore().workspacesById).length;
     },
     syncLocationCount() {
-      return Object.keys(useSyncLocationStore().currentWithWorkspaceSyncLocation).length;
+      return Object.keys((useSyncLocationStore() as any).currentWithWorkspaceSyncLocation).length;
     },
     publishLocationCount() {
-      return Object.keys(usePublishLocationStore().current).length;
+      return Object.keys((usePublishLocationStore() as any).current).length;
     },
     hasCurrentFile() {
       return !!useFileStore().current.id;
@@ -170,10 +172,11 @@ export default {
     },
     accountCount() {
       return Object.values(useDataStore().tokensByType)
-        .reduce((count, tokensBySub) => count + Object.values(tokensBySub).length, 0);
+        .reduce((count: number, tokensBySub) => count + Object.values(tokensBySub).length, 0);
     },
     badgeCount() {
-      return useDataStore().allBadges.filter(badge => badge.isEarned).length;
+      return useDataStore().allBadges
+        .filter((badge) => (badge as { isEarned?: boolean }).isEarned).length;
     },
     featureCount() {
       return useDataStore().allBadges.length;
@@ -235,5 +238,5 @@ export default {
       useModalStore().open('about').catch(() => {});
     },
   },
-};
+});
 </script>

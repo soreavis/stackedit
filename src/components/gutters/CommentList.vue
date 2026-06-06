@@ -8,23 +8,26 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import Comment from './Comment';
-import NewComment from './NewComment';
+import Comment from './Comment.vue';
+import NewComment from './NewComment.vue';
 import editorSvc from '../../services/editorSvc';
 import utils from '../../services/utils';
 import { useDataStore } from '../../stores/data';
 import { useLayoutStore } from '../../stores/layout';
 import { useDiscussionStore } from '../../stores/discussion';
 
-export default {
+export default defineComponent({
   components: {
     Comment,
     NewComment,
   },
   data: () => ({
-    tops: {},
+    tops: {} as Record<string, number>,
+    scrollerElt: null as HTMLElement | null,
+    updateSticky: null as (() => void) | null,
   }),
   computed: {
     ...mapPiniaState(useLayoutStore, [
@@ -47,8 +50,8 @@ export default {
     ]),
     lastCommentsExcludingCurrent() {
       const comments = this.currentFileDiscussionLastComments;
-      const filtered = {};
-      Object.keys(comments).forEach((id) => {
+      const filtered: Record<string, any> = {};
+      Object.keys(comments).forEach((id: string) => {
         if (comments[id].discussionId !== this.currentDiscussionId) {
           filtered[id] = comments[id];
         }
@@ -79,9 +82,14 @@ export default {
       const layoutSettings = useDataStore().layoutSettings;
       const minTop = -2;
       let minCommentTop = minTop;
-      const getTop = (discussion, commentElt1, commentElt2, isCurrent) => {
-        const firstElt = commentElt1 || commentElt2;
-        const secondElt = commentElt1 && commentElt2;
+      const getTop = (
+        discussion: any,
+        commentElt1: HTMLElement | null | '' = null,
+        commentElt2: HTMLElement | null = null,
+        isCurrent?: boolean,
+      ): number => {
+        const firstElt = (commentElt1 || commentElt2) as HTMLElement;
+        const secondElt = (commentElt1 && commentElt2) as HTMLElement | null;
         const coordinates = layoutSettings.showEditor
           ? editorSvc.clEditor.selectionMgr.getCoordinates(discussion.end)
           : editorSvc.getPreviewOffsetCoordinates(editorSvc.getPreviewOffset(discussion.end));
@@ -109,23 +117,23 @@ export default {
       };
 
       // Get the discussion top coordinates
-      const tops = {};
+      const tops: Record<string, number> = {};
       const discussions = this.currentFileDiscussions;
       Object.entries(discussions)
-        .sort(([, discussion1], [, discussion2]) => discussion1.end - discussion2.end)
-        .forEach(([discussionId, discussion]) => {
+        .sort(([, discussion1]: [string, any], [, discussion2]: [string, any]) => discussion1.end - discussion2.end)
+        .forEach(([discussionId, discussion]: [string, any]) => {
           if (discussion === this.currentDiscussion || discussion === this.newDiscussion) {
             tops.current = getTop(
               discussion,
               this.currentDiscussionLastCommentId
-                && this.$el.querySelector(`.comment--${this.currentDiscussionLastCommentId}`),
-              this.$el.querySelector('.comment--new'),
+                && (this.$el.querySelector(`.comment--${this.currentDiscussionLastCommentId}`) as HTMLElement | null),
+              this.$el.querySelector('.comment--new') as HTMLElement | null,
               true,
             );
           } else {
             tops[discussionId] = getTop(
               discussion,
-              this.$el.querySelector(`.comment--discussion-${discussionId}`),
+              this.$el.querySelector(`.comment--discussion-${discussionId}`) as HTMLElement | null,
             );
           }
         });
@@ -140,41 +148,41 @@ export default {
     );
 
     const layoutSettings = useDataStore().layoutSettings;
-    this.scrollerElt = layoutSettings.showEditor
+    this.scrollerElt = (layoutSettings.showEditor
       ? editorSvc.editorElt.parentNode
-      : editorSvc.previewElt.parentNode;
+      : editorSvc.previewElt.parentNode) as HTMLElement;
 
     this.updateSticky = () => {
       let height = 0;
       let offsetTop = this.tops.current;
-      const lastCommentElt = this.$el.querySelector(`.comment--${this.currentDiscussionLastCommentId}`);
+      const lastCommentElt = this.$el.querySelector(`.comment--${this.currentDiscussionLastCommentId}`) as HTMLElement | null;
       if (lastCommentElt) {
         height += lastCommentElt.clientHeight;
         offsetTop += lastCommentElt.offsetTop;
       }
-      const newCommentElt = this.$el.querySelector('.comment--new');
+      const newCommentElt = this.$el.querySelector('.comment--new') as HTMLElement | null;
       if (newCommentElt) {
         height += newCommentElt.clientHeight;
       }
-      const currentDiscussionElt = document.querySelector('.current-discussion__inner');
-      const minOffsetTop = this.scrollerElt.scrollTop + 10;
-      const maxOffsetTop = (this.scrollerElt.scrollTop + this.scrollerElt.clientHeight) - height
+      const currentDiscussionElt = document.querySelector('.current-discussion__inner') as HTMLElement;
+      const minOffsetTop = this.scrollerElt!.scrollTop + 10;
+      const maxOffsetTop = (this.scrollerElt!.scrollTop + this.scrollerElt!.clientHeight) - height
         - currentDiscussionElt.clientHeight;
-      let stickyComment = null;
+      let stickyComment: string | null = null;
       if (offsetTop > maxOffsetTop || maxOffsetTop < minOffsetTop) {
         stickyComment = 'bottom';
       } else if (offsetTop < minOffsetTop) {
         stickyComment = 'top';
       }
-      if (useDiscussionStore().stickyComment !== stickyComment) {
-        useDiscussionStore().setStickyComment(stickyComment);
+      if ((useDiscussionStore().stickyComment as unknown) !== stickyComment) {
+        useDiscussionStore().setStickyComment(stickyComment as any);
       }
     };
 
-    this.scrollerElt.addEventListener('scroll', this.updateSticky);
+    this.scrollerElt!.addEventListener('scroll', this.updateSticky!);
     this.$watch(
       () => this.updateStickyTrigger,
-      () => this.updateSticky(),
+      () => this.updateSticky!(),
       { immediate: true },
     );
 
@@ -182,14 +190,16 @@ export default {
     if (!editorSvc.previewCtxWithDiffs) {
       editorSvc.$once('previewCtxWithDiffs', () => {
         this.updateTops();
-        this.updateSticky();
+        this.updateSticky!();
       });
     }
   },
   unmounted() {
-    this.scrollerElt.removeEventListener('scroll', this.updateSticky);
+    if (this.scrollerElt && this.updateSticky) {
+      this.scrollerElt.removeEventListener('scroll', this.updateSticky);
+    }
   },
-};
+});
 </script>
 
 <style lang="scss">

@@ -21,19 +21,20 @@
       <a target="_blank" rel="noopener noreferrer" href="/privacy.html">Privacy Policy</a>
     </div>
     <div class="modal__button-bar">
-      <button class="button button--resolve" @click="config.resolve()">Close</button>
+      <button class="button button--resolve" @click="cfg.resolve()">Close</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
-import ModalInner from './common/ModalInner';
+import ModalInner from './common/ModalInner.vue';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
 import faq from '../../data/faq.md?raw';
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
   },
@@ -44,11 +45,14 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
+    cfg(): any {
+      return this.config;
+    },
     faq() {
       return markdownConversionSvc.defaultConverter.render(faq);
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

@@ -16,13 +16,14 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import { useLayoutStore } from '../stores/layout';
 
-export default {
+export default defineComponent({
   data: () => ({
     maskY: 0,
     // Outline fold level: show headings up to and including H<foldLevel>.
@@ -35,18 +36,18 @@ export default {
     ]),
   },
   mounted() {
-    const tocElt = this.$el.querySelector('.toc__inner');
+    const tocElt = (this.$el as HTMLElement).querySelector('.toc__inner') as HTMLElement;
 
     // TOC click behaviour
-    let isMousedown;
-    function onClick(e) {
+    let isMousedown = false;
+    function onClick(e: MouseEvent) {
       if (!isMousedown) {
         return;
       }
       e.preventDefault();
       const y = e.clientY - tocElt.getBoundingClientRect().top;
 
-      editorSvc.previewCtx.sectionDescList.some((sectionDesc) => {
+      editorSvc.previewCtx.sectionDescList.some((sectionDesc: any) => {
         if (y >= sectionDesc.tocDimension.endOffset) {
           return false;
         }
@@ -68,11 +69,11 @@ export default {
     tocElt.addEventListener('mouseleave', () => {
       isMousedown = false;
     });
-    tocElt.addEventListener('mousedown', (e) => {
+    tocElt.addEventListener('mousedown', (e: MouseEvent) => {
       isMousedown = e.which === 1;
       onClick(e);
     });
-    tocElt.addEventListener('mousemove', (e) => {
+    tocElt.addEventListener('mousemove', (e: MouseEvent) => {
       onClick(e);
     });
 
@@ -99,7 +100,7 @@ export default {
       });
     });
   },
-};
+});
 </script>
 
 <style lang="scss">
