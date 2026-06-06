@@ -28,12 +28,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import { useDataStore } from '../stores/data';
 import { useGlobalStore } from '../stores/global';
 
-export default {
+export default defineComponent({
   computed: {
     ...mapPiniaState(useGlobalStore, [
       'light',
@@ -42,16 +43,22 @@ export default {
       'layoutSettings',
     ]),
   },
-  methods: mapPiniaActions(useDataStore, [
-    'toggleNavigationBar',
-    'toggleEditor',
-    'toggleSidePreview',
-    'toggleStatusBar',
-    'toggleFocusMode',
-    'toggleScrollSync',
-    'toggleLineNumbers',
-  ]),
-};
+  methods: {
+    ...mapPiniaActions(useDataStore, [
+      'toggleEditor',
+    ]),
+    // These layout-setting toggles accept an optional `value`; called with no
+    // argument they toggle the current setting. The store action types `value`
+    // as required, so wrap them with optional-arg signatures for the template's
+    // no-arg `@click` calls (passing `undefined` preserves the toggle behavior).
+    toggleNavigationBar(value?: unknown): void { useDataStore().toggleNavigationBar(value); },
+    toggleSidePreview(value?: unknown): void { useDataStore().toggleSidePreview(value); },
+    toggleStatusBar(value?: unknown): void { useDataStore().toggleStatusBar(value); },
+    toggleFocusMode(value?: unknown): void { useDataStore().toggleFocusMode(value); },
+    toggleScrollSync(value?: unknown): void { useDataStore().toggleScrollSync(value); },
+    toggleLineNumbers(value?: unknown): void { useDataStore().toggleLineNumbers(value); },
+  },
+});
 </script>
 
 <style lang="scss">

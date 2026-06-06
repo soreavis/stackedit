@@ -6,30 +6,32 @@
       </div>
       <p>Publish <b>{{ currentFileName }}</b> to your <b>GitLab</b> project.</p>
       <form-entry label="Project URL" error="projectUrl">
-        <input slot="field" class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> {{ config.token.serverUrl }}/path/to/project
         </div>
       </form-entry>
       <form-entry label="File path" error="path">
-        <input slot="field" class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> path/to/README.md<br>
           If the file exists, it will be overwritten.
         </div>
       </form-entry>
       <form-entry label="Branch" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="branch" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="branch" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If not supplied, the <code>main</code> branch will be used (use <code>master</code> for older repos).
         </div>
       </form-entry>
       <form-entry label="Template">
-        <select slot="field" class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
-          <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
-            {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
-          </option>
-        </select>
+        <template #field>
+          <select class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
+            <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
+              {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
+            </option>
+          </select>
+        </template>
         <div class="form-entry__actions">
           <a href="javascript:void(0)" @click="configureTemplates">Configure templates</a>
         </div>

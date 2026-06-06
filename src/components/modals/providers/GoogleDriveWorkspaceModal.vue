@@ -6,7 +6,7 @@
       </div>
       <p>Create a workspace synced with a <b>Google Drive</b> folder.</p>
       <form-entry label="Folder ID" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="folderId" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="folderId" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If not supplied, a new workspace folder will be created in your Drive root folder.
         </div>

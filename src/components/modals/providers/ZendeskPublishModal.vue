@@ -6,26 +6,28 @@
       </div>
       <p>Publish <b>{{ currentFileName }}</b> to your <b>Zendesk Help Center</b>.</p>
       <form-entry label="Section ID" error="sectionId">
-        <input slot="field" class="textfield" type="text" v-model.trim="sectionId" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="sectionId" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           https://example.zendesk.com/hc/en-us/sections/<b>21857469</b>-Section-name
         </div>
       </form-entry>
       <form-entry label="Existing article ID" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="articleId" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="articleId" @keydown.enter="resolve()"></template>
       </form-entry>
       <form-entry label="Locale" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="locale" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="locale" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Default:</b> en-us
         </div>
       </form-entry>
       <form-entry label="Template">
-        <select slot="field" class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
-          <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
-            {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
-          </option>
-        </select>
+        <template #field>
+          <select class="textfield" v-model="selectedTemplate" @keydown.enter="resolve()">
+            <option v-for="(template, id) in allTemplatesById" :key="id" :value="id">
+              {{ template.name }}{{ template.description ? ' · ' + template.description : '' }}
+            </option>
+          </select>
+        </template>
         <div class="form-entry__actions">
           <a href="javascript:void(0)" @click="configureTemplates">Configure templates</a>
         </div>

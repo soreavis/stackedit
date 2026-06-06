@@ -7,12 +7,12 @@
       <div class="side-bar__info" v-if="publishLocations.length">
         <p>{{ currentFileName }} is already published.</p>
         <menu-entry @click.native="requestPublish">
-          <icon-upload slot="icon"></icon-upload>
+          <template #icon><icon-upload></icon-upload></template>
           <div>Publish now</div>
           <span>Update publications for {{ currentFileName }}.</span>
         </menu-entry>
         <menu-entry @click.native="managePublish">
-          <icon-view-list slot="icon"></icon-view-list>
+          <template #icon><icon-view-list></icon-view-list></template>
           <div><div class="menu-entry__label menu-entry__label--count">{{ locationCount }}</div> File publication</div>
           <span>Manage publication locations for {{ currentFileName }}.</span>
         </menu-entry>
@@ -23,99 +23,100 @@
       <hr>
       <div v-for="token in bloggerTokens" :key="'blogger-' + token.sub">
         <menu-entry @click.native="publishBlogger(token)">
-          <icon-provider slot="icon" provider-id="blogger"></icon-provider>
+          <template #icon><icon-provider provider-id="blogger"></icon-provider></template>
           <div>Publish to Blogger</div>
           <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="publishBloggerPage(token)">
-          <icon-provider slot="icon" provider-id="bloggerPage"></icon-provider>
+          <template #icon><icon-provider provider-id="bloggerPage"></icon-provider></template>
           <div>Publish to Blogger Page</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in dropboxTokens" :key="token.sub">
         <menu-entry @click.native="publishDropbox(token)">
-          <icon-provider slot="icon" provider-id="dropbox"></icon-provider>
+          <template #icon><icon-provider provider-id="dropbox"></icon-provider></template>
           <div>Publish to Dropbox</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in githubTokens" :key="token.sub">
         <menu-entry @click.native="publishGist(token)">
-          <icon-provider slot="icon" provider-id="gist"></icon-provider>
+          <template #icon><icon-provider provider-id="gist"></icon-provider></template>
           <div>Publish to Gist</div>
           <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="publishGithub(token)">
-          <icon-provider slot="icon" provider-id="github"></icon-provider>
+          <template #icon><icon-provider provider-id="github"></icon-provider></template>
           <div>Publish to GitHub</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in gitlabTokens" :key="token.sub">
         <menu-entry @click.native="publishGitlab(token)">
-          <icon-provider slot="icon" provider-id="gitlab"></icon-provider>
+          <template #icon><icon-provider provider-id="gitlab"></icon-provider></template>
           <div>Publish to GitLab</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in googleDriveTokens" :key="token.sub">
         <menu-entry @click.native="publishGoogleDrive(token)">
-          <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+          <template #icon><icon-provider provider-id="googleDrive"></icon-provider></template>
           <div>Publish to Google Drive</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in wordpressTokens" :key="token.sub">
         <menu-entry @click.native="publishWordpress(token)">
-          <icon-provider slot="icon" provider-id="wordpress"></icon-provider>
+          <template #icon><icon-provider provider-id="wordpress"></icon-provider></template>
           <div>Publish to WordPress</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in zendeskTokens" :key="token.sub">
         <menu-entry @click.native="publishZendesk(token)">
-          <icon-provider slot="icon" provider-id="zendesk"></icon-provider>
+          <template #icon><icon-provider provider-id="zendesk"></icon-provider></template>
           <div>Publish to Zendesk Help Center</div>
           <span>{{ token.name }} — {{ token.subdomain }}</span>
         </menu-entry>
       </div>
       <hr>
       <menu-entry @click.native="addBloggerAccount">
-        <icon-provider slot="icon" provider-id="blogger"></icon-provider>
+        <template #icon><icon-provider provider-id="blogger"></icon-provider></template>
         <span>Add Blogger account</span>
       </menu-entry>
       <menu-entry @click.native="addDropboxAccount">
-        <icon-provider slot="icon" provider-id="dropbox"></icon-provider>
+        <template #icon><icon-provider provider-id="dropbox"></icon-provider></template>
         <span>Add Dropbox account</span>
       </menu-entry>
       <menu-entry @click.native="addGithubAccount">
-        <icon-provider slot="icon" provider-id="github"></icon-provider>
+        <template #icon><icon-provider provider-id="github"></icon-provider></template>
         <span>Add GitHub account</span>
       </menu-entry>
       <menu-entry @click.native="addGitlabAccount">
-        <icon-provider slot="icon" provider-id="gitlab"></icon-provider>
+        <template #icon><icon-provider provider-id="gitlab"></icon-provider></template>
         <span>Add GitLab account</span>
       </menu-entry>
       <menu-entry @click.native="addGoogleDriveAccount">
-        <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+        <template #icon><icon-provider provider-id="googleDrive"></icon-provider></template>
         <span>Add Google Drive account</span>
       </menu-entry>
       <menu-entry @click.native="addWordpressAccount">
-        <icon-provider slot="icon" provider-id="wordpress"></icon-provider>
+        <template #icon><icon-provider provider-id="wordpress"></icon-provider></template>
         <span>Add WordPress account</span>
       </menu-entry>
       <menu-entry @click.native="addZendeskAccount">
-        <icon-provider slot="icon" provider-id="zendesk"></icon-provider>
+        <template #icon><icon-provider provider-id="zendesk"></icon-provider></template>
         <span>Add Zendesk account</span>
       </menu-entry>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import MenuEntry from './common/MenuEntry';
+import MenuEntry from './common/MenuEntry.vue';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import dropboxHelper from '../../services/providers/helpers/dropboxHelper';
 import githubHelper from '../../services/providers/helpers/githubHelper';
@@ -123,27 +124,27 @@ import gitlabHelper from '../../services/providers/helpers/gitlabHelper';
 import wordpressHelper from '../../services/providers/helpers/wordpressHelper';
 import zendeskHelper from '../../services/providers/helpers/zendeskHelper';
 import publishSvc from '../../services/publishSvc';
-import { usePublishLocationStore } from '../../stores/publishLocation';
+import { usePublishLocationStore, PublishLocation } from '../../stores/publishLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useDataStore } from '../../stores/data';
 import { useQueueStore } from '../../stores/queue';
 
-const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
-  .filter(token => filter(token))
-  .sort((token1, token2) => token1.name.localeCompare(token2.name));
+const tokensToArray = (tokens: Record<string, any>, filter: (token: any) => boolean = () => true) => Object.values(tokens)
+  .filter((token: any) => filter(token))
+  .sort((token1: any, token2: any) => token1.name.localeCompare(token2.name));
 
-const publishModalOpener = (type, featureId) => async (token) => {
+const publishModalOpener = (type: string, featureId: string) => async (token: any) => {
   try {
     const publishLocation = await useModalStore().open({
       type,
       token,
-    });
-    publishSvc.createPublishLocation(publishLocation, featureId);
+    }) as PublishLocation;
+    publishSvc.createPublishLocation(publishLocation as any, featureId);
   } catch (e) { /* cancel */ }
 };
 
-export default {
+export default defineComponent({
   components: {
     MenuEntry,
   },
@@ -154,9 +155,11 @@ export default {
     ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
-    ...mapPiniaState(usePublishLocationStore, {
-      publishLocations: 'current',
-    }),
+    publishLocations(): unknown[] {
+      // current/currentWithWorkspaceSyncLocation are runtime getters on the
+      // location-store factory that aren't surfaced in its inferred type.
+      return (usePublishLocationStore() as any).current;
+    },
     locationCount() {
       return Object.keys(this.publishLocations).length;
     },
@@ -164,7 +167,7 @@ export default {
       return `"${useFileStore().current.name}"`;
     },
     bloggerTokens() {
-      return tokensToArray(useDataStore().googleTokensBySub, token => token.isBlogger);
+      return tokensToArray(useDataStore().googleTokensBySub, (token: any) => token.isBlogger);
     },
     dropboxTokens() {
       return tokensToArray(useDataStore().dropboxTokensBySub);
@@ -176,7 +179,7 @@ export default {
       return tokensToArray(useDataStore().gitlabTokensBySub);
     },
     googleDriveTokens() {
-      return tokensToArray(useDataStore().googleTokensBySub, token => token.isDrive);
+      return tokensToArray(useDataStore().googleTokensBySub, (token: any) => token.isDrive);
     },
     wordpressTokens() {
       return tokensToArray(useDataStore().wordpressTokensBySub);
@@ -224,7 +227,7 @@ export default {
     },
     async addGitlabAccount() {
       try {
-        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' }) as any;
         await gitlabHelper.addAccount(serverUrl, applicationId);
       } catch (e) { /* cancel */ }
     },
@@ -241,7 +244,7 @@ export default {
     },
     async addZendeskAccount() {
       try {
-        const { subdomain, clientId } = await useModalStore().open({ type: 'zendeskAccount' });
+        const { subdomain, clientId } = await useModalStore().open({ type: 'zendeskAccount' }) as any;
         await zendeskHelper.addAccount(subdomain, clientId);
       } catch (e) { /* cancel */ }
     },
@@ -255,5 +258,5 @@ export default {
     publishWordpress: publishModalOpener('wordpressPublish', 'publishToWordPress'),
     publishZendesk: publishModalOpener('zendeskPublish', 'publishToZendesk'),
   },
-};
+});
 </script>

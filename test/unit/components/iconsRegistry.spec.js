@@ -1,10 +1,15 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
-import Vue from 'vue';
+import { createApp } from 'vue';
 
-// Loading src/icons/index.js calls Vue.component(...) for every icon. This
-// spec verifies the registry is intact + the recently-added icons survive.
-import '../../../src/icons/index.js';
+// Vue 3: icons register on the app instance via app.use(icons) (the plugin's
+// install() calls app.component(...) for every icon), not the old global
+// Vue.component(). This spec verifies the registry is intact + the
+// recently-added icons survive.
+import icons from '../../../src/icons/index.js';
+
+const app = createApp({});
+app.use(icons);
 
 describe('icon registry', () => {
   // Spot-check the bundled icon set. If a future refactor accidentally drops
@@ -24,11 +29,10 @@ describe('icon registry', () => {
     'iconProvider',
   ];
 
-  it.each(expected)('registers %s globally', (name) => {
-    // Vue.component(name) returns the registered component constructor when
-    // the name was previously registered with the same call form. If not
-    // registered, the call returns undefined — that's the regression signal.
-    const ctor = Vue.component(name);
+  it.each(expected)('registers %s on the app', (name) => {
+    // app.component(name) (single arg) returns the registered component when
+    // the plugin registered it, or undefined otherwise — the regression signal.
+    const ctor = app.component(name);
     expect(ctor).toBeTruthy();
   });
 });

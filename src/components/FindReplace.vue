@@ -31,7 +31,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import { Cm6Marker } from '../services/editor/cm6/cm6MarkerClass';
@@ -40,20 +41,20 @@ import { useFindReplaceStore } from '../stores/findReplace';
 import EditorClassApplier from './common/EditorClassApplier';
 import { useDataStore } from '../stores/data';
 
-const accessor = (fieldName, setterName) => ({
+const accessor = (fieldName: string, setterName: string) => ({
   get() {
-    return useFindReplaceStore()[fieldName];
+    return (useFindReplaceStore() as any)[fieldName];
   },
-  set(value) {
-    useFindReplaceStore()[setterName](value);
+  set(value: any) {
+    (useFindReplaceStore() as any)[setterName](value);
   },
 });
 
-const computedLayoutSetting = key => ({
+const computedLayoutSetting = (key: string) => ({
   get() {
-    return useDataStore().layoutSettings[key];
+    return (useDataStore().layoutSettings as any)[key];
   },
-  set(value) {
+  set(value: any) {
     useDataStore().patchLayoutSettings({
       [key]: value,
     });
@@ -61,7 +62,15 @@ const computedLayoutSetting = key => ({
 });
 
 class DynamicClassApplier {
-  constructor(cssClass, offset, silent) {
+  startMarker: Cm6Marker;
+
+  endMarker: Cm6Marker;
+
+  classApplier?: any;
+
+  child?: any;
+
+  constructor(cssClass: string, offset: { start: number; end: number }, silent?: boolean) {
     this.startMarker = new Cm6Marker(offset.start);
     this.endMarker = new Cm6Marker(offset.end);
     editorSvc.clEditor.addMarker(this.startMarker);
@@ -86,10 +95,18 @@ class DynamicClassApplier {
   }
 }
 
-export default {
+export default defineComponent({
   data: () => ({
     findCount: 0,
     findPosition: 0,
+    classAppliers: {} as Record<string, DynamicClassApplier>,
+    debouncedHighlightOccurrences: (() => {}) as (() => void) & { cancel?: () => void },
+    state: null as string | null,
+    onKeyup: null as ((evt: KeyboardEvent) => void) | null,
+    onFocusIn: null as (() => void) | null,
+    searchRegex: null as any,
+    replaceRegex: null as RegExp | null,
+    selectedClassApplier: null as DynamicClassApplier | null,
   }),
   computed: {
     ...mapPiniaState(useFindReplaceStore, [
@@ -118,9 +135,11 @@ export default {
 
     // Last open changes trigger focus on text input and find occurence in selection
     this.$watch(() => this.lastOpen, () => {
-      const elt = this.$el.querySelector(`.find-replace__text-input--${this.type}`);
+      const elt = this.$el.querySelector(
+        `.find-replace__text-input--${this.type}`,
+      ) as HTMLInputElement;
       elt.focus();
-      elt.setSelectionRange(0, this[`${this.type}Text`].length);
+      elt.setSelectionRange(0, (this as any)[`${this.type}Text`].length);
       // Highlight and find in selection
       this.state = null;
       this.debouncedHighlightOccurrences();
@@ -129,10 +148,10 @@ export default {
     });
 
     // Close on escape
-    this.onKeyup = (evt) => {
+    this.onKeyup = (evt: KeyboardEvent) => {
       if (evt.which === 27) {
         // Esc key
-        useFindReplaceStore().setType();
+        useFindReplaceStore().setType(null);
       }
     };
     window.addEventListener('keyup', this.onKeyup);
@@ -142,22 +161,22 @@ export default {
       setTimeout(() => this.unselectClassApplier(), 15);
     window.addEventListener('focusin', this.onFocusIn);
   },
-  destroyed() {
+  unmounted() {
     // Unregister listeners
     editorSvc.clEditor.off('contentChanged', this.debouncedHighlightOccurrences);
-    window.removeEventListener('keyup', this.onKeyup);
-    window.removeEventListener('focusin', this.onFocusIn);
+    if (this.onKeyup) window.removeEventListener('keyup', this.onKeyup);
+    if (this.onFocusIn) window.removeEventListener('focusin', this.onFocusIn);
     this.state = 'destroyed';
     this.debouncedHighlightOccurrences();
   },
   methods: {
     highlightOccurrences() {
-      const oldClassAppliers = {};
+      const oldClassAppliers: Record<string, DynamicClassApplier> = {};
       Object.entries(this.classAppliers).forEach(([, classApplier]) => {
         const newKey = `${classApplier.startMarker.offset}:${classApplier.endMarker.offset}`;
         oldClassAppliers[newKey] = classApplier;
       });
-      const offsetList = [];
+      const offsetList: { start: number; end: number }[] = [];
       this.classAppliers = {};
       if (this.state !== 'destroyed' && this.findText) {
         try {
@@ -167,13 +186,14 @@ export default {
           }
           this.replaceRegex = new RegExp(this.searchRegex, this.findCaseSensitive ? 'm' : 'mi');
           this.searchRegex = new RegExp(this.searchRegex, this.findCaseSensitive ? 'gm' : 'gmi');
-          editorSvc.clEditor.getContent().replace(this.searchRegex, (...params) => {
+          editorSvc.clEditor.getContent().replace(this.searchRegex, (...params: any[]) => {
             const match = params[0];
             const offset = params[params.length - 2];
             offsetList.push({
               start: offset,
               end: offset + match.length,
             });
+            return match;
           });
           offsetList.forEach((offset, i) => {
             const key = `${offset.start}:${offset.end}`;
@@ -217,7 +237,7 @@ export default {
       const startOffset = Math.min(selectionMgr.selectionStart, selectionMgr.selectionEnd);
       const endOffset = Math.max(selectionMgr.selectionStart, selectionMgr.selectionEnd);
       const keys = Object.keys(this.classAppliers);
-      const finder = checker => (key) => {
+      const finder = (checker: (ca: DynamicClassApplier) => boolean) => (key: string) => {
         if (checker(this.classAppliers[key]) && selectedClassApplier !== this.classAppliers[key]) {
           this.selectedClassApplier = this.classAppliers[key];
           return true;
@@ -243,7 +263,9 @@ export default {
           start: this.selectedClassApplier.startMarker.offset,
           end: this.selectedClassApplier.endMarker.offset,
         });
-        selectionMgr.updateCursorCoordinates(this.$el.parentNode.clientHeight);
+        // updateCursorCoordinates was a cledit/pagedown selectionMgr method that
+        // no longer exists post-CM6 migration (it threw "is not a function").
+        // setSelectionStartEnd above now scrolls the match into view via CM6.
         // Deduce the findPosition
         Object.keys(this.classAppliers).forEach((key, i) => {
           if (this.selectedClassApplier !== this.classAppliers[key]) {
@@ -274,13 +296,13 @@ export default {
       }
     },
     close() {
-      useFindReplaceStore().setType();
+      useFindReplaceStore().setType(null);
     },
     onEscape() {
       editorSvc.clEditor.focus();
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

@@ -8,16 +8,20 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import utils from '../../../services/utils';
 
-export default {
+export default defineComponent({
   props: ['label', 'info', 'error'],
   data: () => ({
     uid: utils.uid(),
   }),
   mounted() {
-    this.$el.querySelector('input,select').id = this.uid;
+    const field = this.$el.querySelector('input,select');
+    if (field) {
+      field.id = this.uid;
+    }
   },
-};
+});
 </script>

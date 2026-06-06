@@ -10,29 +10,30 @@
       </a>
     </div>
     <div class="modal__button-bar">
-      <button class="button" @click="config.reject()">Cancel</button>
+      <button class="button" @click="cfg.reject()">Cancel</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
-import ModalInner from './common/ModalInner';
+import ModalInner from './common/ModalInner.vue';
 import utils from '../../services/utils';
 import { useWorkspaceStore } from '../../stores/workspace';
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
   },
   data() {
     const sponsorToken = useWorkspaceStore().sponsorToken;
-    const makeButton = (id, price, description, offer) => {
+    const makeButton = (id: string, price: string, description: string, offer?: string) => {
       const params = {
         cmd: '_s-xclick',
         hosted_button_id: id,
-        custom: sponsorToken.sub,
+        custom: sponsorToken?.sub,
       };
       return {
         id,
@@ -56,12 +57,15 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
+    cfg(): any {
+      return this.config;
+    },
   },
   methods: {
     sponsor() {
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

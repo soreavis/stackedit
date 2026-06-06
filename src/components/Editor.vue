@@ -19,11 +19,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
+import { defineComponent, markRaw } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import CommentList from './gutters/CommentList';
-import EditorNewDiscussionButton from './gutters/EditorNewDiscussionButton';
+import CommentList from './gutters/CommentList.vue';
+import EditorNewDiscussionButton from './gutters/EditorNewDiscussionButton.vue';
 import editorSvc from '../services/editorSvc';
 import { useFileStore } from '../stores/file';
 import { useDataStore } from '../stores/data';
@@ -31,7 +32,7 @@ import { useLayoutStore } from '../stores/layout';
 import { useDiscussionStore } from '../stores/discussion';
 import { isCm6FlagEnabled } from '../services/editor/cm6/cm6Flag';
 
-export default {
+export default defineComponent({
   components: {
     CommentList,
     EditorNewDiscussionButton,
@@ -44,6 +45,12 @@ export default {
     // section measurements; the spinner gives the user immediate
     // feedback that something is happening rather than a blank pre.
     loading: true,
+    // Non-reactive handles assigned in mounted()/beforeUnmount(). Declared
+    // here so TS knows the shape; wrapped in markRaw where they hold live
+    // disposables so Vue doesn't deep-proxy them.
+    cm6Handle: null as { dispose: () => void } | null,
+    loaderDismiss: null as (() => void) | null,
+    loaderUnwatch: null as (() => void) | null,
   }),
   computed: {
     ...mapPiniaState(useFileStore, [
@@ -53,9 +60,13 @@ export default {
       'styles',
     ]),
     ...mapPiniaState(useDataStore, [
-      'computedSettings',
       'layoutSettings',
     ]),
+    // computedSettings is a loose data-store getter typed `unknown`; expose
+    // it through an explicit computed so template member access type-resolves.
+    computedSettings(): any {
+      return useDataStore().computedSettings;
+    },
     editorTopPadding() {
       // Match the editor pre's top padding so the first line number
       // aligns with the first source line.
@@ -68,9 +79,9 @@ export default {
       // Lazy-load CM6 so flag-off users don't pay the ~250 KB chunk cost.
       import('../services/editor/cm6/cm6Editor').then(({ mountCm6Editor }) => {
         if (this.$refs.cm6Mount) {
-          this._cm6Handle = mountCm6Editor(this.$refs.cm6Mount, {
+          this.cm6Handle = markRaw(mountCm6Editor(this.$refs.cm6Mount as HTMLElement, {
             doc: '# CM6 sandbox\n\nStage 3 batch 1 — type here to verify the leaf editor works.\n',
-          });
+          }));
         }
       });
     }
@@ -89,15 +100,15 @@ export default {
     // feedback while a new file is read from IndexedDB + parsed +
     // decorated. Cached / small files load well under the show-delay
     // below, so quick switches never flash the overlay.
-    let showTimer = null;
-    let safetyTimer = null;
+    let showTimer: ReturnType<typeof setTimeout> | null = null;
+    let safetyTimer: ReturnType<typeof setTimeout> | null = null;
     const clearLoaderTimers = () => {
-      clearTimeout(showTimer);
-      clearTimeout(safetyTimer);
+      if (showTimer) clearTimeout(showTimer);
+      if (safetyTimer) clearTimeout(safetyTimer);
       showTimer = null;
       safetyTimer = null;
     };
-    const armLoader = (immediate) => {
+    const armLoader = (immediate: boolean) => {
       clearLoaderTimers();
       if (immediate) {
         this.loading = true;
@@ -109,7 +120,7 @@ export default {
       // even if something goes wrong, so the user is never stuck staring
       // at a blank pane.
       safetyTimer = setTimeout(() => {
-        clearTimeout(showTimer);
+        if (showTimer) clearTimeout(showTimer);
         showTimer = null;
         this.loading = false;
       }, 8000);
@@ -121,13 +132,13 @@ export default {
     // `sectionList` fires after the bridge's contentChanged handler runs
     // markdown parsing, so by then the editor shows real content.
     // Persistent listener — fires on every switch, not just the first.
-    this._loaderDismiss = dismissLoader;
+    this.loaderDismiss = dismissLoader;
     editorSvc.$on('sectionList', dismissLoader);
     // Re-arm whenever the open file changes. No file selected → no
     // spinner (EmptyDocument takes over the pane instead).
-    this._loaderUnwatch = this.$watch(
+    this.loaderUnwatch = this.$watch(
       () => useFileStore().currentId,
-      (id) => { if (id) armLoader(false); else dismissLoader(); },
+      (id: string | null) => { if (id) armLoader(false); else dismissLoader(); },
     );
     // The file open on mount is already loading: keep the initial overlay
     // (data.loading starts true) but arm the 8s safety; drop it if there
@@ -138,9 +149,9 @@ export default {
       this.loading = false;
     }
 
-    const editorElt = this.$el.querySelector('.editor__inner');
-    const onDiscussionEvt = cb => (evt) => {
-      let elt = evt.target;
+    const editorElt = this.$el.querySelector('.editor__inner') as HTMLElement;
+    const onDiscussionEvt = (cb: (discussionId: string) => void) => (evt: Event) => {
+      let elt = evt.target as (HTMLElement & { discussionId?: string }) | null;
       while (elt && elt !== editorElt) {
         // Cledit path: discussionId is a JS property on the wrap span.
         // CM6 path: data-discussion-id attribute on the decorated span.
@@ -149,11 +160,11 @@ export default {
           cb(id);
           return;
         }
-        elt = elt.parentNode;
+        elt = elt.parentNode as (HTMLElement & { discussionId?: string }) | null;
       }
     };
 
-    const classToggler = toggle => (discussionId) => {
+    const classToggler = (toggle: boolean) => (discussionId: string) => {
       Array.from(editorElt.getElementsByClassName(`discussion-editor-highlighting--${discussionId}`))
         .forEach(elt => elt.classList.toggle('discussion-editor-highlighting--hover', toggle));
       Array.from(document.getElementsByClassName(`comment--discussion-${discussionId}`))
@@ -173,9 +184,9 @@ export default {
     // makes an empty file editable by clicking anywhere in the pane, not
     // only on its single line. CM6 already handles clicks inside its own
     // box; the gutter (comments / new-discussion button) handles its own.
-    this.$el.addEventListener('mousedown', (evt) => {
+    this.$el.addEventListener('mousedown', (evt: MouseEvent) => {
       if (evt.button !== 0) return;
-      if (evt.target.closest('.cm-editor, .gutter, .editor__cm6-sandbox')) return;
+      if ((evt.target as HTMLElement).closest('.cm-editor, .gutter, .editor__cm6-sandbox')) return;
       const view = editorSvc.clEditor && editorSvc.clEditor.view;
       if (!view) return;
       const pos = view.posAtCoords({ x: evt.clientX, y: evt.clientY });
@@ -188,7 +199,7 @@ export default {
 
     this.$watch(
       () => useDiscussionStore().currentDiscussionId,
-      (discussionId, oldDiscussionId) => {
+      (discussionId: string | null, oldDiscussionId: string | null) => {
         if (oldDiscussionId) {
           editorElt.querySelectorAll(`.discussion-editor-highlighting--${oldDiscussionId}`)
             .forEach(elt => elt.classList.remove('discussion-editor-highlighting--selected'));
@@ -200,21 +211,21 @@ export default {
       },
     );
   },
-  beforeDestroy() {
-    if (this._cm6Handle) {
-      this._cm6Handle.dispose();
-      this._cm6Handle = null;
+  beforeUnmount() {
+    if (this.cm6Handle) {
+      this.cm6Handle.dispose();
+      this.cm6Handle = null;
     }
-    if (this._loaderUnwatch) {
-      this._loaderUnwatch();
-      this._loaderUnwatch = null;
+    if (this.loaderUnwatch) {
+      this.loaderUnwatch();
+      this.loaderUnwatch = null;
     }
-    if (this._loaderDismiss) {
-      editorSvc.$off('sectionList', this._loaderDismiss);
-      this._loaderDismiss = null;
+    if (this.loaderDismiss) {
+      editorSvc.$off('sectionList', this.loaderDismiss);
+      this.loaderDismiss = null;
     }
   },
-};
+});
 </script>
 
 <style lang="scss">

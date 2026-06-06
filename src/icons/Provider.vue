@@ -4,8 +4,10 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   props: ['providerId'],
   computed: {
     classState() {
@@ -29,7 +31,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

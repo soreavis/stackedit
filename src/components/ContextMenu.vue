@@ -10,11 +10,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import { useContextMenuStore } from '../stores/contextMenu';
+import { useContextMenuStore, ContextMenuItem } from '../stores/contextMenu';
 
-export default {
+export default defineComponent({
   computed: {
     ...mapPiniaState(useContextMenuStore, [
       'coordinates',
@@ -23,12 +24,12 @@ export default {
     ]),
   },
   methods: {
-    close(item = null) {
-      this.resolve(item);
+    close(item: ContextMenuItem | null = null) {
+      this.resolve(item ?? undefined);
       useContextMenuStore().close();
     },
   },
-};
+});
 </script>
 
 <style lang="scss">
