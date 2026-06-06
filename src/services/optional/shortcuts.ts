@@ -142,6 +142,17 @@ function collectExpansions(computedSettings: { shortcuts?: Record<string, Shortc
   });
 }
 
+// tinykeys v4 added a default `ignore` that skips keyboard events coming from
+// contenteditable / input / select / textarea elements (anything that isn't the
+// bound target). StackEdit binds to `window` and its primary surface is the CM6
+// contenteditable editor, so that default would swallow EVERY editor shortcut
+// (bold, italic, the command palette, …). Context-gating is already owned by
+// guard()/shortcutsAllowed() and the per-handler modal checks, so we replace the
+// default with one that keeps only the universally-correct guards (auto-repeat
+// and IME composition) — restoring the tinykeys v3 behaviour of firing while the
+// editor is focused.
+const tinykeysIgnore = (event: KeyboardEvent): boolean => event.repeat || event.isComposing;
+
 let unbindAll: () => void = () => {};
 
 watch(
@@ -162,7 +173,7 @@ watch(
       if (!binding) return;
       bindings[binding] = guard((methods as Record<string, () => void>)[method]);
     });
-    unbindAll = tinykeys(window, bindings);
+    unbindAll = tinykeys(window, bindings, { ignore: tinykeysIgnore });
     collectExpansions(computedSettings as { shortcuts?: Record<string, Shortcut | string> });
   }, { immediate: true },
 );
@@ -234,4 +245,4 @@ tinykeys(window, {
     e.preventDefault();
     useModalStore().open({ type: 'commandPalette', initialQuery: '' }).catch(() => {});
   },
-});
+}, { ignore: tinykeysIgnore });

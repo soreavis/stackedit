@@ -1,3 +1,12 @@
+// @vitest-environment jsdom
+//
+// These specs MUST run under jsdom, not the project-default happy-dom.
+// happy-dom's DOM traversal (TreeWalker / node-removal handling) is
+// incompatible with DOMPurify 3.4.8's sanitization walk — sibling nodes get
+// skipped after a removal, so the sanitizer appears to leak <script>/onclick/
+// javascript:. This is a happy-dom test-harness bug only: DOMPurify 3.4.8
+// sanitizes correctly in real browsers (verified live) and under jsdom (the
+// DOM DOMPurify itself tests against). See CHANGELOG / the dompurify bump.
 import { describe, it, expect } from 'vitest';
 import htmlSanitizer from '../../../src/libs/htmlSanitizer.js';
 
