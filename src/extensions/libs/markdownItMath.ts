@@ -2,7 +2,6 @@
 // math spans (per pandoc's math syntax) and emits `inline_math` /
 // `display_math` tokens. Rendering is done elsewhere by the KaTeX
 // extension.
-import type MarkdownIt from 'markdown-it';
 import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
 
 function texMath(state: StateInline, silent: boolean): boolean {
@@ -65,6 +64,6 @@ function texMath(state: StateInline, silent: boolean): boolean {
   return true;
 }
 
-export default function markdownItMath(md: MarkdownIt): void {
+export default function markdownItMath(md: any): void {
   md.inline.ruler.push('texMath', texMath);
 }

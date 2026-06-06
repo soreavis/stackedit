@@ -200,10 +200,10 @@ export default {
     // Delete the contentState
     useContentStateStore().deleteItem(`${fileId}/contentState`);
     // Delete sync locations
-    (((useSyncLocationStore() as any).groupedByFileId[fileId] || []) as Item[])
+    ((useSyncLocationStore().groupedByFileId[fileId] || []) as Item[])
       .forEach(item => useSyncLocationStore().deleteItem(item.id));
     // Delete publish locations
-    (((usePublishLocationStore() as any).groupedByFileId[fileId] || []) as Item[])
+    ((usePublishLocationStore().groupedByFileId[fileId] || []) as Item[])
       .forEach(item => usePublishLocationStore().deleteItem(item.id));
   },
 
@@ -297,7 +297,7 @@ export default {
     // Sanitize the workspace
     this.ensureUniqueLocations();
 
-    if (Object.keys((useSyncLocationStore() as any).currentWithWorkspaceSyncLocation).length > 1) {
+    if (Object.keys(useSyncLocationStore().currentWithWorkspaceSyncLocation).length > 1) {
       badgeSvc.addBadge('syncMultipleLocations');
     }
   },
@@ -311,7 +311,7 @@ export default {
     // Sanitize the workspace
     this.ensureUniqueLocations();
 
-    if (Object.keys((usePublishLocationStore() as any).current).length > 1) {
+    if (Object.keys(usePublishLocationStore().current).length > 1) {
       badgeSvc.addBadge('publishMultipleLocations');
     }
   },

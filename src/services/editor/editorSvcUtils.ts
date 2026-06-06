@@ -3,6 +3,7 @@ import { findContainer } from './sharedUtils';
 import animationSvc from '../animationSvc';
 import { useContentStateStore } from '../../stores/contentState';
 import { useLayoutStore } from '../../stores/layout';
+import { ScrollPosition } from '../../data/empties/emptyContentState';
 
 const diffMatchPatch = new DiffMatchPatch();
 
@@ -10,11 +11,6 @@ const diffMatchPatch = new DiffMatchPatch();
 // so `this` is editorSvc itself. Keep `this` typed loosely (`any`) since
 // the editorSvc surface is huge and cross-cutting.
 type EditorSvcThis = any;
-
-interface ScrollPosition {
-  sectionIdx: number;
-  posInSection: number;
-}
 
 export default {
   /**
@@ -48,7 +44,7 @@ export default {
    * Restore the scroll position from the current file content state.
    */
   restoreScrollPosition(this: EditorSvcThis): void {
-    const { scrollPosition }: { scrollPosition?: ScrollPosition } = (useContentStateStore() as any).current;
+    const { scrollPosition } = useContentStateStore().current;
     if (scrollPosition && this.previewCtxMeasured) {
       const sectionDesc = this.previewCtxMeasured.sectionDescList[scrollPosition.sectionIdx];
       if (sectionDesc) {

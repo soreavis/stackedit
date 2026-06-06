@@ -48,7 +48,7 @@ export const useFileStore = defineStore('file', {
       // without auto-expanding a currently-collapsed folder. The fallback
       // localDbSvc uses when currentId goes null; picking a file behind a
       // closed folder would pop it open in the explorer (disorienting).
-      const openNodes = (useExplorerStore() as any).openNodes as Record<string, boolean>;
+      const openNodes = useExplorerStore().openNodes as Record<string, boolean>;
       const foldersById = useFolderStore().itemsById as Record<string, Folder>;
       const isHidden = (file: FileItem): boolean => {
         let pid: string | null = file.parentId;
@@ -72,7 +72,7 @@ export const useFileStore = defineStore('file', {
       };
       const acceptable = (f: FileItem | undefined): boolean =>
         !!f && !isUnderTrash(f) && !isHidden(f);
-      const ids = (useDataStore() as any).lastOpenedIds as string[];
+      const ids = useDataStore().lastOpenedIds as string[];
       for (let i = 0; i < ids.length; i += 1) {
         const f = this.itemsById[ids[i]];
         if (acceptable(f)) return f;

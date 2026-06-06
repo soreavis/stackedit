@@ -2,7 +2,6 @@
 // — module-level state stays loosely typed (`any`) until cledit is
 // ported.
 import { watch } from 'vue';
-import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
 import DiffMatchPatch from 'diff-match-patch';
 import utils from '../utils';
 import diffUtils from '../diffUtils';
@@ -180,7 +179,7 @@ export default {
     const content = useContentStore().current;
     if (content) {
       removeDiscussionMarkers(); // Markers will be recreated on contentChanged
-      const contentState = (useContentStateStore() as any).current;
+      const contentState = useContentStateStore().current;
       const options = Object.assign({
         selectionStart: contentState.selectionStart,
         selectionEnd: contentState.selectionEnd,
