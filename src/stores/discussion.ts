@@ -57,7 +57,7 @@ export const useDiscussionStore = defineStore('discussion', {
       return currentDiscussionId === newDiscussionId ? newDiscussion : null;
     },
     currentFileDiscussionLastComments(): Record<string, Comment> {
-      const { discussions, comments } = useContentStore().current as { discussions: Record<string, Discussion>; comments: Record<string, Comment> };
+      const { discussions, comments } = (useContentStore() as any).current as { discussions: Record<string, Discussion>; comments: Record<string, Comment> };
       const discussionLastComments: Record<string, Comment> = {};
       Object.entries(comments).forEach(([, comment]) => {
         if (discussions[comment.discussionId]) {
@@ -75,7 +75,7 @@ export const useDiscussionStore = defineStore('discussion', {
       if (newDiscussion) {
         currentFileDiscussions[this.newDiscussionId as string] = newDiscussion;
       }
-      const { discussions } = useContentStore().current as { discussions: Record<string, Discussion> };
+      const { discussions } = (useContentStore() as any).current as { discussions: Record<string, Discussion> };
       Object.entries(this.currentFileDiscussionLastComments)
         .sort(([, lastComment1], [, lastComment2]) =>
           (lastComment1 as Comment).created - (lastComment2 as Comment).created)
@@ -92,7 +92,7 @@ export const useDiscussionStore = defineStore('discussion', {
     currentDiscussionComments(): Record<string, Comment> {
       const comments: Record<string, Comment> = {};
       if (this.currentDiscussion) {
-        const contentComments = (useContentStore().current as { comments: Record<string, Comment> }).comments;
+        const contentComments = ((useContentStore() as any).current as { comments: Record<string, Comment> }).comments;
         Object.entries(contentComments)
           .filter(([, comment]) =>
             comment.discussionId === this.currentDiscussionId)
@@ -155,7 +155,7 @@ export const useDiscussionStore = defineStore('discussion', {
       }
     },
     async createNewDiscussion(selection?: { start: number; end: number }): Promise<void> {
-      const loginToken = (useWorkspaceStore() as any).loginToken;
+      const loginToken = useWorkspaceStore().loginToken;
       if (!loginToken) {
         try {
           await useModalStore().open('signInForComment');
@@ -168,7 +168,7 @@ export const useDiscussionStore = defineStore('discussion', {
           await this.createNewDiscussion(selection);
         } catch (e) { /* cancel */ }
       } else if (selection) {
-        let text = (useContentStore().current as any).text.slice(selection.start, selection.end).trim();
+        let text = ((useContentStore() as any).current as any).text.slice(selection.start, selection.end).trim();
         const maxLength = 80;
         if (text.length > maxLength) {
           text = `${text.slice(0, maxLength - 1).trim()}…`;
@@ -177,8 +177,8 @@ export const useDiscussionStore = defineStore('discussion', {
       }
     },
     cleanCurrentFile({ filterComment, filterDiscussion }: { filterComment?: Comment; filterDiscussion?: Discussion } = {}): void {
-      const { discussions } = useContentStore().current as { discussions: Record<string, Discussion> };
-      const { comments } = useContentStore().current as { comments: Record<string, Comment> };
+      const { discussions } = (useContentStore() as any).current as { discussions: Record<string, Discussion> };
+      const { comments } = (useContentStore() as any).current as { comments: Record<string, Comment> };
       const patch = {
         discussions: {} as Record<string, Discussion>,
         comments: {} as Record<string, Comment>,

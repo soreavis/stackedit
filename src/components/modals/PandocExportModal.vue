@@ -53,7 +53,7 @@ export default defineComponent({
     async resolve() {
       this.config.resolve();
       const currentFile = useFileStore().current;
-      const currentContent = useContentStore().current;
+      const currentContent = (useContentStore() as any).current;
       const { selectedFormat } = this;
       useQueueStore().enqueue(async () => {
         useNotificationStore().info(`Exporting to ${selectedFormat}…`);

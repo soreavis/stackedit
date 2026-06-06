@@ -221,11 +221,11 @@ export const useExplorerStore = defineStore('explorer', {
         node.parentNode = parentNode;
       });
 
-      const localSettings = ((useDataStore() as any).localSettings || {}) as Record<string, unknown>;
+      const localSettings = (useDataStore().localSettings || {}) as Record<string, unknown>;
       const sortMode = (localSettings.explorerSort as string) || 'name';
       const pinnedFolderIds = (localSettings.pinnedFolderIds as Record<string, boolean>) || {};
-      const lastOpened = ((useDataStore() as any).lastOpened || {}) as LastOpenedMap;
-      const lastCreated = ((useDataStore() as any).lastCreated || {}) as LastCreatedMap;
+      const lastOpened = (useDataStore().lastOpened || {}) as LastOpenedMap;
+      const lastCreated = (useDataStore().lastCreated || {}) as LastCreatedMap;
       const comparator = makeComparator(sortMode, lastOpened, lastCreated, pinnedFolderIds);
       rootNode.sortChildren(comparator);
 

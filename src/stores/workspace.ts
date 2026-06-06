@@ -33,7 +33,7 @@ export const useWorkspaceStore = defineStore('workspace', {
     workspacesById(): Record<string, Workspace> {
       const workspacesById: Record<string, Workspace> = {};
       const mainWorkspaceToken = this.mainWorkspaceToken as Token | undefined;
-      Object.entries((useDataStore() as any).workspaces as Record<string, Workspace>).forEach(([id, workspace]) => {
+      Object.entries(useDataStore().workspaces as Record<string, Workspace>).forEach(([id, workspace]) => {
         const sanitizedWorkspace: Workspace = {
           id,
           providerId: 'googleDriveAppData',
@@ -73,7 +73,7 @@ export const useWorkspaceStore = defineStore('workspace', {
     },
     mainWorkspaceToken(): Token | null {
       const result = utils.someResult(
-        Object.values((useDataStore() as any).googleTokensBySub as Record<string, Token>),
+        Object.values(useDataStore().googleTokensBySub as Record<string, Token>),
         (token: Token) => {
           if (token.isLogin) return token;
           return null;
@@ -106,7 +106,7 @@ export const useWorkspaceStore = defineStore('workspace', {
       }
     },
     loginToken(): Token | undefined {
-      const tokensBySub = (useDataStore() as any).tokensByType[this.loginType] as Record<string, Token> | undefined;
+      const tokensBySub = useDataStore().tokensByType[this.loginType] as Record<string, Token> | undefined;
       return tokensBySub && tokensBySub[this.currentWorkspace.sub as string];
     },
     sponsorToken(): Token | null {
@@ -121,15 +121,15 @@ export const useWorkspaceStore = defineStore('workspace', {
       this.lastFocus = value;
     },
     removeWorkspace(id: string): void {
-      const workspaces = { ...((useDataStore() as any).workspaces as Record<string, Workspace>) };
+      const workspaces = { ...(useDataStore().workspaces as Record<string, Workspace>) };
       delete workspaces[id];
-      (useDataStore() as any).setItem({ id: 'workspaces', data: workspaces });
+      useDataStore().setItem({ id: 'workspaces', data: workspaces });
     },
     patchWorkspacesById(workspaces: Record<string, Workspace>): void {
       const sanitizedWorkspaces: Record<string, Workspace> = {};
       Object
         .entries({
-          ...((useDataStore() as any).workspaces as Record<string, Workspace>),
+          ...(useDataStore().workspaces as Record<string, Workspace>),
           ...workspaces,
         })
         .forEach(([id, workspace]) => {
@@ -140,7 +140,7 @@ export const useWorkspaceStore = defineStore('workspace', {
             locationUrl: undefined,
           };
         });
-      (useDataStore() as any).setItem({ id: 'workspaces', data: sanitizedWorkspaces });
+      useDataStore().setItem({ id: 'workspaces', data: sanitizedWorkspaces });
     },
     setCurrentWorkspaceId(value: string | null): void {
       this.setCurrentWorkspaceIdRaw(value);

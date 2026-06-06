@@ -55,9 +55,9 @@ function throttle(func: () => any, wait: number): void {
 // CM6 doesn't have per-section DOM); section preview offsets come from
 // the rendered HTML's `offsetTop` (just like the original).
 const doScrollSync = (): void => {
-  const localSkipAnimation = skipAnimation || !(useLayoutStore() as any).styles.showSidePreview;
+  const localSkipAnimation = skipAnimation || !useLayoutStore().styles.showSidePreview;
   skipAnimation = false;
-  if (!(useDataStore() as any).layoutSettings.scrollSync || sectionDescList.length === 0) {
+  if (!useDataStore().layoutSettings.scrollSync || sectionDescList.length === 0) {
     return;
   }
   let editorScrollTop = editorScrollerElt.scrollTop;
@@ -93,7 +93,7 @@ const doScrollSync = (): void => {
           isPreviewMoving = true;
         });
     }, localSkipAnimation ? 500 : 10);
-  } else if (!(useLayoutStore() as any).styles.showEditor || isScrollPreview) {
+  } else if (!useLayoutStore().styles.showEditor || isScrollPreview) {
     isScrollPreview = false;
     previewScrollTop += SCROLL_OFFSET;
     sectionDescList.some((sectionDesc: any) => {
@@ -133,11 +133,11 @@ const forceScrollSync = (): void => {
     doScrollSync();
   }
 };
-watch(() => (useDataStore() as any).layoutSettings.scrollSync, forceScrollSync);
+watch(() => useDataStore().layoutSettings.scrollSync, forceScrollSync);
 
 function isOverlayEnabled(): boolean {
   try {
-    const settings = (useDataStore() as any).computedSettings;
+    const settings = useDataStore().computedSettings as any;
     if (settings && settings.debug && typeof settings.debug.scrollSyncOverlay === 'boolean') {
       return settings.debug.scrollSyncOverlay;
     }
@@ -250,7 +250,7 @@ function mountSyncDebugOverlay(): void {
 watch(
   () => {
     try {
-      return !!(useDataStore() as any).computedSettings?.debug?.scrollSyncOverlay;
+      return !!(useDataStore().computedSettings as any)?.debug?.scrollSyncOverlay;
     } catch {
       return false;
     }
@@ -325,7 +325,7 @@ watch(
 
 (editorSvc as any).$on('previewCtx', () => {
   // Assume the user is writing in the editor
-  isScrollEditor = (useLayoutStore() as any).styles.showEditor;
+  isScrollEditor = useLayoutStore().styles.showEditor;
   // A preview scrolling event can occur if height is smaller
   timeoutId = setTimeout(() => {
     isPreviewRefreshing = false;
@@ -333,7 +333,7 @@ watch(
 });
 
 watch(
-  () => (useLayoutStore() as any).styles.showEditor,
+  () => useLayoutStore().styles.showEditor,
   (showEditor: boolean) => {
     isScrollEditor = showEditor;
     isScrollPreview = !showEditor;

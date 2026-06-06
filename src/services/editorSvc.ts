@@ -127,7 +127,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
         return this.parsingCtx.sections;
       },
       getCursorFocusRatio: (): number => {
-        if ((useDataStore() as any).layoutSettings.focusMode) {
+        if (useDataStore().layoutSettings.focusMode) {
           return 1;
         }
         return 0.15;
@@ -517,7 +517,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
     }, 100);
 
     let imgEltsToCache: any[] = [];
-    if ((useDataStore() as any).computedSettings.editor.inlineImages) {
+    if ((useDataStore().computedSettings as any).editor.inlineImages) {
       this.clEditor.highlighter.on('sectionHighlighted', (section: any) => {
         Array.from(section.elt.getElementsByClassName('token img')).forEach((imgTokenElt: any) => {
           const srcElt = imgTokenElt.querySelector('.token.cl-src');
@@ -592,7 +592,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
     watch(
       () => (useContentStore() as any).currentChangeTrigger,
       () => {
-        const content: any = useContentStore().current;
+        const content: any = (useContentStore() as any).current;
         // Track ID changes
         let initClEditor = false;
         if (content.id !== lastContentId) {
@@ -623,14 +623,14 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
 
     // Disable editor if hidden or if no content is loaded
     watch(
-      () => (useContentStore() as any).isCurrentEditable,
+      () => useContentStore().isCurrentEditable,
       (editable: any) => this.clEditor.toggleEditable(!!editable), {
         immediate: true,
       },
     );
 
     watch(
-      () => utils.serializeObject((useLayoutStore() as any).styles),
+      () => utils.serializeObject(useLayoutStore().styles),
       () => this.measureSectionDimensions(false, true, true),
     );
 

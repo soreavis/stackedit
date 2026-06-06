@@ -155,9 +155,9 @@ export const useDataStore = defineStore('data', {
     syncDataById(state) { return getById(state, 'syncData') as Record<string, { itemId: string; [k: string]: unknown }>; },
     syncDataByItemId(): Record<string, { itemId: string; [k: string]: unknown }> {
       const result: Record<string, { itemId: string; [k: string]: unknown }> = {};
-      const isGit = (useWorkspaceStore() as any).currentWorkspaceIsGit as boolean;
+      const isGit = useWorkspaceStore().currentWorkspaceIsGit as boolean;
       if (isGit) {
-        Object.entries((useGlobalStore() as any).gitPathsByItemId as Record<string, string>).forEach(([id, path]) => {
+        Object.entries(useGlobalStore().gitPathsByItemId as Record<string, string>).forEach(([id, path]) => {
           const entry = this.syncDataById[path];
           if (entry) result[id] = entry;
         });
@@ -247,16 +247,16 @@ export const useDataStore = defineStore('data', {
       this.setSideBarPanel();
       this.toggleLayoutSetting('showSideBar', value, 'toggleSideBar');
       if (this.layoutSettings.showSideBar
-        && notEnoughSpace((useLayoutStore() as any).constants as LayoutConstants,
-          (useDiscussionStore() as any).currentDiscussion)) {
+        && notEnoughSpace(useLayoutStore().constants as LayoutConstants,
+          useDiscussionStore().currentDiscussion)) {
         this.patchLayoutSettings({ showExplorer: false });
       }
     },
     toggleExplorer(value: unknown): void {
       this.toggleLayoutSetting('showExplorer', value, 'toggleExplorer');
       if (this.layoutSettings.showExplorer
-        && notEnoughSpace((useLayoutStore() as any).constants as LayoutConstants,
-          (useDiscussionStore() as any).currentDiscussion)) {
+        && notEnoughSpace(useLayoutStore().constants as LayoutConstants,
+          useDiscussionStore().currentDiscussion)) {
         this.patchLayoutSettings({ showSideBar: false });
       }
     },

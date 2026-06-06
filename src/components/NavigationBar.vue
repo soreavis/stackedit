@@ -243,7 +243,7 @@ export default defineComponent({
     metaParts() {
       const current = useFileStore().current;
       if (!current || !current.id) return null;
-      const content = useContentStore().current;
+      const content = (useContentStore() as any).current;
       const text = (content && content.text) || '';
       const bytes = new Blob([text]).size;
       const words = text.trim() ? text.trim().split(/\s+/).length : 0;
