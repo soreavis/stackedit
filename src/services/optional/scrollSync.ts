@@ -262,12 +262,6 @@ watch(
   { immediate: true },
 );
 
-// Track the editor `scrollHeight` we last re-measured against. CM6 grows
-// `scrollHeight` as it incrementally measures lines that come into the
-// viewport; once that delta exceeds `RESCALE_THRESHOLD_PX` the cached
-// section offsets (which were scaled to the old scrollHeight) need a
-// fresh re-measurement. Without this, drift accumulates as the user
-// scrolls deeper into the doc and never recovers.
 
 (editorSvc as any).$on('inited', () => {
   editorScrollerElt = (editorSvc as any).editorElt.parentNode;
@@ -310,11 +304,8 @@ watch(
 //
 // `sectionUtils.measureSectionDimensions` now derives editor section
 // heights deterministically from the source content (line type ×
-// known CSS pixel heights) and scales to the live scrollHeight, and
-// `maybeRescaleEditorOffsets` re-runs that measurement on the fly
-// whenever scrollHeight drifts past 50px from its last cached value as
-// CM6 incrementally measures new lines under scroll. So we no longer
-// depend on the heightmap being fully populated up-front, and the
+// known CSS pixel heights) and scales to the live scrollHeight, so we no
+// longer depend on the heightmap being fully populated up-front, and the
 // warmup is pure cost. Removed.
 
 (editorSvc as any).$on('sectionList', () => {
