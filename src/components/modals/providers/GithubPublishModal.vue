@@ -44,19 +44,24 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import githubProvider from '../../../services/providers/githubProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
+import templatePickerModal from '../common/templatePickerModal';
 import utils from '../../../services/utils';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal, templatePickerModal],
   data: () => ({
     branch: '',
     path: '',
+    templateSettingId: 'githubPublishTemplate',
   }),
-  computedLocalSettings: {
-    repoUrl: 'githubRepoUrl',
-    selectedTemplate: 'githubPublishTemplate',
+  computed: {
+    repoUrl: localSetting('githubRepoUrl'),
+    selectedTemplate: localSetting('githubPublishTemplate'),
   },
   created() {
     this.path = `${this.currentFileName}.md`;
@@ -72,7 +77,7 @@ export default modalTemplate({
       }
       if (parsedRepo && this.path) {
         // Return new location
-        const location = githubProvider.makeLocation(
+        const location = (githubProvider as any).makeLocation(
           this.config.token,
           parsedRepo.owner,
           parsedRepo.repo,

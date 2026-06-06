@@ -28,17 +28,20 @@
   </modal-inner>
 </template>
 
-<script>
-import modalTemplate from '../common/modalTemplate';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 import constants from '../../../data/constants';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     redirectUrl: constants.oauth2RedirectUri,
   }),
-  computedLocalSettings: {
-    siteUrl: 'zendeskSiteUrl',
-    clientId: 'zendeskClientId',
+  computed: {
+    siteUrl: localSetting('zendeskSiteUrl'),
+    clientId: localSetting('zendeskClientId'),
   },
   methods: {
     resolve() {

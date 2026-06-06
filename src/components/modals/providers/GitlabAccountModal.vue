@@ -6,7 +6,7 @@
       </div>
       <p>Link your <b>GitLab</b> account to <b>StackEdit</b>.</p>
       <form-entry label="GitLab URL" error="serverUrl">
-        <template #field v-if="config.forceServerUrl"><input class="textfield" type="text" disabled="disabled" v-model="config.forceServerUrl"></template>
+        <template #field v-if="config.forceServerUrl"><input class="textfield" type="text" :disabled="true" v-model="config.forceServerUrl"></template>
         <template #field v-else><input class="textfield" type="text" v-model.trim="serverUrl" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> https://gitlab.example.com/
@@ -29,17 +29,20 @@
   </modal-inner>
 </template>
 
-<script>
-import modalTemplate from '../common/modalTemplate';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 import constants from '../../../data/constants';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     redirectUrl: constants.oauth2RedirectUri,
   }),
-  computedLocalSettings: {
-    serverUrl: 'gitlabServerUrl',
-    applicationId: 'gitlabApplicationId',
+  computed: {
+    serverUrl: localSetting('gitlabServerUrl'),
+    applicationId: localSetting('gitlabApplicationId'),
   },
   methods: {
     resolve() {
