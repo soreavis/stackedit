@@ -14,23 +14,23 @@ jobs:
     name: Build + Unit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Use Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
 
       - name: Install
-        # --legacy-peer-deps required: some Vue-2-era devDeps have old peers
-        # that npm 9+ refuses without the flag. Also matches vercel.json.
+        # --legacy-peer-deps required: a few transitive peers still lag the
+        # toolchain and npm 9+ refuses without the flag. Also matches vercel.json.
         run: npm ci --legacy-peer-deps
 
       - name: Lint
         run: npm run lint
 
-      - name: Typecheck (api/ + services/)
+      - name: Typecheck (vue-tsc, whole tree)
         run: npm run typecheck
 
       - name: Build
