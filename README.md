@@ -6,7 +6,7 @@
 ![Node](https://img.shields.io/badge/node-22.x-green?logo=nodedotjs&logoColor=white)
 ![Vue 3](https://img.shields.io/badge/vue-3.5-42b883?logo=vuedotjs&logoColor=white)
 ![Vite](https://img.shields.io/badge/vite-8.0-646cff?logo=vite&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-479_passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-480_passing-brightgreen)
 
 > **Full-featured, open-source Markdown editor** descended from [PageDown](https://code.google.com/archive/p/pagedown/), the Markdown library originally written for Stack Overflow and the other Stack Exchange sites. Modernized for Vercel deployment, hardened, and actively maintained.
 
@@ -37,17 +37,20 @@ A modernization + hardening pass on top of upstream's last shipped version (5.15
 
 | Area | Upstream | Fork |
 |---|---|---|
-| Bundler | Webpack 2 | **Vite 7.3** |
+| Framework | Vue 2.7 | **Vue 3.5** |
+| State management | Vuex 3 | **Pinia 3** |
+| Editor core | forked PageDown | **CodeMirror 6** |
+| Bundler | Webpack 2 | **Vite 8.0** (Rolldown + Oxc) |
 | Dev server | webpack-dev-server | Vite with HMR |
-| Test runner | Jest (broken on modern Node) | **Vitest 4** + happy-dom 20 |
-| Linter | ESLint 4 | **ESLint 9** flat config + `eslint-plugin-vue` 10 |
+| Test runner | Jest (broken on modern Node) | **Vitest 4** + happy-dom 20 (+ jsdom for sanitizer specs) |
+| Linter | ESLint 4 | **ESLint 10** flat config + `eslint-plugin-vue` 10 + `@typescript-eslint` |
 | Node target | 10.x | **22.x** |
 | Sass | node-sass (deprecated) + `@import` | **Dart Sass** with `@use` / `math.div` / `color.adjust` |
 | CSS baseline | `normalize-scss` | `modern-normalize` |
 | PWA | workbox via webpack plugin | `vite-plugin-pwa` 1.x |
-| Source language | JavaScript | **JavaScript + TypeScript** (all `api/` + `src/services/` ported to TS) |
+| Source language | JavaScript | **TypeScript** — all `.vue` components, `api/`, and `src/services/` (templates type-checked by `vue-tsc`) |
 
-Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB**). Mermaid is lazy-loaded; the template worker is a separate chunk; Vue aliased to the runtime-only build so the `parseHTML` ReDoS parser is dead-code-eliminated from the shipped bundle.
+Bundle: main chunk went from **2.8 MB → ~545 KB** (gzipped **828 KB → ~152 KB**), with `@vue/*` + Pinia split into a dedicated `vue` chunk. Mermaid, KaTeX, and the CodeMirror 6 editor are lazy-loaded; the template worker is a separate chunk.
 
 ### Deploy
 
@@ -75,8 +78,8 @@ Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB*
 
 - **Removed ~50 webpack-era devDeps** (loaders, gulp, node-sass, stylelint, etc.) — Vite handles those natively.
 - **Removed unused runtime deps**: `aws-sdk`, `request`, `body-parser`, `compression`, `serve-static`, `tmp`, `google-id-token-verifier`, `indexeddbshim`, `babel-runtime`.
-- **Replaced** (Nov 2025 pass): `mousetrap@1.6.5` (unmaintained, last release Jan 2020) → **tinykeys 3**; `file-saver` 1 → 2; `bezier-easing` 2 → 3; legacy `markdown-it-imsize` fork → in-repo shim; custom clipboard plugins → native async Clipboard API.
-- **Bumped**: Mermaid 11, KaTeX 0.16, Prism 1.30, happy-dom 20, DOMPurify 3.4, `vite-plugin-pwa` 1.2, Vite 7.3, Vitest 4.1.
+- **Replaced**: `mousetrap@1.6.5` (unmaintained, last release Jan 2020) → **tinykeys 4**; `file-saver` 1 → 2; `bezier-easing` 2 → 3; legacy `markdown-it-imsize` fork → in-repo shim; custom clipboard plugins → native async Clipboard API.
+- **Bumped**: Mermaid 11, KaTeX 0.17, Prism 1.30, markdown-it 14, happy-dom 20, DOMPurify 3.4, `vite-plugin-pwa` 1.3, Vite 8, Vitest 4.1.
 
 ### Features added on top of 5.15.4
 
@@ -90,11 +93,11 @@ Bundle: main chunk went from **2.8 MB → 595 KB** (gzipped **828 KB → 154 KB*
 ### Bug fixes specific to this codebase
 
 - **Scroll-sync regression** (bezier-easing v3 dropped the v2 `.get()` / `.toCSS()` methods). `animationSvc` re-attaches them as shims on the returned function so the animation loop doesn't throw on every frame.
-- **Shortcuts init TDZ** ReferenceError at module load — hoisted the `expansions` const above its `immediate: true` watcher in `shortcuts.js`.
+- **Shortcuts init TDZ** ReferenceError at module load — hoisted the `expansions` const above its `immediate: true` watcher in `shortcuts.ts`.
 
 ### Tests
 
-- **353 specs** across 22 files under `test/unit/`. Hardening specs (`test/unit/hardening/`) cover: sanitizer XSS vectors, rate limiter, API handlers, GitHub OAuth PKCE, template worker sandbox, `vercel.json` contract, markdown-it plugins (including the rule-disable regression for `options.{fence,table,del}`), drag-and-drop markdown import, mermaid lightbox pan/zoom/copy. Component specs (`test/unit/components/`) cover: `defaultLocalSettings` invariants, the icon registry, the `simpleModals` registry shape, the `customToolbarButtons` + `pagedownButtons` shape, and the modal Vuex module's open/reject/stack/hideUntil flows.
+- **480 specs** under `test/unit/`. Hardening specs (`test/unit/hardening/`) cover: sanitizer XSS vectors, rate limiter, API handlers, GitHub OAuth PKCE, template worker sandbox, `vercel.json` contract, markdown-it plugins (including the rule-disable regression for `options.{fence,table,del}`), drag-and-drop markdown import, mermaid lightbox pan/zoom/copy. Component specs (`test/unit/components/`) cover: `defaultLocalSettings` invariants, the icon registry, the `simpleModals` registry shape, the `customToolbarButtons` + `pagedownButtons` shape, the modal Pinia store's open/reject/stack/hideUntil flows, and a Modal focus-trap regression guard.
 - Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (KaTeX, Mermaid, YAML front-matter, API curl recipes, sanitizer vectors).
 
 ### Release & versioning
@@ -143,7 +146,7 @@ This codebase is no longer source-compatible with upstream's file layout in gene
 ```bash
 git clone git@github.com:soreavis/stackedit.git
 cd stackedit
-npm install --legacy-peer-deps   # required: some Vue-2-era devDeps have old peers
+npm install --legacy-peer-deps   # required: a few transitive peers still lag the toolchain
 npm run dev                      # http://localhost:8080
 ```
 
@@ -174,7 +177,7 @@ npm run dev                      # http://localhost:8080
    | `GOOGLE_API_KEY` | Google APIs | Runtime (restrict by HTTP referrer) |
    | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Optional — enables distributed rate limiting | Runtime |
 
-3. The `vercel.json` pins `npm install --legacy-peer-deps` as the install command — Vercel's default `npm install` fails on the Vue-2-era peer graph without it.
+3. The `vercel.json` pins `npm install --legacy-peer-deps` as the install command — Vercel's default `npm install` fails on the peer-dependency graph without it.
 4. Vercel auto-deploys on push to `main`.
 
 ## Testing
@@ -183,7 +186,7 @@ npm run dev                      # http://localhost:8080
 npm run unit
 ```
 
-353 tests across 22 files under `test/unit/` (hardening + component specs). Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (sanitizer XSS vectors, KaTeX, Mermaid, YAML front-matter).
+480 tests under `test/unit/` (hardening + component specs). Paste-ready manual fixtures under `test/fixtures/` for browser smoke-testing (sanitizer XSS vectors, KaTeX, Mermaid, YAML front-matter).
 
 ## Project structure
 
@@ -191,12 +194,12 @@ npm run unit
 api/                # Vercel serverless/Edge functions
 dev-server/         # Vite dev middleware for PDF/Pandoc export
 src/
-  components/       # Vue 2 SFCs (app shell, modals, menus)
+  components/       # Vue 3 SFCs in TypeScript (app shell, modals, menus)
   extensions/       # markdown-it plugins (KaTeX, Mermaid, emoji, …)
   icons/            # SVG icon components
-  libs/             # htmlSanitizer (DOMPurify), pagedown, clunderscore
-  services/         # Vuex-adjacent services (editor, sync, network, templateWorker) — all TypeScript
-  store/            # Vuex modules
+  libs/             # htmlSanitizer (DOMPurify) + in-tree markdown-it shims
+  services/         # editor (CodeMirror 6), sync, network, templateWorker — all TypeScript
+  stores/           # Pinia stores
   styles/           # SCSS
 static/             # Landing page, favicon, robots, 404, privacy.html, fonts
 test/
