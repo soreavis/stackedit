@@ -64,7 +64,7 @@ const notEnoughSpace = (layoutConstants: LayoutConstants, showGutter: unknown): 
     layoutConstants.buttonBarWidth +
     (showGutter ? layoutConstants.gutterWidth : 0);
 
-interface AdditionalTemplate {
+export interface AdditionalTemplate {
   name: string;
   description: string;
   value: string;

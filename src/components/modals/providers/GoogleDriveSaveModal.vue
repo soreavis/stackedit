@@ -28,25 +28,28 @@
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import googleHelper from '../../../services/providers/helpers/googleHelper';
 import googleDriveProvider from '../../../services/providers/googleDriveProvider';
-import modalTemplate from '../common/modalTemplate';
+import baseModal from '../common/baseModal';
+import { localSetting } from '../common/localSetting';
 import { useModalStore } from '../../../stores/modal';
 import { useDataStore } from '../../../stores/data';
 
-export default modalTemplate({
+export default defineComponent({
+  mixins: [baseModal],
   data: () => ({
     fileId: '',
   }),
-  computedLocalSettings: {
-    folderId: 'googleDriveFolderId',
+  computed: {
+    folderId: localSetting('googleDriveFolderId'),
   },
   methods: {
     openFolder() {
       return useModalStore().hideUntil(
         googleHelper.openPicker(this.config.token, 'folder')
-          .then((folders) => {
+          .then((folders: any[]) => {
             if (folders[0]) {
               useDataStore().patchLocalSettings({
                 googleDriveFolderId: folders[0].id,
@@ -57,7 +60,7 @@ export default modalTemplate({
     },
     resolve() {
       // Return new location
-      const location = googleDriveProvider.makeLocation(
+      const location = (googleDriveProvider as any).makeLocation(
         this.config.token,
         this.fileId,
         this.folderId,
