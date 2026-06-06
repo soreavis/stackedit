@@ -1,12 +1,12 @@
 import { createItemStore, BaseItem, ItemStoreState } from './itemStoreFactory';
-import emptyContentStateRaw from '../data/empties/emptyContentState';
+import emptyContentStateRaw, { ScrollPosition } from '../data/empties/emptyContentState';
 import { useFileStore } from './file';
 
 export interface ContentState extends BaseItem {
   type?: string;
   selectionStart: number;
   selectionEnd: number;
-  scrollPosition: number | null;
+  scrollPosition: ScrollPosition | null;
   hash: number;
 }
 
