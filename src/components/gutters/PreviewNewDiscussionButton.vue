@@ -4,17 +4,19 @@
   </a>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapActions as mapPiniaActions } from 'pinia';
 import editorSvc from '../../services/editorSvc';
 import { useContentStore } from '../../stores/content';
 import { useLayoutStore } from '../../stores/layout';
 import { useDiscussionStore } from '../../stores/discussion';
 
-export default {
+export default defineComponent({
   data: () => ({
-    selection: null,
-    coordinates: null,
+    selection: null as ReturnType<typeof editorSvc.getTrimmedSelection> | null,
+    coordinates: null as ReturnType<typeof editorSvc.getPreviewOffsetCoordinates> | null,
+    timeout: undefined as ReturnType<typeof setTimeout> | undefined,
   }),
   methods: {
     ...mapPiniaActions(useDiscussionStore, [
@@ -23,7 +25,7 @@ export default {
     checkSelection() {
       clearTimeout(this.timeout);
       this.timeout = setTimeout(() => {
-        let offset;
+        let offset: number | undefined;
         // Show the button if content is not a revision and preview selection is not empty
         if (
           !useContentStore().revisionContent &&
@@ -54,5 +56,5 @@ export default {
       this.checkSelection();
     });
   },
-};
+});
 </script>

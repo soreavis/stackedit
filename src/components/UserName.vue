@@ -2,11 +2,12 @@
   <span class="user-name">{{ name }}</span>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import userSvc from '../services/userSvc';
 import { useUserInfoStore } from '../stores/userInfo';
 
-export default {
+export default defineComponent({
   props: ['userId'],
   computed: {
     sanitizedUserId() {
@@ -23,5 +24,5 @@ export default {
       immediate: true,
     },
   },
-};
+});
 </script>

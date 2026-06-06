@@ -22,8 +22,9 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import editorSvc from '../services/editorSvc';
 import utils from '../services/utils';
@@ -32,7 +33,17 @@ import { useFileStore } from '../stores/file';
 
 // A footer stat: either a regex counter OR a custom computeFn(text) → value.
 class Stat {
-  constructor(name, regex, computeFn) {
+  id: string;
+
+  name: string;
+
+  regex: RegExp | null;
+
+  computeFn: ((text: string) => string) | null;
+
+  value: string | number | null;
+
+  constructor(name: string, regex?: string | null, computeFn?: ((text: string) => string) | null) {
     this.id = utils.uid();
     this.name = name;
     this.regex = regex ? new RegExp(regex, 'gm') : null;
@@ -40,17 +51,17 @@ class Stat {
     this.value = null;
   }
 
-  run(text) {
+  run(text: string) {
     if (this.computeFn) {
       this.value = this.computeFn(text);
       return;
     }
-    this.value = (text.match(this.regex) || []).length;
+    this.value = (text.match(this.regex as RegExp) || []).length;
   }
 }
 
 // Reading time = words / 220 wpm, rounded up, min 1 if any content.
-function formatReading(text) {
+function formatReading(text: string) {
   const words = (text.match(/\S+/g) || []).length;
   if (!words) return '0m';
   return `${Math.max(1, Math.round(words / 220))}m`;
@@ -59,7 +70,7 @@ function formatReading(text) {
 // Crude sentence split — ends with ., !, or ? followed by space/EOL.
 const SENTENCE_RE = '[^.!?\\n]+[.!?]+(?=\\s|$)';
 
-export default {
+export default defineComponent({
   data: () => ({
     textSelection: false,
     htmlSelection: false,
@@ -116,12 +127,12 @@ export default {
           this.textSelection = true;
           text = selectedText;
         }
-        this.textStats.forEach(stat => stat.run(text));
+        this.textStats.forEach((stat: Stat) => stat.run(text));
       }, 10);
     },
     computeHtml() {
       setTimeout(() => {
-        let text;
+        let text: string | undefined;
         if (editorSvc.previewSelectionRange) {
           text = `${editorSvc.previewSelectionRange}`;
         }
@@ -131,12 +142,12 @@ export default {
           ({ text } = editorSvc.previewCtx);
         }
         if (text != null) {
-          this.htmlStats.forEach(stat => stat.run(text));
+          this.htmlStats.forEach((stat: Stat) => stat.run(text));
         }
       }, 10);
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

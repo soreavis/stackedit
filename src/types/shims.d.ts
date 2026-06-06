@@ -3,6 +3,10 @@
 // re-exports. Do NOT add `export {}` — that converts this file into a
 // module and breaks the ambient module declarations below.
 
+// Build-time global injected via Vite `define` (vite.config.mjs:
+// `VERSION: JSON.stringify(pkg.version)`).
+declare const VERSION: string;
+
 // Vite Worker import suffix (`./templateWorker.js?worker` etc.).
 declare module '*?worker' {
   const workerCtor: {

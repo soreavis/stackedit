@@ -6,19 +6,19 @@
       </div>
       <p>Create a workspace synced with a <b>GitLab</b> project folder.</p>
       <form-entry label="Project URL" error="projectUrl">
-        <input slot="field" class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> {{ config.token.serverUrl }}/path/to/project
         </div>
       </form-entry>
       <form-entry label="Folder path" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If not supplied, the root folder will be used.
         </div>
       </form-entry>
       <form-entry label="Branch" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="branch" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="branch" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If not supplied, the <code>main</code> branch will be used (use <code>master</code> for older repos).
         </div>

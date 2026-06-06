@@ -7,12 +7,12 @@
       <div class="side-bar__info" v-if="syncLocations.length">
         <p>{{ currentFileName }} is already synchronized.</p>
         <menu-entry @click.native="requestSync">
-          <icon-sync slot="icon"></icon-sync>
+          <template #icon><icon-sync></icon-sync></template>
           <div>Synchronize now</div>
           <span>Download / upload file changes.</span>
         </menu-entry>
         <menu-entry @click.native="manageSync">
-          <icon-view-list slot="icon"></icon-view-list>
+          <template #icon><icon-view-list></icon-view-list></template>
           <div><div class="menu-entry__label menu-entry__label--count">{{ locationCount }}</div> File synchronization</div>
           <span>Manage synchronized locations for {{ currentFileName }}.</span>
         </menu-entry>
@@ -23,81 +23,82 @@
       <hr>
       <div v-for="token in dropboxTokens" :key="token.sub">
         <menu-entry @click.native="openDropbox(token)">
-          <icon-provider slot="icon" provider-id="dropbox"></icon-provider>
+          <template #icon><icon-provider provider-id="dropbox"></icon-provider></template>
           <div>Open from Dropbox</div>
           <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="saveDropbox(token)">
-          <icon-provider slot="icon" provider-id="dropbox"></icon-provider>
+          <template #icon><icon-provider provider-id="dropbox"></icon-provider></template>
           <div>Save on Dropbox</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in githubTokens" :key="token.sub">
         <menu-entry @click.native="openGithub(token)">
-          <icon-provider slot="icon" provider-id="github"></icon-provider>
+          <template #icon><icon-provider provider-id="github"></icon-provider></template>
           <div>Open from GitHub</div>
           <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="saveGithub(token)">
-          <icon-provider slot="icon" provider-id="github"></icon-provider>
+          <template #icon><icon-provider provider-id="github"></icon-provider></template>
           <div>Save on GitHub</div>
           <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="saveGist(token)">
-          <icon-provider slot="icon" provider-id="gist"></icon-provider>
+          <template #icon><icon-provider provider-id="gist"></icon-provider></template>
           <div>Save on Gist</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in gitlabTokens" :key="token.sub">
         <menu-entry @click.native="openGitlab(token)">
-          <icon-provider slot="icon" provider-id="gitlab"></icon-provider>
+          <template #icon><icon-provider provider-id="gitlab"></icon-provider></template>
           <div>Open from GitLab</div>
           <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="saveGitlab(token)">
-          <icon-provider slot="icon" provider-id="gitlab"></icon-provider>
+          <template #icon><icon-provider provider-id="gitlab"></icon-provider></template>
           <div>Save on GitLab</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <div v-for="token in googleDriveTokens" :key="token.sub">
         <menu-entry @click.native="openGoogleDrive(token)">
-          <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+          <template #icon><icon-provider provider-id="googleDrive"></icon-provider></template>
           <div>Open from Google Drive</div>
           <span>{{ token.name }}</span>
         </menu-entry>
         <menu-entry @click.native="saveGoogleDrive(token)">
-          <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+          <template #icon><icon-provider provider-id="googleDrive"></icon-provider></template>
           <div>Save on Google Drive</div>
           <span>{{ token.name }}</span>
         </menu-entry>
       </div>
       <hr>
       <menu-entry @click.native="addDropboxAccount">
-        <icon-provider slot="icon" provider-id="dropbox"></icon-provider>
+        <template #icon><icon-provider provider-id="dropbox"></icon-provider></template>
         <span>Add Dropbox account</span>
       </menu-entry>
       <menu-entry @click.native="addGithubAccount">
-        <icon-provider slot="icon" provider-id="github"></icon-provider>
+        <template #icon><icon-provider provider-id="github"></icon-provider></template>
         <span>Add GitHub account</span>
       </menu-entry>
       <menu-entry @click.native="addGitlabAccount">
-        <icon-provider slot="icon" provider-id="gitlab"></icon-provider>
+        <template #icon><icon-provider provider-id="gitlab"></icon-provider></template>
         <span>Add GitLab account</span>
       </menu-entry>
       <menu-entry @click.native="addGoogleDriveAccount">
-        <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
+        <template #icon><icon-provider provider-id="googleDrive"></icon-provider></template>
         <span>Add Google Drive account</span>
       </menu-entry>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import MenuEntry from './common/MenuEntry';
+import MenuEntry from './common/MenuEntry.vue';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import dropboxHelper from '../../services/providers/helpers/dropboxHelper';
 import githubHelper from '../../services/providers/helpers/githubHelper';
@@ -115,16 +116,16 @@ import badgeSvc from '../../services/badgeSvc';
 import { useQueueStore } from '../../stores/queue';
 import { useDataStore } from '../../stores/data';
 
-const tokensToArray = (tokens, filter = () => true) => Object.values(tokens)
-  .filter(token => filter(token))
-  .sort((token1, token2) => token1.name.localeCompare(token2.name));
+const tokensToArray = (tokens: any, filter: (token: any) => boolean = () => true): any[] => Object.values(tokens)
+  .filter((token: any) => filter(token))
+  .sort((token1: any, token2: any) => token1.name.localeCompare(token2.name));
 
-const openSyncModal = (token, type) => useModalStore().open({
+const openSyncModal = (token: any, type: string) => useModalStore().open({
   type,
   token,
-}).then(syncLocation => syncSvc.createSyncLocation(syncLocation));
+}).then((syncLocation: any) => syncSvc.createSyncLocation(syncLocation));
 
-export default {
+export default defineComponent({
   components: {
     MenuEntry,
   },
@@ -138,9 +139,13 @@ export default {
     ...mapPiniaState(useFileStore, [
       'isCurrentTemp',
     ]),
-    ...mapPiniaState(useSyncLocationStore, {
-      syncLocations: 'currentWithWorkspaceSyncLocation',
-    }),
+    // currentWithWorkspaceSyncLocation is typed `unknown[]` by the loose
+    // location store; the template/consumers only use .length, so surface
+    // it as an array here rather than via a mapPiniaState rename (whose
+    // renamed-getter overload vue-tsc can't infer a real type for).
+    syncLocations(): unknown[] {
+      return (useSyncLocationStore() as any).currentWithWorkspaceSyncLocation as unknown[];
+    },
     locationCount() {
       return Object.keys(this.syncLocations).length;
     },
@@ -157,7 +162,7 @@ export default {
       return tokensToArray(useDataStore().gitlabTokensBySub);
     },
     googleDriveTokens() {
-      return tokensToArray(useDataStore().googleTokensBySub, token => token.isDrive);
+      return tokensToArray(useDataStore().googleTokensBySub, (token: any) => token.isDrive);
     },
     noToken() {
       return !this.googleDriveTokens.length
@@ -190,7 +195,7 @@ export default {
     },
     async addGitlabAccount() {
       try {
-        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' }) as { serverUrl: string; applicationId: string };
         await gitlabHelper.addAccount(serverUrl, applicationId);
       } catch (e) { /* cancel */ }
     },
@@ -200,37 +205,37 @@ export default {
         await googleHelper.addDriveAccount(!useDataStore().localSettings.googleDriveRestrictedAccess);
       } catch (e) { /* cancel */ }
     },
-    async openDropbox(token) {
+    async openDropbox(token: any) {
       const paths = await dropboxHelper.openChooser(token);
       useQueueStore().enqueue(
         async () => {
-          await dropboxProvider.openFiles(token, paths);
+          await (dropboxProvider as any).openFiles(token, paths);
           badgeSvc.addBadge('openFromDropbox');
         },
       );
     },
-    async saveDropbox(token) {
+    async saveDropbox(token: any) {
       try {
         await openSyncModal(token, 'dropboxSave');
         badgeSvc.addBadge('saveOnDropbox');
       } catch (e) { /* cancel */ }
     },
-    async openGoogleDrive(token) {
+    async openGoogleDrive(token: any) {
       const files = await googleHelper.openPicker(token, 'doc');
       useQueueStore().enqueue(
         async () => {
-          await googleDriveProvider.openFiles(token, files);
+          await (googleDriveProvider as any).openFiles(token, files);
           badgeSvc.addBadge('openFromGoogleDrive');
         },
       );
     },
-    async saveGoogleDrive(token) {
+    async saveGoogleDrive(token: any) {
       try {
         await openSyncModal(token, 'googleDriveSave');
         badgeSvc.addBadge('saveOnGoogleDrive');
       } catch (e) { /* cancel */ }
     },
-    async openGithub(token) {
+    async openGithub(token: any) {
       try {
         const syncLocation = await useModalStore().open({
           type: 'githubOpen',
@@ -238,25 +243,25 @@ export default {
         });
         useQueueStore().enqueue(
           async () => {
-            await githubProvider.openFile(token, syncLocation);
+            await (githubProvider as any).openFile(token, syncLocation);
             badgeSvc.addBadge('openFromGithub');
           },
         );
       } catch (e) { /* cancel */ }
     },
-    async saveGithub(token) {
+    async saveGithub(token: any) {
       try {
         await openSyncModal(token, 'githubSave');
         badgeSvc.addBadge('saveOnGithub');
       } catch (e) { /* cancel */ }
     },
-    async saveGist(token) {
+    async saveGist(token: any) {
       try {
         await openSyncModal(token, 'gistSync');
         badgeSvc.addBadge('saveOnGist');
       } catch (e) { /* cancel */ }
     },
-    async openGitlab(token) {
+    async openGitlab(token: any) {
       try {
         const syncLocation = await useModalStore().open({
           type: 'gitlabOpen',
@@ -264,18 +269,18 @@ export default {
         });
         useQueueStore().enqueue(
           async () => {
-            await gitlabProvider.openFile(token, syncLocation);
+            await (gitlabProvider as any).openFile(token, syncLocation);
             badgeSvc.addBadge('openFromGitlab');
           },
         );
       } catch (e) { /* cancel */ }
     },
-    async saveGitlab(token) {
+    async saveGitlab(token: any) {
       try {
         await openSyncModal(token, 'gitlabSave');
         badgeSvc.addBadge('saveOnGitlab');
       } catch (e) { /* cancel */ }
     },
   },
-};
+});
 </script>

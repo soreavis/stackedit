@@ -6,20 +6,20 @@
       </div>
       <p>Save <b>{{ currentFileName }}</b> to your <b>GitLab</b> project and keep it synced.</p>
       <form-entry label="Project URL" error="projectUrl">
-        <input slot="field" class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="projectUrl" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> {{ config.token.serverUrl }}/path/to/project
         </div>
       </form-entry>
       <form-entry label="File path" error="path">
-        <input slot="field" class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="path" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           <b>Example:</b> path/to/README.md<br>
           If the file exists, it will be overwritten.
         </div>
       </form-entry>
       <form-entry label="Branch" info="optional">
-        <input slot="field" class="textfield" type="text" v-model.trim="branch" @keydown.enter="resolve()">
+        <template #field><input class="textfield" type="text" v-model.trim="branch" @keydown.enter="resolve()"></template>
         <div class="form-entry__info">
           If not supplied, the <code>main</code> branch will be used (use <code>master</code> for older repos).
         </div>

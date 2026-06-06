@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import vue2 from '@vitejs/plugin-vue2';
+import vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
@@ -26,7 +26,6 @@ export default defineConfig({
     extensions: ['.mjs', '.js', '.ts', '.vue', '.json'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      vue: 'vue/dist/vue.runtime.esm.js',
     },
   },
   define: {
@@ -37,7 +36,7 @@ export default defineConfig({
   },
   plugins: [
     devApiPlugin(),
-    vue2(),
+    vue(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt'],
@@ -98,7 +97,12 @@ export default defineConfig({
           if (id.includes('prismjs')) return 'prismjs';
           if (id.includes('markdown-it')) return 'markdown-it';
           if (id.includes('dompurify')) return 'dompurify';
-          if (id.includes('/vue/') || id.includes('/vuex/')) return 'vue';
+          // Vue 3's runtime is split across @vue/* packages (@vue/runtime-dom,
+          // @vue/reactivity, @vue/shared, …) plus the `vue` entry; pinia rides
+          // along. `/@vue/` is NOT matched by `/vue/`, so list it explicitly —
+          // otherwise the whole runtime lands in the index chunk.
+          if (id.includes('/vue/') || id.includes('/@vue/')
+            || id.includes('/pinia/') || id.includes('/vuex/')) return 'vue';
           return undefined;
         },
       },

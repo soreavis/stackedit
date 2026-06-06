@@ -41,22 +41,24 @@
       </div>
     </div>
     <div class="modal__button-bar">
-      <button class="button button--resolve" @click="config.resolve()">Close</button>
+      <button class="button button--resolve" @click="cfg.resolve()">Close</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
 
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import ModalInner from './common/ModalInner';
+import ModalInner from './common/ModalInner.vue';
 import { useSyncLocationStore } from '../../stores/syncLocation';
+import type { SyncLocation } from '../../stores/syncLocation';
 import { useFileStore } from '../../stores/file';
 import { useModalStore } from '../../stores/modal';
 import { useNotificationStore } from '../../stores/notification';
 import badgeSvc from '../../services/badgeSvc';
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
   },
@@ -64,9 +66,19 @@ export default {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
-    ...mapPiniaState(useSyncLocationStore, {
-      syncLocations: 'currentWithWorkspaceSyncLocation',
-    }),
+    // This component only renders while a modal is open, so `config` is always
+    // a real ModalConfig (never `false`). Surface a typed accessor so the
+    // template can call `cfg.resolve()` without the `false | ModalConfig` union.
+    cfg(): any {
+      return this.config;
+    },
+    // currentWithWorkspaceSyncLocation is typed `unknown[]` by the loose
+    // location store; surface it as SyncLocation[] via an explicit computed
+    // (rather than a mapPiniaState rename, whose renamed-getter overload
+    // vue-tsc can't infer a real type for) so the template sees real props.
+    syncLocations(): any[] {
+      return (useSyncLocationStore() as any).currentWithWorkspaceSyncLocation;
+    },
     currentFileName() {
       return useFileStore().current.name;
     },
@@ -75,7 +87,7 @@ export default {
     ...mapPiniaActions(useNotificationStore, [
       'info',
     ]),
-    remove(location) {
+    remove(location: SyncLocation) {
       if (location.id === 'main') {
         this.info('This location can not be removed.');
       } else {
@@ -84,7 +96,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

@@ -1,46 +1,47 @@
 <template>
   <div class="side-bar__panel side-bar__panel--menu">
     <menu-entry @click.native="manageWorkspaces">
-      <icon-database slot="icon"></icon-database>
+      <template #icon><icon-database></icon-database></template>
       <div><div class="menu-entry__label menu-entry__label--count">{{ workspaceCount }}</div> Manage workspaces</div>
       <span>List, rename, remove workspaces</span>
     </menu-entry>
     <hr>
     <div class="workspace" v-for="(workspace, id) in workspacesById" :key="id">
       <menu-entry :href="workspace.url" target="_blank" rel="noopener noreferrer">
-        <icon-provider slot="icon" :provider-id="workspace.providerId"></icon-provider>
+        <template #icon><icon-provider :provider-id="workspace.providerId"></icon-provider></template>
         <div class="workspace__name"><div class="menu-entry__label" v-if="currentWorkspace === workspace">current</div>{{ workspace.name }}</div>
       </menu-entry>
     </div>
     <hr>
     <menu-entry @click.native="addCouchdbWorkspace">
-      <icon-provider slot="icon" provider-id="couchdbWorkspace"></icon-provider>
+      <template #icon><icon-provider provider-id="couchdbWorkspace"></icon-provider></template>
       <span>Add a <b>CouchDB</b> workspace</span>
     </menu-entry>
     <menu-entry @click.native="addGithubWorkspace">
-      <icon-provider slot="icon" provider-id="githubWorkspace"></icon-provider>
+      <template #icon><icon-provider provider-id="githubWorkspace"></icon-provider></template>
       <span>Add a <b>GitHub</b> workspace</span>
     </menu-entry>
     <menu-entry @click.native="addGitlabWorkspace">
-      <icon-provider slot="icon" provider-id="gitlabWorkspace"></icon-provider>
+      <template #icon><icon-provider provider-id="gitlabWorkspace"></icon-provider></template>
       <span>Add a <b>GitLab</b> workspace</span>
     </menu-entry>
     <menu-entry @click.native="addGoogleDriveWorkspace">
-      <icon-provider slot="icon" provider-id="googleDriveWorkspace"></icon-provider>
+      <template #icon><icon-provider provider-id="googleDriveWorkspace"></icon-provider></template>
       <span>Add a <b>Google Drive</b> workspace</span>
     </menu-entry>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import MenuEntry from './common/MenuEntry';
+import MenuEntry from './common/MenuEntry.vue';
 import googleHelper from '../../services/providers/helpers/googleHelper';
 import gitlabHelper from '../../services/providers/helpers/gitlabHelper';
 import { useModalStore } from '../../stores/modal';
 import { useWorkspaceStore } from '../../stores/workspace';
 
-export default {
+export default defineComponent({
   components: {
     MenuEntry,
   },
@@ -70,7 +71,7 @@ export default {
     },
     async addGitlabWorkspace() {
       try {
-        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' });
+        const { serverUrl, applicationId } = await useModalStore().open({ type: 'gitlabAccount' }) as any;
         const token = await gitlabHelper.addAccount(serverUrl, applicationId);
         useModalStore().open({
           type: 'gitlabWorkspace',
@@ -93,7 +94,7 @@ export default {
       } catch (e) { /* Cancel */ }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

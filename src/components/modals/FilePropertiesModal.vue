@@ -16,40 +16,42 @@
         <div class="modal__title">Extensions</div>
         <div class="modal__sub-title">Configure the Markdown engine.</div>
         <form-entry label="Preset">
-          <select slot="field" class="textfield" v-model="preset" @keydown.enter="resolve()">
-            <option v-for="(preset, id) in presets" :key="id" :value="preset">
-              {{ preset }}
-            </option>
-          </select>
+          <template #field>
+            <select class="textfield" v-model="preset" @keydown.enter="resolve()">
+              <option v-for="(preset, id) in presets" :key="id" :value="preset">
+                {{ preset }}
+              </option>
+            </select>
+          </template>
         </form-entry>
         <div class="modal__title">Metadata</div>
         <div class="modal__sub-title">Add info to your publications (Wordpress, Blogger...).</div>
         <form-entry label="Title">
-          <input slot="field" class="textfield" type="text" v-model.trim="title" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="title" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Author">
-          <input slot="field" class="textfield" type="text" v-model.trim="author" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="author" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Tags" info="comma-separated">
-          <input slot="field" class="textfield" type="text" v-model.trim="tags" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="tags" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Categories" info="comma-separated">
-          <input slot="field" class="textfield" type="text" v-model.trim="categories" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="categories" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Excerpt">
-          <input slot="field" class="textfield" type="text" v-model.trim="excerpt" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="excerpt" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Featured image">
-          <input slot="field" class="textfield" type="text" v-model.trim="featuredImage" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="featuredImage" @keydown.enter="resolve()"></template>
         </form-entry>
         <form-entry label="Status">
-          <input slot="field" class="textfield" type="text" v-model.trim="status" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="status" @keydown.enter="resolve()"></template>
           <div class="form-entry__info">
             <b>Example:</b> draft
           </div>
         </form-entry>
         <form-entry label="Date" info="YYYY-MM-DD">
-          <input slot="field" class="textfield" type="text" v-model.trim="date" @keydown.enter="resolve()">
+          <template #field><input class="textfield" type="text" v-model.trim="date" @keydown.enter="resolve()"></template>
         </form-entry>
       </div>
       <div v-else-if="tab === 'yaml'" key="tab-yaml">
@@ -81,20 +83,21 @@
       </transition>
     </div>
     <div class="modal__button-bar">
-      <button class="button" @click="config.reject()">Cancel</button>
+      <button class="button" @click="cfg.reject()">Cancel</button>
       <button class="button button--resolve" @click="resolve()">Ok</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import yaml from 'js-yaml';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
-import ModalInner from './common/ModalInner';
-import Tab from './common/Tab';
-import FormEntry from './common/FormEntry';
-import CodeEditor from '../CodeEditor';
+import ModalInner from './common/ModalInner.vue';
+import Tab from './common/Tab.vue';
+import FormEntry from './common/FormEntry.vue';
+import CodeEditor from '../CodeEditor.vue';
 import utils from '../../services/utils';
 import presets from '../../data/presets';
 import { useContentStore } from '../../stores/content';
@@ -112,7 +115,7 @@ const metadataProperties = {
   date: '',
 };
 
-export default {
+export default defineComponent({
   components: {
     ModalInner,
     Tab,
@@ -120,22 +123,26 @@ export default {
     CodeEditor,
   },
   data: () => ({
-    contentId: null,
-    yamlProperties: null,
+    contentId: null as string | null,
+    yamlProperties: null as string | null,
     preset: '',
-    error: null,
+    error: null as string | null,
+    properties: null as any,
     ...metadataProperties,
   }),
   computed: {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
+    cfg(): any {
+      return this.config;
+    },
     presets: () => Object.keys(presets).sort(),
     tab: {
       get() {
         return useDataStore().localSettings.filePropertiesTab;
       },
-      set(value) {
+      set(value: string) {
         useDataStore().patchLocalSettings({
           filePropertiesTab: value,
         });
@@ -161,8 +168,8 @@ export default {
       if (!this.presets.includes(this.preset)) {
         this.preset = 'default';
       }
-      Object.keys(metadataProperties).forEach((name) => {
-        this[name] = `${properties[name] || ''}`;
+      Object.keys(metadataProperties).forEach((name: string) => {
+        (this as any)[name] = `${properties[name] || ''}`;
       });
     },
     simpleToYaml() {
@@ -178,10 +185,10 @@ export default {
           hasChanged = true;
         }
       }
-      Object.keys(metadataProperties).forEach((name) => {
-        if (this[name] !== properties[name]) {
-          if (this[name]) {
-            properties[name] = this[name];
+      Object.keys(metadataProperties).forEach((name: string) => {
+        if ((this as any)[name] !== properties[name]) {
+          if ((this as any)[name]) {
+            properties[name] = (this as any)[name];
             hasChanged = true;
           } else if (properties[name]) {
             delete properties[name];
@@ -208,13 +215,13 @@ export default {
       this.tab = 'yaml';
       this.simpleToYaml();
     },
-    setYamlProperties(value) {
+    setYamlProperties(value: string) {
       this.yamlProperties = value;
       try {
         this.properties = yaml.load(value);
         this.error = null;
       } catch (e) {
-        this.error = e.message;
+        this.error = (e as Error).message;
       }
     },
     resolve() {
@@ -226,25 +233,25 @@ export default {
         this.setYamlTab();
       } else {
         const properties = this.properties || {};
-        if (Object.keys(metadataProperties).some(key => properties[key])) {
+        if (Object.keys(metadataProperties).some((key: string) => properties[key])) {
           badgeSvc.addBadge('setMetadata');
         }
         const extensions = properties.extensions || {};
         if (extensions.preset) {
           badgeSvc.addBadge('changePreset');
         }
-        if (Object.keys(extensions).filter(key => key !== 'preset').length) {
+        if (Object.keys(extensions).filter((key: string) => key !== 'preset').length) {
           badgeSvc.addBadge('changeExtension');
         }
         useContentStore().patchItem({
-          id: this.contentId,
+          id: this.contentId as string,
           properties: utils.sanitizeText(this.yamlProperties),
         });
-        this.config.resolve();
+        this.cfg.resolve();
       }
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

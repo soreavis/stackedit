@@ -5,14 +5,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
-import Comment from './Comment';
-import NewComment from './NewComment';
+import Comment from './Comment.vue';
+import NewComment from './NewComment.vue';
 import { useLayoutStore } from '../../stores/layout';
 import { useDiscussionStore } from '../../stores/discussion';
 
-export default {
+export default defineComponent({
   components: {
     Comment,
     NewComment,
@@ -31,7 +32,7 @@ export default {
       'currentDiscussionLastComment',
     ]),
   },
-};
+});
 </script>
 
 <style lang="scss">

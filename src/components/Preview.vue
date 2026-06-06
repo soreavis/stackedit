@@ -16,10 +16,11 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState, mapActions as mapPiniaActions } from 'pinia';
-import CommentList from './gutters/CommentList';
-import PreviewNewDiscussionButton from './gutters/PreviewNewDiscussionButton';
+import CommentList from './gutters/CommentList.vue';
+import PreviewNewDiscussionButton from './gutters/PreviewNewDiscussionButton.vue';
 import editorSvc from '../services/editorSvc';
 import { useFileStore } from '../stores/file';
 import { useDataStore } from '../stores/data';
@@ -50,7 +51,7 @@ const uniPunct = new RegExp(
   'g',
 );
 const asciiPunct = /['!"#$%&()*+,./:;<=>?@[\]^`{|}~\\]/g;
-function githubSlugBase(text) {
+function githubSlugBase(text: string) {
   return text
     .trim()
     .toLowerCase()
@@ -59,7 +60,7 @@ function githubSlugBase(text) {
     .replace(/\s/g, '-');
 }
 
-export default {
+export default defineComponent({
   components: {
     CommentList,
     PreviewNewDiscussionButton,
@@ -79,8 +80,8 @@ export default {
     ...mapPiniaActions(useDataStore, [
       'toggleEditor',
     ]),
-    onClick(evt) {
-      let elt = evt.target;
+    onClick(evt: MouseEvent) {
+      let elt = evt.target as (HTMLElement & { href?: string; hash?: string }) | null;
       while (elt && elt !== this.$el) {
         // In-page fragment link (e.g. a Table of Contents entry
         // `[Section](#section)`). Handle it ourselves: the browser
@@ -99,13 +100,15 @@ export default {
           && (!elt.hash || elt.href.slice(0, appUri.length) !== appUri)) {
           evt.preventDefault();
           const wnd = window.open(elt.href, '_blank');
-          wnd.focus();
+          if (wnd) {
+            wnd.focus();
+          }
           return;
         }
-        elt = elt.parentNode;
+        elt = elt.parentNode as typeof elt;
       }
     },
-    resolveAnchorTarget(previewElt, id) {
+    resolveAnchorTarget(previewElt: HTMLElement, id: string) {
       // 1. Exact element id -- StackEdit-native / Pandoc-slug TOCs.
       let target;
       try {
@@ -117,7 +120,7 @@ export default {
         return target;
       }
       target = Array.from(previewElt.querySelectorAll('[id]'))
-        .find(el => el.id === id);
+        .find((el: Element) => el.id === id);
       if (target) {
         return target;
       }
@@ -129,9 +132,9 @@ export default {
       const headings = Array.from(
         previewElt.querySelectorAll('h1,h2,h3,h4,h5,h6'),
       );
-      const occurrences = Object.create(null);
-      let match;
-      headings.forEach((heading) => {
+      const occurrences: Record<string, number> = Object.create(null);
+      let match: Element | undefined;
+      headings.forEach((heading: Element) => {
         const base = githubSlugBase(heading.textContent || '');
         let slug = base;
         if (occurrences[base] !== undefined) {
@@ -151,12 +154,12 @@ export default {
       // 3. Last resort: case-insensitive heading-text match.
       const wanted = id.replace(/[-_]+/g, ' ').trim().toLowerCase();
       return headings.find(
-        h => (h.textContent || '').trim().toLowerCase() === wanted,
+        (h: Element) => (h.textContent || '').trim().toLowerCase() === wanted,
       );
     },
-    scrollToAnchor(id) {
-      const scrollerElt = this.$el.querySelector('.preview__inner-1');
-      const previewElt = this.$el.querySelector('.preview__inner-2');
+    scrollToAnchor(id: string) {
+      const scrollerElt = this.$el.querySelector('.preview__inner-1') as HTMLElement | null;
+      const previewElt = this.$el.querySelector('.preview__inner-2') as HTMLElement | null;
       if (!scrollerElt || !previewElt || !id) {
         return;
       }
@@ -175,7 +178,7 @@ export default {
       const ctx = editorSvc.previewCtxMeasured || editorSvc.previewCtx;
       const list = ctx && ctx.sectionDescList;
       const sectionDesc = list
-        && list.find(s => s.previewElt && s.previewElt.contains(target));
+        && list.find((s: any) => s.previewElt && s.previewElt.contains(target));
       if (sectionDesc
         && editorSvc.editorElt && editorSvc.editorElt.parentNode) {
         const offsetInSection = target.getBoundingClientRect().top
@@ -198,51 +201,51 @@ export default {
         - scrollerElt.getBoundingClientRect().top - SCROLL_OFFSET;
       scrollerElt.scrollTop = Math.max(0, top);
     },
-    onScroll(evt) {
-      this.previewTop = evt.target.scrollTop < 10;
+    onScroll(evt: Event) {
+      this.previewTop = (evt.target as HTMLElement).scrollTop < 10;
     },
   },
   mounted() {
-    const previewElt = this.$el.querySelector('.preview__inner-2');
-    const onDiscussionEvt = cb => (evt) => {
-      let elt = evt.target;
+    const previewElt = this.$el.querySelector('.preview__inner-2') as HTMLElement;
+    const onDiscussionEvt = (cb: (discussionId: string) => void) => (evt: Event) => {
+      let elt = evt.target as (HTMLElement & { discussionId?: string }) | null;
       while (elt && elt !== previewElt) {
         if (elt.discussionId) {
           cb(elt.discussionId);
           return;
         }
-        elt = elt.parentNode;
+        elt = elt.parentNode as typeof elt;
       }
     };
 
-    const classToggler = toggle => (discussionId) => {
+    const classToggler = (toggle: boolean) => (discussionId: string) => {
       Array.from(previewElt.getElementsByClassName(`discussion-preview-highlighting--${discussionId}`))
-        .forEach(elt => elt.classList.toggle('discussion-preview-highlighting--hover', toggle));
+        .forEach((elt: Element) => elt.classList.toggle('discussion-preview-highlighting--hover', toggle));
       Array.from(document.getElementsByClassName(`comment--discussion-${discussionId}`))
-        .forEach(elt => elt.classList.toggle('comment--hover', toggle));
+        .forEach((elt: Element) => elt.classList.toggle('comment--hover', toggle));
     };
 
     previewElt.addEventListener('mouseover', onDiscussionEvt(classToggler(true)));
     previewElt.addEventListener('mouseout', onDiscussionEvt(classToggler(false)));
-    previewElt.addEventListener('click', onDiscussionEvt((discussionId) => {
+    previewElt.addEventListener('click', onDiscussionEvt((discussionId: string) => {
       useDiscussionStore().setCurrentDiscussionId(discussionId);
     }));
 
     this.$watch(
       () => useDiscussionStore().currentDiscussionId,
-      (discussionId, oldDiscussionId) => {
+      (discussionId: string | null, oldDiscussionId: string | null) => {
         if (oldDiscussionId) {
           previewElt.querySelectorAll(`.discussion-preview-highlighting--${oldDiscussionId}`)
-            .forEach(elt => elt.classList.remove('discussion-preview-highlighting--selected'));
+            .forEach((elt: Element) => elt.classList.remove('discussion-preview-highlighting--selected'));
         }
         if (discussionId) {
           previewElt.querySelectorAll(`.discussion-preview-highlighting--${discussionId}`)
-            .forEach(elt => elt.classList.add('discussion-preview-highlighting--selected'));
+            .forEach((elt: Element) => elt.classList.add('discussion-preview-highlighting--selected'));
         }
       },
     );
   },
-};
+});
 </script>
 
 <style lang="scss">

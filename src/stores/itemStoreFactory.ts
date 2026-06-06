@@ -67,8 +67,7 @@ export function createItemStore<T extends BaseItem>(
         if (!item.hash || !simpleHash) {
           item.hash = hashFunc(item);
         }
-        // Pinia + Vue 2.7 reactivity tracks deep keys via the underlying
-        // Vue.observable / shallow ref system, so spreading a fresh
+        // Pinia + Vue 3 reactivity tracks deep keys, so spreading a fresh
         // object onto itemsById preserves reactivity for downstream
         // getters/computed.
         this.itemsById = { ...this.itemsById, [item.id]: item };

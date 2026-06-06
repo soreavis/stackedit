@@ -29,46 +29,55 @@
       </div>
     </div>
     <div class="modal__button-bar">
-      <button class="button button--resolve" @click="config.resolve()">Close</button>
+      <button class="button button--resolve" @click="(config as any).resolve()">Close</button>
     </div>
   </modal-inner>
 </template>
 
-<script>
-import Vue from 'vue';
+<script lang="ts">
 
+import { defineComponent } from 'vue';
 import { mapState as mapPiniaState } from 'pinia';
 import { useModalStore } from '../../stores/modal';
-import ModalInner from './common/ModalInner';
+import ModalInner from './common/ModalInner.vue';
 import { useDataStore } from '../../stores/data';
 
-export default {
+interface Badge {
+  featureId: string;
+  name: string;
+  description: string;
+  isEarned: boolean;
+  hasSomeEarned?: boolean;
+  children?: Badge[];
+}
+
+export default defineComponent({
   components: {
     ModalInner,
   },
   data: () => ({
-    shown: {},
+    shown: {} as Record<string, boolean>,
   }),
   computed: {
     ...mapPiniaState(useModalStore, [
       'config',
     ]),
-    ...mapPiniaState(useDataStore, [
-      'badgeTree',
-    ]),
-    badgeCount() {
-      return useDataStore().allBadges.filter(badge => badge.isEarned).length;
+    badgeTree(): Badge[] {
+      return useDataStore().badgeTree as Badge[];
     },
-    featureCount() {
+    badgeCount(): number {
+      return (useDataStore().allBadges as Badge[]).filter(badge => badge.isEarned).length;
+    },
+    featureCount(): number {
       return useDataStore().allBadges.length;
     },
   },
   methods: {
-    show(featureId) {
-      Vue.set(this.shown, featureId, true);
+    show(featureId: string) {
+      this.shown[featureId] = true;
     },
   },
-};
+});
 </script>
 
 <style lang="scss">

@@ -1,4 +1,3 @@
-import Vue from 'vue';
 import timeSvc from '../../services/timeSvc';
 import { useGlobalStore } from '../../stores/global';
 
@@ -26,54 +25,12 @@ const copyToClipboard = async (text) => {
   legacyCopy(text);
 };
 
-// Global directives
-Vue.directive('focus', {
-  inserted(el) {
-    el.focus();
-    const { value } = el;
-    if (value && el.setSelectionRange) {
-      el.setSelectionRange(0, value.length);
-    }
-  },
-});
-
-const setVisible = (el, value) => {
-  el.style.display = value ? '' : 'none';
-  if (value) {
-    el.removeAttribute('aria-hidden');
-  } else {
-    el.setAttribute('aria-hidden', 'true');
-  }
-};
-Vue.directive('show', {
-  bind(el, { value }) {
-    setVisible(el, value);
-  },
-  update(el, { value, oldValue }) {
-    if (value !== oldValue) {
-      setVisible(el, value);
-    }
-  },
-});
-
 const setElTitle = (el, title) => {
   el.title = title;
   el.setAttribute('aria-label', title);
 };
-Vue.directive('title', {
-  bind(el, { value }) {
-    setElTitle(el, value);
-  },
-  update(el, { value, oldValue }) {
-    if (value !== oldValue) {
-      setElTitle(el, value);
-    }
-  },
-});
 
-// v-clipboard directive: click the element to copy its bound value to the
-// OS clipboard. Uses the native async Clipboard API with a hidden-textarea
-// fallback for legacy browsers / insecure contexts.
+// v-clipboard: click the element to copy its bound value to the OS clipboard.
 const createClipboard = (el, value) => {
   const handler = () => copyToClipboard(value);
   el.addEventListener('click', handler);
@@ -85,23 +42,52 @@ const destroyClipboard = (el) => {
     el.seClipboardHandler = null;
   }
 };
-Vue.directive('clipboard', {
-  bind(el, { value }) {
-    createClipboard(el, value);
-  },
-  update(el, { value, oldValue }) {
-    if (value !== oldValue) {
-      destroyClipboard(el);
-      createClipboard(el, value);
-    }
-  },
-  unbind(el) {
-    destroyClipboard(el);
-  },
-});
 
-// Global filters
-Vue.filter('formatTime', time =>
-  // Access the time counter for reactive refresh
-  timeSvc.format(time, useGlobalStore().timeCounter));
+// Global directives, registered on the app instance (Vue 3) via app.use() in
+// src/index.js. v-show is intentionally NOT here — Vue 3 provides it built-in.
+export default {
+  install(app) {
+    app.directive('focus', {
+      mounted(el) {
+        el.focus();
+        const { value } = el;
+        if (value && el.setSelectionRange) {
+          el.setSelectionRange(0, value.length);
+        }
+      },
+    });
 
+    app.directive('title', {
+      mounted(el, { value }) {
+        setElTitle(el, value);
+      },
+      updated(el, { value, oldValue }) {
+        if (value !== oldValue) {
+          setElTitle(el, value);
+        }
+      },
+    });
+
+    app.directive('clipboard', {
+      mounted(el, { value }) {
+        createClipboard(el, value);
+      },
+      updated(el, { value, oldValue }) {
+        if (value !== oldValue) {
+          destroyClipboard(el);
+          createClipboard(el, value);
+        }
+      },
+      unmounted(el) {
+        destroyClipboard(el);
+      },
+    });
+  },
+};
+
+// Relative-time formatter — was a Vue 2 global filter (removed in Vue 3).
+// Exported as a function and used as a component method; reading timeCounter
+// keeps it reactive (re-renders when the global 30s tick advances).
+export function formatTime(time) {
+  return timeSvc.format(time, useGlobalStore().timeCounter);
+}
