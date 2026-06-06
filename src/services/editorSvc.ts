@@ -348,8 +348,8 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
    */
   saveContentState: allowDebounce(() => {
     const scrollPosition = editorSvc.getScrollPosition() ||
-      (useContentStateStore() as any).current.scrollPosition;
-    (useContentStateStore() as any).patchCurrent({
+      useContentStateStore().current.scrollPosition;
+    useContentStateStore().patchCurrent({
       selectionStart: editorSvc.clEditor.selectionMgr.selectionStart,
       selectionEnd: editorSvc.clEditor.selectionMgr.selectionEnd,
       scrollPosition,
@@ -590,9 +590,9 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
     let lastContentId: any = null;
     let lastProperties: any;
     watch(
-      () => (useContentStore() as any).currentChangeTrigger,
+      () => useContentStore().currentChangeTrigger,
       () => {
-        const content: any = (useContentStore() as any).current;
+        const content: any = useContentStore().current;
         // Track ID changes
         let initClEditor = false;
         if (content.id !== lastContentId) {
@@ -603,7 +603,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
         // Track properties changes
         if (content.properties !== lastProperties) {
           lastProperties = content.properties;
-          const options = (extensionSvc as any).getOptions((useContentStore() as any).currentProperties);
+          const options = (extensionSvc as any).getOptions(useContentStore().currentProperties);
           if (utils.serializeObject(options) !== utils.serializeObject(this.options)) {
             this.options = options;
             this.initPrism();

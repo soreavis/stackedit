@@ -159,10 +159,10 @@ export default defineComponent({
       return Object.keys(useWorkspaceStore().workspacesById).length;
     },
     syncLocationCount() {
-      return Object.keys((useSyncLocationStore() as any).currentWithWorkspaceSyncLocation).length;
+      return Object.keys(useSyncLocationStore().currentWithWorkspaceSyncLocation).length;
     },
     publishLocationCount() {
-      return Object.keys((usePublishLocationStore() as any).current).length;
+      return Object.keys(usePublishLocationStore().current).length;
     },
     hasCurrentFile() {
       return !!useFileStore().current.id;

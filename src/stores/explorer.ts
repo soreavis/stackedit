@@ -195,8 +195,8 @@ export const useExplorerStore = defineStore('explorer', {
       (useFolderStore().items as ExplorerItem[]).forEach((item) => {
         nodeMap[item.id] = new Node(item, [], true);
       });
-      const syncLocationsByFileId = (useSyncLocationStore() as any).filteredGroupedByFileId as Record<string, unknown[]>;
-      const publishLocationsByFileId = (usePublishLocationStore() as any).filteredGroupedByFileId as Record<string, unknown[]>;
+      const syncLocationsByFileId = useSyncLocationStore().filteredGroupedByFileId as Record<string, unknown[]>;
+      const publishLocationsByFileId = usePublishLocationStore().filteredGroupedByFileId as Record<string, unknown[]>;
       (useFileStore().items as ExplorerItem[]).forEach((item) => {
         const locations = [
           ...syncLocationsByFileId[item.id] || [],

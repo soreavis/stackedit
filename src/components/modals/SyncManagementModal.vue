@@ -77,7 +77,7 @@ export default defineComponent({
     // (rather than a mapPiniaState rename, whose renamed-getter overload
     // vue-tsc can't infer a real type for) so the template sees real props.
     syncLocations(): any[] {
-      return (useSyncLocationStore() as any).currentWithWorkspaceSyncLocation;
+      return useSyncLocationStore().currentWithWorkspaceSyncLocation;
     },
     currentFileName() {
       return useFileStore().current.name;

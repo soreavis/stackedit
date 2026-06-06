@@ -48,7 +48,7 @@ export default {
    * Restore the scroll position from the current file content state.
    */
   restoreScrollPosition(this: EditorSvcThis): void {
-    const { scrollPosition }: { scrollPosition?: ScrollPosition } = (useContentStateStore() as any).current;
+    const { scrollPosition } = useContentStateStore().current as unknown as { scrollPosition?: ScrollPosition };
     if (scrollPosition && this.previewCtxMeasured) {
       const sectionDesc = this.previewCtxMeasured.sectionDescList[scrollPosition.sectionIdx];
       if (sectionDesc) {

@@ -93,7 +93,7 @@ const isWorkspaceSyncPossible = (): boolean => !!useWorkspaceStore().syncToken;
 /**
  * Return true if file has at least one explicit sync location.
  */
-const hasCurrentFileSyncLocations = (): boolean => !!(useSyncLocationStore() as any).current.length;
+const hasCurrentFileSyncLocations = (): boolean => !!useSyncLocationStore().current.length;
 
 /**
  * Return true if we are online and we have something to sync.
@@ -252,7 +252,7 @@ const createSyncLocation = (syncLocation: any): void => {
   const fileId = currentFile.id;
   syncLocation.fileId = fileId;
   // Use deepCopy to freeze the item
-  const content = utils.deepCopy((useContentStore() as any).current);
+  const content = utils.deepCopy(useContentStore().current);
   useQueueStore().enqueue(
     async () => {
       const provider = (providerRegistry as any).providersById[syncLocation.providerId];
@@ -307,8 +307,8 @@ const isTempFile = (fileId: string): boolean => {
     return true;
   }
   const locations = [
-    ...(useSyncLocationStore() as any).filteredGroupedByFileId[fileId] || [],
-    ...(usePublishLocationStore() as any).filteredGroupedByFileId[fileId] || [],
+    ...useSyncLocationStore().filteredGroupedByFileId[fileId] || [],
+    ...usePublishLocationStore().filteredGroupedByFileId[fileId] || [],
   ];
   if (locations.length) {
     // If file has sync/publish locations, it's not a temp file
@@ -370,7 +370,7 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
     }
 
     const syncLocations: any[] = [
-      ...(useSyncLocationStore() as any).filteredGroupedByFileId[fileId] || [],
+      ...useSyncLocationStore().filteredGroupedByFileId[fileId] || [],
     ];
     if (isWorkspaceSyncPossible()) {
       syncLocations.unshift({ id: 'main', providerId: workspaceProvider.id, fileId });

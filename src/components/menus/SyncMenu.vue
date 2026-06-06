@@ -144,7 +144,7 @@ export default defineComponent({
     // it as an array here rather than via a mapPiniaState rename (whose
     // renamed-getter overload vue-tsc can't infer a real type for).
     syncLocations(): unknown[] {
-      return (useSyncLocationStore() as any).currentWithWorkspaceSyncLocation as unknown[];
+      return useSyncLocationStore().currentWithWorkspaceSyncLocation as unknown[];
     },
     locationCount() {
       return Object.keys(this.syncLocations).length;

@@ -158,7 +158,7 @@ export default defineComponent({
     publishLocations(): unknown[] {
       // current/currentWithWorkspaceSyncLocation are runtime getters on the
       // location-store factory that aren't surfaced in its inferred type.
-      return (usePublishLocationStore() as any).current;
+      return usePublishLocationStore().current;
     },
     locationCount() {
       return Object.keys(this.publishLocations).length;
