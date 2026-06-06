@@ -29,9 +29,18 @@ import badgeSvc from './badgeSvc';
 import { useQueueStore } from '../stores/queue';
 import { useDataStore } from '../stores/data';
 import { useGlobalStore } from '../stores/global';
+import { SyncData, ChangeItem, Change } from './sync/syncTypes';
+import { upgradeSyncedContent, cleanSyncedContent } from './sync/syncedContentUtils';
+import {
+  getLastStoredSyncActivity,
+  isWorkspaceSyncPossible,
+  hasCurrentFileSyncLocations,
+  isSyncPossible,
+  isSyncWindow,
+  isAutoSyncReady,
+  setLastSyncActivity,
+} from './sync/syncReadiness';
 
-const minAutoSyncEvery = 60 * 1000; // 60 sec
-const inactivityThreshold = 3 * 1000; // 3 sec
 const restartSyncAfter = 30 * 1000; // 30 sec
 const restartContentSyncAfter = 1000; // Enough to detect an authorize pop up
 const checkSponsorshipAfter = (5 * 60 * 1000) + (30 * 1000); // tokenExpirationMargin + 30 sec
@@ -41,145 +50,8 @@ const LAST_SEEN = 0;
 const LAST_MERGED = 1;
 const LAST_SENT = 2;
 
-// Core sync wire shapes — minimal surfaces touched by this module.
-// Providers return arbitrary additional fields (which we read via `any`
-// at the call site).
-interface SyncData {
-  id: string;
-  itemId?: string;
-  type?: string;
-  hash?: number;
-  parentIds?: string[];
-}
-
-interface ChangeItem {
-  id: string;
-  type?: string;
-  hash?: number;
-  [key: string]: unknown;
-}
-
-interface Change {
-  fileId?: string;
-  syncDataId: string;
-  syncData?: SyncData;
-  item?: ChangeItem;
-  file?: { name?: string; [key: string]: unknown };
-}
-
-interface SyncedContent {
-  id: string;
-  v?: number;
-  historyData: Record<string, ChangeItem>;
-  syncHistory: Record<string, number[]>;
-  [key: string]: unknown;
-}
-
 let actionProvider: any;
 let workspaceProvider: any;
-
-/**
- * Use a lock in the local storage to prevent multiple windows concurrency.
- */
-let lastSyncActivity: number | undefined;
-const getLastStoredSyncActivity = (): number =>
-  parseInt(localStorage.getItem(useWorkspaceStore().lastSyncActivityKey) || '', 10) || 0;
-
-/**
- * Return true if workspace sync is possible.
- */
-const isWorkspaceSyncPossible = (): boolean => !!useWorkspaceStore().syncToken;
-
-/**
- * Return true if file has at least one explicit sync location.
- */
-const hasCurrentFileSyncLocations = (): boolean => !!useSyncLocationStore().current.length;
-
-/**
- * Return true if we are online and we have something to sync.
- */
-const isSyncPossible = (): boolean => !useGlobalStore().offline &&
-  (isWorkspaceSyncPossible() || hasCurrentFileSyncLocations());
-
-/**
- * Return true if we are the many window, ie we have the lastSyncActivity lock.
- */
-const isSyncWindow = (): boolean => {
-  const storedLastSyncActivity = getLastStoredSyncActivity();
-  return lastSyncActivity === storedLastSyncActivity ||
-    Date.now() > inactivityThreshold + storedLastSyncActivity;
-};
-
-/**
- * Return true if auto sync can start, ie if lastSyncActivity is old enough.
- */
-const isAutoSyncReady = (): boolean => {
-  let { autoSyncEvery } = useDataStore().computedSettings as any;
-  if (autoSyncEvery < minAutoSyncEvery) {
-    autoSyncEvery = minAutoSyncEvery;
-  }
-  return Date.now() > autoSyncEvery + getLastStoredSyncActivity();
-};
-
-/**
- * Update the lastSyncActivity, assuming we have the lock.
- */
-const setLastSyncActivity = (): void => {
-  const currentDate = Date.now();
-  lastSyncActivity = currentDate;
-  localStorage.setItem(useWorkspaceStore().lastSyncActivityKey, `${currentDate}`);
-};
-
-/**
- * Upgrade hashes if syncedContent is from an old version
- */
-const upgradeSyncedContent = (syncedContent: SyncedContent): SyncedContent => {
-  if (syncedContent.v) {
-    return syncedContent;
-  }
-  const hashUpgrades: Record<string, number> = {};
-  const historyData: Record<string, ChangeItem> = {};
-  const syncHistory: Record<string, number[]> = {};
-  Object.entries(syncedContent.historyData).forEach(([hash, content]) => {
-    const newContent = utils.addItemHash(content);
-    historyData[newContent.hash] = newContent;
-    hashUpgrades[hash] = newContent.hash;
-  });
-  Object.entries(syncedContent.syncHistory).forEach(([id, hashEntries]) => {
-    syncHistory[id] = hashEntries.map((hash: number) => hashUpgrades[String(hash)]);
-  });
-  return {
-    ...syncedContent,
-    historyData,
-    syncHistory,
-    v: 1,
-  };
-};
-
-/**
- * Clean a syncedContent.
- */
-const cleanSyncedContent = (syncedContent: SyncedContent): void => {
-  // Clean syncHistory from removed syncLocations
-  Object.keys(syncedContent.syncHistory).forEach((syncLocationId: string) => {
-    if (syncLocationId !== 'main' && !useSyncLocationStore().itemsById[syncLocationId]) {
-      delete syncedContent.syncHistory[syncLocationId];
-    }
-  });
-
-  const allSyncLocationHashSet = new Set<number>(([] as number[])
-    .concat(...Object.keys(syncedContent.syncHistory)
-      .map((id: string) => syncedContent.syncHistory[id])));
-
-  // Clean historyData from unused contents
-  Object.keys(syncedContent.historyData)
-    .map((hash: string) => parseInt(hash, 10))
-    .forEach((hash: number) => {
-      if (!allSyncLocationHashSet.has(hash)) {
-        delete syncedContent.historyData[hash];
-      }
-    });
-};
 
 /**
  * Apply changes retrieved from the workspace provider. Update sync data accordingly.
