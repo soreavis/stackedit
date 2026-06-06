@@ -92,7 +92,7 @@ export default {
       return (await (networkSvc as any).request({
         ...options,
         headers: {
-          ...options.headers || {},
+          ...options.headers,
           Authorization: `Bearer ${token.accessToken}`,
         },
       }, true)).body;

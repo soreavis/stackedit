@@ -10,7 +10,7 @@ const request = ({ accessToken, serverUrl }: any, options: any): Promise<any> =>
   ...options,
   url: `${serverUrl}/api/v4/${options.url}`,
   headers: {
-    ...options.headers || {},
+    ...options.headers,
     Authorization: `Bearer ${accessToken}`,
   },
 })

@@ -19,7 +19,6 @@ import editorSvcUtils from './editor/editorSvcUtils';
 import utils from './utils';
 import { useContentStore } from '../stores/content';
 import { useContentStateStore } from '../stores/contentState';
-import { useModalStore } from '../stores/modal';
 import { useDataStore } from '../stores/data';
 import { useLayoutStore } from '../stores/layout';
 
@@ -528,7 +527,7 @@ const editorSvc: any = Object.assign(createEventBus(), editorSvcDiscussions, edi
             const imgElt = document.createElement('img');
             imgElt.style.display = 'none';
             const uri = srcElt.textContent;
-            if (!/^unsafe/.test((htmlSanitizer as any).sanitizeUri(uri, true))) {
+            if (!(htmlSanitizer as any).sanitizeUri(uri, true).startsWith('unsafe')) {
               imgElt.onload = () => {
                 imgElt.style.display = '';
               };

@@ -8,7 +8,7 @@ import { usePublishLocationStore } from '../stores/publishLocation';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
-import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
+import { setItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useFolderStore } from '../stores/folder';
 import { useSyncedContentStore } from '../stores/syncedContent';
 import { useModalStore } from '../stores/modal';

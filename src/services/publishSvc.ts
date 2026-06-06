@@ -1,7 +1,7 @@
 import localDbSvc from './localDbSvc';
 import { usePublishLocationStore } from '../stores/publishLocation';
 import { useFileStore } from '../stores/file';
-import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
+import { setItemByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
 import utils from './utils';
 import networkSvc from './networkSvc';
