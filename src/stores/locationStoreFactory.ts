@@ -32,7 +32,7 @@ export function createLocationStore<T extends LocationItem>(
   storeId: string,
   empty: (id?: string) => T,
 ) {
-  return createItemStore<T>(storeId, empty, false, {
+  return createItemStore(storeId, empty, false, {
     extraGetters: {
       groupedByFileId(state: { itemsById: Record<string, T> }): Record<string, T[]> {
         const groups: Record<string, T[]> = {};
@@ -82,14 +82,14 @@ export function createLocationStore<T extends LocationItem>(
       },
       currentWithWorkspaceSyncLocation(): unknown[] {
         const fileId = useFileStore().current.id;
-        const syncDataByItemId = (useDataStore() as any).syncDataByItemId as Record<string, unknown>;
+        const syncDataByItemId = useDataStore().syncDataByItemId as Record<string, unknown>;
         const fileSyncData = syncDataByItemId[fileId];
         const contentSyncData = syncDataByItemId[`${fileId}/content`];
         if (!fileSyncData || !contentSyncData) {
           return (this as any).current;
         }
         const workspaceProvider = (providerRegistry as any).providersById[
-          (useWorkspaceStore() as any).currentWorkspace.providerId];
+          useWorkspaceStore().currentWorkspace.providerId as string];
         return [{
           id: 'main',
           providerId: workspaceProvider.id,

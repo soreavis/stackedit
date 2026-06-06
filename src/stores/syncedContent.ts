@@ -12,7 +12,7 @@ export interface SyncedContent extends BaseItem {
 
 const emptySyncedContent = emptySyncedContentRaw as unknown as (id?: string) => SyncedContent;
 
-export const useSyncedContentStore = createItemStore<SyncedContent>('syncedContent', emptySyncedContent, true, {
+export const useSyncedContentStore = createItemStore('syncedContent', emptySyncedContent, true, {
   extraGetters: {
     current(state: ItemStoreState<SyncedContent>): SyncedContent {
       const currentFileId = useFileStore().current.id;

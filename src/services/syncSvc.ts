@@ -8,7 +8,7 @@ import { usePublishLocationStore } from '../stores/publishLocation';
 import { useWorkspaceStore } from '../stores/workspace';
 import { useContentStore } from '../stores/content';
 import { useFileStore } from '../stores/file';
-import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
+import { setItemByType, deleteItemByType } from '../stores/itemBridge';
 import { useFolderStore } from '../stores/folder';
 import { useSyncedContentStore } from '../stores/syncedContent';
 import { useModalStore } from '../stores/modal';
@@ -29,9 +29,18 @@ import badgeSvc from './badgeSvc';
 import { useQueueStore } from '../stores/queue';
 import { useDataStore } from '../stores/data';
 import { useGlobalStore } from '../stores/global';
+import { SyncData, ChangeItem, Change } from './sync/syncTypes';
+import { upgradeSyncedContent, cleanSyncedContent } from './sync/syncedContentUtils';
+import {
+  getLastStoredSyncActivity,
+  isWorkspaceSyncPossible,
+  hasCurrentFileSyncLocations,
+  isSyncPossible,
+  isSyncWindow,
+  isAutoSyncReady,
+  setLastSyncActivity,
+} from './sync/syncReadiness';
 
-const minAutoSyncEvery = 60 * 1000; // 60 sec
-const inactivityThreshold = 3 * 1000; // 3 sec
 const restartSyncAfter = 30 * 1000; // 30 sec
 const restartContentSyncAfter = 1000; // Enough to detect an authorize pop up
 const checkSponsorshipAfter = (5 * 60 * 1000) + (30 * 1000); // tokenExpirationMargin + 30 sec
@@ -41,157 +50,20 @@ const LAST_SEEN = 0;
 const LAST_MERGED = 1;
 const LAST_SENT = 2;
 
-// Core sync wire shapes — minimal surfaces touched by this module.
-// Providers return arbitrary additional fields (which we read via `any`
-// at the call site).
-interface SyncData {
-  id: string;
-  itemId?: string;
-  type?: string;
-  hash?: number;
-  parentIds?: string[];
-}
-
-interface ChangeItem {
-  id: string;
-  type?: string;
-  hash?: number;
-  [key: string]: unknown;
-}
-
-interface Change {
-  fileId?: string;
-  syncDataId: string;
-  syncData?: SyncData;
-  item?: ChangeItem;
-  file?: { name?: string; [key: string]: unknown };
-}
-
-interface SyncedContent {
-  id: string;
-  v?: number;
-  historyData: Record<string, ChangeItem>;
-  syncHistory: Record<string, number[]>;
-  [key: string]: unknown;
-}
-
 let actionProvider: any;
 let workspaceProvider: any;
-
-/**
- * Use a lock in the local storage to prevent multiple windows concurrency.
- */
-let lastSyncActivity: number | undefined;
-const getLastStoredSyncActivity = (): number =>
-  parseInt(localStorage.getItem((useWorkspaceStore() as any).lastSyncActivityKey) || '', 10) || 0;
-
-/**
- * Return true if workspace sync is possible.
- */
-const isWorkspaceSyncPossible = (): boolean => !!(useWorkspaceStore() as any).syncToken;
-
-/**
- * Return true if file has at least one explicit sync location.
- */
-const hasCurrentFileSyncLocations = (): boolean => !!(useSyncLocationStore() as any).current.length;
-
-/**
- * Return true if we are online and we have something to sync.
- */
-const isSyncPossible = (): boolean => !(useGlobalStore() as any).offline &&
-  (isWorkspaceSyncPossible() || hasCurrentFileSyncLocations());
-
-/**
- * Return true if we are the many window, ie we have the lastSyncActivity lock.
- */
-const isSyncWindow = (): boolean => {
-  const storedLastSyncActivity = getLastStoredSyncActivity();
-  return lastSyncActivity === storedLastSyncActivity ||
-    Date.now() > inactivityThreshold + storedLastSyncActivity;
-};
-
-/**
- * Return true if auto sync can start, ie if lastSyncActivity is old enough.
- */
-const isAutoSyncReady = (): boolean => {
-  let { autoSyncEvery } = (useDataStore() as any).computedSettings;
-  if (autoSyncEvery < minAutoSyncEvery) {
-    autoSyncEvery = minAutoSyncEvery;
-  }
-  return Date.now() > autoSyncEvery + getLastStoredSyncActivity();
-};
-
-/**
- * Update the lastSyncActivity, assuming we have the lock.
- */
-const setLastSyncActivity = (): void => {
-  const currentDate = Date.now();
-  lastSyncActivity = currentDate;
-  localStorage.setItem((useWorkspaceStore() as any).lastSyncActivityKey, `${currentDate}`);
-};
-
-/**
- * Upgrade hashes if syncedContent is from an old version
- */
-const upgradeSyncedContent = (syncedContent: SyncedContent): SyncedContent => {
-  if (syncedContent.v) {
-    return syncedContent;
-  }
-  const hashUpgrades: Record<string, number> = {};
-  const historyData: Record<string, ChangeItem> = {};
-  const syncHistory: Record<string, number[]> = {};
-  Object.entries(syncedContent.historyData).forEach(([hash, content]) => {
-    const newContent = utils.addItemHash(content);
-    historyData[newContent.hash] = newContent;
-    hashUpgrades[hash] = newContent.hash;
-  });
-  Object.entries(syncedContent.syncHistory).forEach(([id, hashEntries]) => {
-    syncHistory[id] = hashEntries.map((hash: number) => hashUpgrades[String(hash)]);
-  });
-  return {
-    ...syncedContent,
-    historyData,
-    syncHistory,
-    v: 1,
-  };
-};
-
-/**
- * Clean a syncedContent.
- */
-const cleanSyncedContent = (syncedContent: SyncedContent): void => {
-  // Clean syncHistory from removed syncLocations
-  Object.keys(syncedContent.syncHistory).forEach((syncLocationId: string) => {
-    if (syncLocationId !== 'main' && !(useSyncLocationStore() as any).itemsById[syncLocationId]) {
-      delete syncedContent.syncHistory[syncLocationId];
-    }
-  });
-
-  const allSyncLocationHashSet = new Set<number>(([] as number[])
-    .concat(...Object.keys(syncedContent.syncHistory)
-      .map((id: string) => syncedContent.syncHistory[id])));
-
-  // Clean historyData from unused contents
-  Object.keys(syncedContent.historyData)
-    .map((hash: string) => parseInt(hash, 10))
-    .forEach((hash: number) => {
-      if (!allSyncLocationHashSet.has(hash)) {
-        delete syncedContent.historyData[hash];
-      }
-    });
-};
 
 /**
  * Apply changes retrieved from the workspace provider. Update sync data accordingly.
  */
 const applyChanges = (changes: Change[]): void => {
-  const allItemsById: Record<string, ChangeItem> = { ...(useGlobalStore() as any).allItemsById };
-  const syncDataById: Record<string, SyncData> = { ...(useDataStore() as any).syncDataById };
+  const allItemsById: Record<string, ChangeItem> = { ...useGlobalStore().allItemsById };
+  const syncDataById = { ...useDataStore().syncDataById } as unknown as Record<string, SyncData>;
   const idsToKeep: Record<string, boolean> = {};
   let saveSyncData = false;
   let getExistingItem: (existingSyncData: SyncData | undefined) => ChangeItem | undefined;
-  if ((useWorkspaceStore() as any).currentWorkspaceIsGit) {
-    const itemsByGitPath: Record<string, ChangeItem> = { ...(useGlobalStore() as any).itemsByGitPath };
+  if (useWorkspaceStore().currentWorkspaceIsGit) {
+    const itemsByGitPath: Record<string, ChangeItem> = { ...useGlobalStore().itemsByGitPath };
     getExistingItem = (existingSyncData) => existingSyncData && itemsByGitPath[existingSyncData.id];
   } else {
     getExistingItem = (existingSyncData) => existingSyncData && existingSyncData.itemId
@@ -237,7 +109,7 @@ const applyChanges = (changes: Change[]): void => {
   });
 
   if (saveSyncData) {
-    (useDataStore() as any).setSyncDataById(syncDataById);
+    useDataStore().setSyncDataById(syncDataById);
 
     // Sanitize the workspace
     (workspaceSvc as any).sanitizeWorkspace(idsToKeep);
@@ -253,7 +125,7 @@ const createSyncLocation = (syncLocation: any): void => {
   syncLocation.fileId = fileId;
   // Use deepCopy to freeze the item
   const content = utils.deepCopy(useContentStore().current);
-  (useQueueStore() as any).enqueue(
+  useQueueStore().enqueue(
     async () => {
       const provider = (providerRegistry as any).providersById[syncLocation.providerId];
       const token = provider.getToken(syncLocation);
@@ -269,9 +141,9 @@ const createSyncLocation = (syncLocation: any): void => {
       newSyncHistoryItem[LAST_SENT] = content.hash;
       newSyncedContent.historyData[content.hash] = content;
 
-      (useSyncedContentStore() as any).patchItem(newSyncedContent);
+      useSyncedContentStore().patchItem(newSyncedContent);
       (workspaceSvc as any).addSyncLocation(updatedSyncLocation);
-      (useNotificationStore() as any).info(`A new synchronized location was added to "${currentFile.name}".`);
+      useNotificationStore().info(`A new synchronized location was added to "${currentFile.name}".`);
     },
   );
 };
@@ -294,12 +166,12 @@ const tooLateChecker = (timeout: number): any => {
  */
 const isTempFile = (fileId: string): boolean => {
   const contentId = `${fileId}/content`;
-  if ((useDataStore() as any).syncDataByItemId[contentId]) {
+  if (useDataStore().syncDataByItemId[contentId]) {
     // If file has already been synced, let's not consider it a temp file
     return false;
   }
-  const file: any = (useFileStore() as any).itemsById[fileId];
-  const content: any = (useContentStore() as any).itemsById[contentId];
+  const file: any = useFileStore().itemsById[fileId];
+  const content: any = useContentStore().itemsById[contentId];
   if (!file || !content) {
     return false;
   }
@@ -307,15 +179,15 @@ const isTempFile = (fileId: string): boolean => {
     return true;
   }
   const locations = [
-    ...(useSyncLocationStore() as any).filteredGroupedByFileId[fileId] || [],
-    ...(usePublishLocationStore() as any).filteredGroupedByFileId[fileId] || [],
+    ...useSyncLocationStore().filteredGroupedByFileId[fileId] || [],
+    ...usePublishLocationStore().filteredGroupedByFileId[fileId] || [],
   ];
   if (locations.length) {
     // If file has sync/publish locations, it's not a temp file
     return false;
   }
   // Return true if it's a welcome file that has no discussion
-  const { welcomeFileHashes } = (useDataStore() as any).localSettings;
+  const { welcomeFileHashes } = useDataStore().localSettings as any;
   const hash = utils.hash(content.text);
   const hasDiscussions = Object.keys(content.discussions).length;
   return file.name === 'Welcome file' && welcomeFileHashes[hash] && !hasDiscussions;
@@ -331,9 +203,9 @@ const updateSyncData = (result: any): any => {
     result.fileSyncData,
   ].forEach((syncData: any) => {
     if (syncData) {
-      const oldSyncData = (useDataStore() as any).syncDataById[syncData.id];
+      const oldSyncData = useDataStore().syncDataById[syncData.id];
       if (utils.serializeObject(oldSyncData) !== utils.serializeObject(syncData)) {
-        (useDataStore() as any).patchSyncDataById({
+        useDataStore().patchSyncDataById({
           [syncData.id]: syncData,
         });
       }
@@ -370,7 +242,7 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
     }
 
     const syncLocations: any[] = [
-      ...(useSyncLocationStore() as any).filteredGroupedByFileId[fileId] || [],
+      ...useSyncLocationStore().filteredGroupedByFileId[fileId] || [],
     ];
     if (isWorkspaceSyncPossible()) {
       syncLocations.unshift({ id: 'main', providerId: workspaceProvider.id, fileId });
@@ -393,8 +265,8 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
         }
 
         // On workspace provider, call downloadWorkspaceContent
-        const oldContentSyncData = (useDataStore() as any).syncDataByItemId[contentId];
-        const oldFileSyncData = (useDataStore() as any).syncDataByItemId[fileId];
+        const oldContentSyncData = useDataStore().syncDataByItemId[contentId];
+        const oldFileSyncData = useDataStore().syncDataByItemId[fileId];
         if (!oldContentSyncData || !oldFileSyncData) {
           return null;
         }
@@ -417,17 +289,17 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
         }
 
         // On workspace provider, call uploadWorkspaceContent
-        const oldContentSyncData = (useDataStore() as any).syncDataByItemId[contentId];
+        const oldContentSyncData = useDataStore().syncDataByItemId[contentId];
         if (oldContentSyncData && oldContentSyncData.hash === content.hash) {
           return syncLocation;
         }
-        const oldFileSyncData = (useDataStore() as any).syncDataByItemId[fileId];
+        const oldFileSyncData = useDataStore().syncDataByItemId[fileId];
 
         updateSyncData(await provider.uploadWorkspaceContent({
           token,
           content,
           // Use deepCopy to freeze item
-          file: utils.deepCopy((useFileStore() as any).itemsById[fileId]),
+          file: utils.deepCopy(useFileStore().itemsById[fileId]),
           contentSyncData: oldContentSyncData,
           fileSyncData: oldFileSyncData,
           ifNotTooLate,
@@ -444,7 +316,7 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
 
         // Merge content
         let mergedContent: any;
-        const clientContent: any = utils.deepCopy((useContentStore() as any).itemsById[contentId]);
+        const clientContent: any = utils.deepCopy(useContentStore().itemsById[contentId]);
         if (!clientContent) {
           mergedContent = utils.deepCopy(serverContent || null);
         } else if (!serverContent // If sync location has not been created yet
@@ -471,8 +343,8 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
           const serverChanged = lastMergedContent && lastMergedContent.text !== serverContent.text;
           const clientChanged = lastMergedContent && lastMergedContent.text !== clientContent.text;
           if (serverChanged && clientChanged && serverContent.text !== clientContent.text) {
-            const fileName = ((useFileStore() as any).itemsById[fileId] || {}).name || 'a file';
-            (useNotificationStore() as any).info(`Sync auto-merged concurrent edits in "${fileName}". Use File → History to compare versions.`);
+            const fileName = (useFileStore().itemsById[fileId] || {}).name || 'a file';
+            useNotificationStore().info(`Sync auto-merged concurrent edits in "${fileName}". Use File → History to compare versions.`);
           }
         }
         if (!mergedContent) {
@@ -480,7 +352,7 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
         }
 
         // Update or set content in store
-        (useContentStore() as any).setItem({
+        useContentStore().setItem({
           id: contentId,
           text: utils.sanitizeText(mergedContent.text),
           properties: utils.sanitizeText(mergedContent.properties),
@@ -489,7 +361,7 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
         });
 
         // Retrieve content with its new hash value and freeze it
-        mergedContent = utils.deepCopy((useContentStore() as any).itemsById[contentId]);
+        mergedContent = utils.deepCopy(useContentStore().itemsById[contentId]);
 
         // Make merged content history
         const mergedContentHistory: any[] = serverContent ? serverContent.history.slice() : [];
@@ -530,7 +402,7 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
         // Clean synced content from unused revisions
         cleanSyncedContent(newSyncedContent);
         // Store synced content
-        (useSyncedContentStore() as any).patchItem(newSyncedContent);
+        useSyncedContentStore().patchItem(newSyncedContent);
 
         if (skipUpload) {
           // Server content and merged content are equal, skip content upload
@@ -539,7 +411,7 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
 
         // If content is to be created, schedule a restart to create the file as well
         if (provider === workspaceProvider &&
-          !(useDataStore() as any).syncDataByItemId[fileId]
+          !useDataStore().syncDataByItemId[fileId]
         ) {
           syncContext.restartSkipContents = true;
         }
@@ -558,22 +430,22 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
         if (utils.serializeObject(syncLocation) !==
           utils.serializeObject(syncLocationToStore)
         ) {
-          (useSyncLocationStore() as any).patchItem(syncLocationToStore);
+          useSyncLocationStore().patchItem(syncLocationToStore);
           (workspaceSvc as any).ensureUniqueLocations();
         }
       };
 
-      await (useQueueStore() as any).doWithLocation({
+      await useQueueStore().doWithLocation({
         location: syncLocation,
         action: async () => {
           try {
             await doSyncLocation();
           } catch (err: any) {
-            if ((useGlobalStore() as any).offline || (err && err.message === 'TOO_LATE')) {
+            if (useGlobalStore().offline || (err && err.message === 'TOO_LATE')) {
               throw err;
             }
             console.error(err);
-            (useNotificationStore() as any).error(err);
+            useNotificationStore().error(err);
           }
         },
       });
@@ -594,11 +466,11 @@ const syncFile = async (fileId: string, syncContext: any = new SyncContext()): P
  * Sync a data item, typically settings, templates or workspaces.
  */
 const syncDataItem = async (dataId: string): Promise<void> => {
-  const getItem = (): any => (useDataStore() as any).itemsById[dataId]
-    || (useDataStore() as any).lsItemsById[dataId];
+  const getItem = (): any => useDataStore().itemsById[dataId]
+    || useDataStore().lsItemsById[dataId];
 
   const oldItem: any = getItem();
-  const oldSyncData = (useDataStore() as any).syncDataByItemId[dataId];
+  const oldSyncData = useDataStore().syncDataByItemId[dataId];
   // Sync if item hash and syncData hash are out of sync
   if (oldSyncData && oldItem && oldItem.hash === oldSyncData.hash) {
     return;
@@ -611,7 +483,7 @@ const syncDataItem = async (dataId: string): Promise<void> => {
   }));
 
   const serverItem = item;
-  const dataSyncData = (useDataStore() as any).dataSyncDataById[dataId];
+  const dataSyncData = useDataStore().dataSyncDataById[dataId] as any;
   const clientItem: any = utils.deepCopy(getItem());
   let mergedItem: any = (() => {
     if (!clientItem) {
@@ -649,7 +521,7 @@ const syncDataItem = async (dataId: string): Promise<void> => {
   }
 
   // Update item in store
-  (useDataStore() as any).setItem({
+  useDataStore().setItem({
     id: dataId,
     ...mergedItem,
   });
@@ -662,14 +534,14 @@ const syncDataItem = async (dataId: string): Promise<void> => {
     updateSyncData(await workspaceProvider.uploadWorkspaceData({
       token,
       item: mergedItem,
-      syncData: (useDataStore() as any).syncDataByItemId[dataId],
+      syncData: useDataStore().syncDataByItemId[dataId],
       ifNotTooLate: tooLateChecker(restartContentSyncAfter),
     }));
   }
 
   // Copy sync data into data sync data
-  (useDataStore() as any).patchDataSyncDataById({
-    [dataId]: utils.deepCopy((useDataStore() as any).syncDataByItemId[dataId]),
+  useDataStore().patchDataSyncDataById({
+    [dataId]: utils.deepCopy(useDataStore().syncDataByItemId[dataId]),
   });
 };
 
@@ -678,14 +550,14 @@ const syncDataItem = async (dataId: string): Promise<void> => {
  */
 const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
   try {
-    const workspace: any = (useWorkspaceStore() as any).currentWorkspace;
+    const workspace: any = useWorkspaceStore().currentWorkspace;
     const syncContext = new SyncContext();
 
     // Store the sub in the DB since it's not safely stored in the token
-    const syncToken: any = (useWorkspaceStore() as any).syncToken;
-    const localSettings: any = (useDataStore() as any).localSettings;
+    const syncToken: any = useWorkspaceStore().syncToken;
+    const localSettings: any = useDataStore().localSettings;
     if (!localSettings.syncSub) {
-      (useDataStore() as any).patchLocalSettings({
+      useDataStore().patchLocalSettings({
         syncSub: syncToken.sub,
       });
     } else if (localSettings.syncSub !== syncToken.sub) {
@@ -704,15 +576,15 @@ const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
     // Find and save one item to save
     await utils.awaitSome(() => ifNotTooLate(async () => {
       const storeItemMap: any = {
-        ...(useFileStore() as any).itemsById,
-        ...(useFolderStore() as any).itemsById,
-        ...(useSyncLocationStore() as any).itemsById,
-        ...(usePublishLocationStore() as any).itemsById,
+        ...useFileStore().itemsById,
+        ...useFolderStore().itemsById,
+        ...useSyncLocationStore().itemsById,
+        ...usePublishLocationStore().itemsById,
         // Deal with contents and data later
       };
 
-      const syncDataByItemId = (useDataStore() as any).syncDataByItemId;
-      const isGit = !!(useWorkspaceStore() as any).currentWorkspaceIsGit;
+      const syncDataByItemId = useDataStore().syncDataByItemId;
+      const isGit = !!useWorkspaceStore().currentWorkspaceIsGit;
       const [changedItem, syncDataToUpdate] = utils.someResult(
         Object.entries(storeItemMap),
         ([id, item]: [string, any]) => {
@@ -747,7 +619,7 @@ const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
     await utils.awaitSome(() => ifNotTooLate(async () => {
       let getItem: (syncData: any) => any;
       let getFileItem: (syncData: any) => any;
-      if ((useWorkspaceStore() as any).currentWorkspaceIsGit) {
+      if (useWorkspaceStore().currentWorkspaceIsGit) {
         const { itemsByGitPath } = (useGlobalStore() as any);
         getItem = (syncData: any) => itemsByGitPath[syncData.id];
         getFileItem = (syncData: any) => itemsByGitPath[syncData.id.slice(1)];
@@ -757,7 +629,7 @@ const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
         getFileItem = (syncData: any) => allItemsById[syncData.itemId.split('/')[0]];
       }
 
-      const syncDataById = (useDataStore() as any).syncDataById;
+      const syncDataById = useDataStore().syncDataById;
       const syncDataToRemove = utils.deepCopy(utils.someResult(
         Object.values(syncDataById),
         (syncData: any) => {
@@ -779,9 +651,9 @@ const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
         syncData: syncDataToRemove,
         ifNotTooLate,
       });
-      const syncDataByIdCopy: any = { ...(useDataStore() as any).syncDataById };
+      const syncDataByIdCopy: any = { ...useDataStore().syncDataById };
       delete syncDataByIdCopy[syncDataToRemove.id];
-      (useDataStore() as any).setSyncDataById(syncDataByIdCopy);
+      useDataStore().setSyncDataById(syncDataByIdCopy);
       return true;
     }));
 
@@ -794,7 +666,7 @@ const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
     await syncDataItem('templates');
 
     if (!skipContents) {
-      const currentFileId = (useFileStore() as any).current.id;
+      const currentFileId = useFileStore().current.id;
       if (currentFileId) {
         // Sync current file first
         await syncFile(currentFileId, syncContext);
@@ -803,12 +675,12 @@ const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
       // Find and sync one file out of sync
       await utils.awaitSome(async () => {
         let getSyncData: (contentId: string) => any;
-        if ((useWorkspaceStore() as any).currentWorkspaceIsGit) {
+        if (useWorkspaceStore().currentWorkspaceIsGit) {
           const { gitPathsByItemId } = (useGlobalStore() as any);
-          const syncDataById = (useDataStore() as any).syncDataById;
+          const syncDataById = useDataStore().syncDataById;
           getSyncData = (contentId: string) => syncDataById[gitPathsByItemId[contentId]];
         } else {
-          const syncDataByItemId = (useDataStore() as any).syncDataByItemId;
+          const syncDataByItemId = useDataStore().syncDataByItemId;
           getSyncData = (contentId: string) => syncDataByItemId[contentId];
         }
 
@@ -816,12 +688,12 @@ const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
         const ids: any[] = [
           ...Object.keys((localDbSvc as any).hashMap.content)
             .map((contentId: string) => [contentId.split('/')[0], contentId]),
-          ...(useFileStore() as any).items
+          ...useFileStore().items
             .map((file: any) => [file.id, `${file.id}/content`]),
         ];
 
         // Find the first content out of sync
-        const contentMap = (useContentStore() as any).itemsById;
+        const contentMap = useContentStore().itemsById;
         const fileIdToSync = utils.someResult(ids, ([fileId, contentId]: [string, string]) => {
           // Get the content hash from itemsById or from localDbSvc if not loaded
           const loadedContent = contentMap[contentId];
@@ -868,11 +740,11 @@ const syncWorkspace = async (skipContents: boolean = false): Promise<void> => {
  */
 const requestSync = (addTriggerSyncBadge: boolean = false): void => {
   // No sync in light mode
-  if ((useGlobalStore() as any).light) {
+  if (useGlobalStore().light) {
     return;
   }
 
-  (useQueueStore() as any).enqueueSyncRequest(async () => {
+  useQueueStore().enqueueSyncRequest(async () => {
     let intervalId: any;
     const attempt = async (): Promise<void> => {
       // Only start syncing when these conditions are met
@@ -887,8 +759,8 @@ const requestSync = (addTriggerSyncBadge: boolean = false): void => {
         const fileHashesToClean: any = {};
         if (getLastStoredSyncActivity() + (constants as any).cleanTrashAfter < Date.now()) {
           // Last synchronization happened 7 days ago
-          const syncDataByItemId = (useDataStore() as any).syncDataByItemId;
-          (useFileStore() as any).items.forEach((file: any) => {
+          const syncDataByItemId = useDataStore().syncDataByItemId;
+          useFileStore().items.forEach((file: any) => {
             // If file is in the trash and has not been modified since it was last synced
             const syncData = syncDataByItemId[file.id];
             if (syncData && file.parentId === 'trash' && file.hash === syncData.hash) {
@@ -908,12 +780,12 @@ const requestSync = (addTriggerSyncBadge: boolean = false): void => {
             // Only sync the current file if workspace sync is unavailable
             // as we don't want to look for out-of-sync files by loading
             // all the syncedContent objects.
-            await syncFile((useFileStore() as any).current.id);
+            await syncFile(useFileStore().current.id);
           }
 
           // Clean files
           Object.entries(fileHashesToClean).forEach(([fileId, fileHash]: [string, any]) => {
-            const file: any = (useFileStore() as any).itemsById[fileId];
+            const file: any = useFileStore().itemsById[fileId];
             if (file && file.hash === fileHash) {
               (workspaceSvc as any).deleteFile(fileId);
             }
@@ -954,18 +826,18 @@ export default {
     const { paymentSuccess } = utils.queryParams;
     utils.setQueryParams(workspaceProvider.getWorkspaceParams(workspace));
 
-    (useWorkspaceStore() as any).setCurrentWorkspaceId(workspace.id);
+    useWorkspaceStore().setCurrentWorkspaceId(workspace.id);
     await (localDbSvc as any).init();
 
     // Enable sponsorship
     if (paymentSuccess) {
-      (useModalStore() as any).open('paymentSuccess')
+      useModalStore().open('paymentSuccess')
         .catch(() => { /* Cancel */ });
-      const sponsorToken: any = (useWorkspaceStore() as any).sponsorToken;
+      const sponsorToken: any = useWorkspaceStore().sponsorToken;
       // Force check sponsorship after a few seconds
       const currentDate = Date.now();
       if (sponsorToken && sponsorToken.expiresOn > currentDate - checkSponsorshipAfter) {
-        (useDataStore() as any).addGoogleToken({
+        useDataStore().addGoogleToken({
           ...sponsorToken,
           expiresOn: currentDate - checkSponsorshipAfter,
         });
@@ -983,7 +855,7 @@ export default {
 
     await (tempFileSvc as any).init();
 
-    if (!(useGlobalStore() as any).light) {
+    if (!useGlobalStore().light) {
       // Sync periodically
       utils.setInterval(() => {
         if (isSyncPossible()
@@ -998,7 +870,7 @@ export default {
       // Unload contents from memory periodically
       utils.setInterval(() => {
         // Wait for sync and publish to finish
-        if ((useQueueStore() as any).isEmpty) {
+        if (useQueueStore().isEmpty) {
           (localDbSvc as any).unloadContents();
         }
       }, 5000);

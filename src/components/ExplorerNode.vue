@@ -568,7 +568,7 @@ export default defineComponent({
       this.infoOpen = false;
     },
     togglePin() {
-      const pinned: Record<string, boolean> = { ...((useDataStore().localSettings || {}).pinnedFolderIds || {}) };
+      const pinned: Record<string, boolean> = { ...((useDataStore().localSettings || {}) as Record<string, any>).pinnedFolderIds };
       const id = this.node.item.id;
       if (pinned[id]) delete pinned[id];
       else pinned[id] = true;

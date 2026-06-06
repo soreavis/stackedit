@@ -1,7 +1,7 @@
 import localDbSvc from './localDbSvc';
 import { usePublishLocationStore } from '../stores/publishLocation';
 import { useFileStore } from '../stores/file';
-import { setItemByType, patchItemByType, deleteItemByType } from '../stores/itemBridge';
+import { setItemByType } from '../stores/itemBridge';
 import { useNotificationStore } from '../stores/notification';
 import utils from './utils';
 import networkSvc from './networkSvc';
@@ -21,7 +21,7 @@ interface PublishLocation {
 }
 
 const hasCurrentFilePublishLocations = (): boolean =>
-  !!((usePublishLocationStore() as any).current as unknown[]).length;
+  !!(usePublishLocationStore().current as unknown[]).length;
 
 const loader = (type: string) => (fileId: string) => (localDbSvc as any).loadItem(`${fileId}/${type}`)
   // Item does not exist, create it
@@ -82,7 +82,7 @@ const publishFile = async (fileId: string): Promise<void> => {
   let counter = 0;
   await loadContent(fileId);
   const publishLocations: PublishLocation[] = [
-    ...((usePublishLocationStore() as any).filteredGroupedByFileId[fileId] as PublishLocation[]) || [],
+    ...(usePublishLocationStore().filteredGroupedByFileId[fileId] as PublishLocation[]) || [],
   ];
   try {
     await utils.awaitSequence(publishLocations, async (publishLocation: PublishLocation) => {
